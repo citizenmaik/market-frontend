@@ -376,7 +376,7 @@ td{padding:6px 8px;white-space:nowrap;}
 // ══════════════════════════════════════════════════════
 //  CONFIG — replace with your Railway URL after deploy
 // ══════════════════════════════════════════════════════
-const API_BASE = localStorage.getItem('apiBase') || 'https://web-production-3f902.up.railway.app';
+const API_BASE = localStorage.getItem('apiBase') || 'http://localhost:5000';
 const REFRESH  = 5 * 60 * 1000;
 
 // ── Theme ─────────────────────────────────────────────
@@ -525,7 +525,7 @@ function renderPerf(p, vix) {
 }
 
 // ── Trend Status ──────────────────────────────────────
-const TREND_KEYS=[['9ema','9 EMA'],['21ema_high','21 EMA High'],['21ema','21 EMA'],['21ema_low','21 EMA Low'],['3d_21ema','3D>21 EMA'],['50ema','50 EMA'],['200ema','200 EMA'],['52w_high','52W High']];
+const TREND_KEYS=[['ema9','9 EMA'],['ema21h','21 EMA High'],['ema21','21 EMA'],['ema21l','21 EMA Low'],['d3ema21','3D>21 EMA'],['ema50','50 EMA'],['ema200','200 EMA'],['w52high','52W High']];
 
 function renderTrend(data) {
   const tb=document.getElementById('trendTbl'); tb.innerHTML='';
@@ -546,14 +546,14 @@ function renderTrend(data) {
 // ── Power Trend ───────────────────────────────────────
 function renderPT(data, yields) {
   const el=document.getElementById('ptEl'); el.innerHTML='';
-  const rows=[['3d_20sma','3D > 20 SMA'],['3d_50sma','3D > 50 SMA'],['3d_200sma','3D > 200 SMA'],['20_50sma','20 > 50 SMA'],['20_200sma','20 > 200 SMA'],['50_200sma','50 > 200 SMA']];
+  const rows=[['sma3d20','3D > 20 SMA'],['sma3d50','3D > 50 SMA'],['sma3d200','3D > 200 SMA'],['sma20_50','20 > 50 SMA'],['sma20_200','20 > 200 SMA'],['sma50_200','50 > 200 SMA']];
   rows.forEach(([k,l])=>{
     const d=document.createElement('div'); d.className='ptr';
     const v=data?data[k]:null;
     d.innerHTML=`<span class="lbl">${l}</span><span class="val ${v==null?'vnum':v?'vyes':'vno'}">${v==null?'—':v?'Yes':'No'}</span>`;
     el.appendChild(d);
   });
-  [['10y','US 10Y Yield'],['2y','US 02Y Yield']].forEach(([k,l])=>{
+  [['y10','US 10Y Yield'],['y2','US 02Y Yield']].forEach(([k,l])=>{
     const d=document.createElement('div'); d.className='ptr';
     d.innerHTML=`<span class="lbl">${l}</span><span class="val vnum">${yields&&yields[k]!=null?yields[k]:'—'}</span>`;
     el.appendChild(d);
@@ -629,8 +629,8 @@ function renderFallback() {
   });
   renderMC({ytd:3.74,'52wh':-1.91});
   renderPerf({ytd:3.74,'1w':1.55,'1m':-1.02,'1y':14.79,'52wh':-1.91}, 20.23);
-  renderTrend({SPY:{9ema:-0.22,21ema_high:-0.99,21ema:-0.44,21ema_low:2.82,'3d_21ema':false,50ema:-0.17,200ema:4.75,52w_high:-1.91},RSP:{9ema:0.42,21ema_high:0.71,21ema:1.23,21ema_low:1.85,'3d_21ema':true,50ema:2.82,200ema:7.53,52w_high:-1.02},QQQ:{9ema:-0.50,21ema_high:-2.09,21ema:-1.30,21ema_low:-0.54,'3d_21ema':false,50ema:-1.74,200ema:3.32,52w_high:-5.27},QQQE:{9ema:-0.03,21ema_high:-1.07,21ema:-0.42,21ema_low:0.29,'3d_21ema':false,50ema:-0.48,200ema:2.86,52w_high:-4.04}});
-  renderPT({3d_20sma:false,3d_50sma:false,3d_200sma:true,20_50sma:false,20_200sma:true,50_200sma:true},{10y:4.09,2y:3.47});
+  renderTrend({SPY:{"ema9":-0.22,"ema21h":-0.99,"ema21":-0.44,"ema21l":2.82,'d3ema21':false,"ema50":-0.17,"ema200":4.75,"w52high":-1.91},RSP:{"ema9":0.42,"ema21h":0.71,"ema21":1.23,"ema21l":1.85,'d3ema21':true,"ema50":2.82,"ema200":7.53,"w52high":-1.02},QQQ:{"ema9":-0.50,"ema21h":-2.09,"ema21":-1.30,"ema21l":-0.54,'d3ema21':false,"ema50":-1.74,"ema200":3.32,"w52high":-5.27},QQQE:{"ema9":-0.03,"ema21h":-1.07,"ema21":-0.42,"ema21l":0.29,'d3ema21':false,"ema50":-0.48,"ema200":2.86,"w52high":-4.04}});
+  renderPT({"sma3d20":false,"sma3d50":false,"sma3d200":true,"sma20_50":false,"sma20_200":true,"sma50_200":true},{"y10":4.09,"y2":3.47});
   renderFac([{label:'Growth',val:-0.06},{label:'Value',val:0.11},{label:'High Dividend',val:0},{label:'Large-Cap',val:0.10},{label:'Mid-Cap',val:0.25},{label:'Small-Cap',val:0.07},{label:'Momentum',val:0.18},{label:'IPOs',val:0.53}]);
   const SEC_FB={RSPG:{name:'Energy',price:0,day:1.6,wk:2.0,mth:17.4,rs_day:1.8,rs_wk:3.2,rs_mth:16.2,high52:0,rs:100},RSPN:{name:'Industrials',price:0,day:.3,wk:0,mth:6.2,rs_day:.5,rs_wk:1.1,rs_mth:5.1,high52:0,rs:100},RSPU:{name:'Utilities',price:0,day:1.2,wk:3.6,mth:7.8,rs_day:1.4,rs_wk:4.7,rs_mth:6.7,high52:-.7,rs:90},RSPH:{name:'Health Care',price:0,day:-.1,wk:.5,mth:.9,rs_day:.2,rs_wk:1.6,rs_mth:-.2,high52:-1.3,rs:90},RSPR:{name:'Real Estate',price:0,day:-.2,wk:.5,mth:2.5,rs_day:.1,rs_wk:1.6,rs_mth:1.4,high52:-1.7,rs:90},RSPM:{name:'Materials',price:0,day:-.5,wk:-2.2,mth:10.5,rs_day:-.3,rs_wk:-1.1,rs_mth:9.4,high52:-2.2,rs:75},RSPS:{name:'Cons Stpl',price:0,day:-.4,wk:-1.2,mth:6,rs_day:-.2,rs_wk:-.1,rs_mth:4.9,high52:-1.6,rs:75},RSPC:{name:'Comm Svcs',price:0,day:.2,wk:-1.1,mth:-1,rs_day:.5,rs_wk:0,rs_mth:-2,high52:-7.4,rs:55},RSPD:{name:'Cons Disc',price:0,day:-1.3,wk:-1.5,mth:2.1,rs_day:-1,rs_wk:-.4,rs_mth:1.1,high52:-2,rs:50},RSPT:{name:'Technology',price:0,day:-.7,wk:-1.4,mth:1.4,rs_day:-.4,rs_wk:-.4,rs_mth:.4,high52:-4,rs:45},RSPF:{name:'Financials',price:0,day:-.8,wk:-.4,mth:-2.6,rs_day:-.6,rs_wk:.7,rs_mth:-3.6,high52:-6.7,rs:15}};
   renderSectors(SEC_FB);
