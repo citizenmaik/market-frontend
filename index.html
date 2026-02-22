@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Markets">
+<meta name="theme-color" content="#0a0b0e" id="themeColorMeta">
+<title>Market Dashboard</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════
+   CSS Variables — Dark & Light Theme
+══════════════════════════════════════════════════════ */
+:root {
+  --green:#00d084; --red:#ff4466; --yellow:#f5c842; --blue:#4d9fff; --accent:#7c6af7;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  --radius:8px; --gap:10px;
+  --transition: background .25s, color .25s, border-color .25s;
+}
+[data-theme="dark"] {
+  --bg:#0a0b0e; --surface:#111318; --surface2:#171b22; --border:#1e2330;
+  --text:#e8eaf0; --muted:#5a6070; --th-btn:#1e2535;
+}
+[data-theme="light"] {
+  --bg:#f0f2f5; --surface:#ffffff; --surface2:#f7f8fa; --border:#e2e6ed;
+  --text:#1a1d24; --muted:#8a94a6; --th-btn:#e8ecf2;
+  --green:#00a864; --red:#d63050; --yellow:#c8971a; --blue:#2b7fd4; --accent:#5c4fd6;
+}
+
+/* ── Reset ── */
+*{margin:0;padding:0;box-sizing:border-box;}
+body {
+  background:var(--bg); color:var(--text);
+  font-family:var(--sans); min-height:100vh;
+  padding: env(safe-area-inset-top,12px) env(safe-area-inset-right,16px)
+           env(safe-area-inset-bottom,16px) env(safe-area-inset-left,16px);
+  transition: var(--transition);
+}
+
+/* ══ LOGIN SCREEN ══════════════════════════════════════ */
+#loginScreen {
+  position:fixed;inset:0;z-index:1000;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:20px;
+  transition:opacity .3s;
+}
+#loginScreen.hidden{opacity:0;pointer-events:none;}
+.login-box {
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:32px 28px;width:320px;max-width:90vw;
+  box-shadow:0 20px 60px rgba(0,0,0,.4);
+}
+.login-logo {
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+  color:var(--muted);text-transform:uppercase;text-align:center;margin-bottom:24px;
+}
+.login-logo span{display:block;font-size:22px;letter-spacing:.05em;color:var(--text);margin-bottom:6px;}
+.login-box input {
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;padding:11px 14px;color:var(--text);
+  font-family:var(--mono);font-size:14px;outline:none;
+  transition:border-color .2s;margin-bottom:12px;
+}
+.login-box input:focus{border-color:var(--accent);}
+.login-box input::placeholder{color:var(--muted);}
+.login-btn {
+  width:100%;padding:11px;border:none;border-radius:7px;
+  background:var(--accent);color:#fff;font-family:var(--mono);
+  font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.05em;
+  transition:opacity .2s;
+}
+.login-btn:hover{opacity:.85;}
+.login-err{color:var(--red);font-family:var(--mono);font-size:11px;text-align:center;height:14px;}
+
+/* ══ HEADER ════════════════════════════════════════════ */
+.hdr {
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);
+  gap:10px;flex-wrap:wrap;
+}
+.hdr h1{font-family:var(--mono);font-size:11px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;}
+.hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.dt{font-family:var(--mono);font-size:10px;color:var(--muted);}
+.last-upd{font-family:var(--mono);font-size:9px;color:var(--muted);}
+
+/* Theme toggle */
+.th-btn {
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
+  background:var(--th-btn);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:15px;transition:all .2s;flex-shrink:0;
+}
+.th-btn:hover{border-color:var(--accent);}
+
+/* Status pill */
+.pill {
+  font-family:var(--mono);font-size:9px;padding:4px 10px;
+  border-radius:10px;border:1px solid var(--border);
+  color:var(--muted);display:flex;align-items:center;gap:5px;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.pill:hover{border-color:var(--accent);}
+.pill.live{border-color:rgba(0,208,132,.4);color:var(--green);}
+.pill.error{border-color:rgba(255,68,102,.4);color:var(--red);}
+.pill.loading{border-color:rgba(77,159,255,.4);color:var(--blue);}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.pulse{animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ══ INDEX CARDS ═══════════════════════════════════════ */
+.idx{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:12px;}
+.ic{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 12px;transition:var(--transition),border-color .2s;cursor:pointer;}
+.ic:hover{border-color:var(--accent);}
+.ic .tk{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:4px;}
+.ic .pr{font-family:var(--mono);font-size:14px;font-weight:500;margin-bottom:3px;}
+.ic .ch{font-family:var(--mono);font-size:10px;font-weight:600;margin-bottom:4px;}
+.ic .nm{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+.up{color:var(--green);} .dn{color:var(--red);}
+
+/* ══ PANELS ════════════════════════════════════════════ */
+.pnl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:var(--transition);}
+.ph{padding:9px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.ph::before{content:'';display:block;width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0;}
+.ph h3{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;font-weight:500;}
+
+/* ══ LAYOUT ════════════════════════════════════════════ */
+.r1{display:grid;grid-template-columns:200px 240px 1fr 190px 220px;gap:var(--gap);margin-bottom:var(--gap);}
+.r2{display:grid;grid-template-columns:250px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);margin-bottom:var(--gap);}
+
+/* ══ MARKET CONDITIONS ═════════════════════════════════ */
+.mc{padding:12px;}
+.mc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.mc-badge{font-family:var(--mono);font-size:12px;font-weight:600;padding:3px 10px;border-radius:4px;}
+.mc-badge.neg{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3);}
+.mc-badge.pos{background:rgba(0,208,132,.15);color:var(--green);border:1px solid rgba(0,208,132,.3);}
+.mc-badge.neu{background:rgba(90,96,112,.2);color:var(--muted);border:1px solid rgba(90,96,112,.2);}
+.mc-pct{font-family:var(--mono);font-size:17px;font-weight:600;}
+.mc-sub{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:8px;}
+.mc-chart{height:52px;}
+.mc-chart svg{width:100%;height:100%;}
+
+/* ══ PERF TABLE ════════════════════════════════════════ */
+.ptable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;}
+.ptable th{padding:6px 7px;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);text-align:center;font-weight:500;}
+.ptable td{padding:5px 7px;text-align:center;border-bottom:1px solid rgba(125,130,145,.12);}
+.ptable tr:last-child td{border-bottom:none;}
+.bdg{display:inline-block;padding:1px 6px;border-radius:3px;font-size:8px;font-weight:600;}
+.bp{background:rgba(0,208,132,.15);color:var(--green);}
+.bn{background:rgba(255,68,102,.12);color:var(--red);}
+.bu{background:rgba(90,96,112,.18);color:var(--muted);}
+.tlo{display:grid;grid-template-columns:repeat(6,1fr);padding:7px;gap:3px;border-top:1px solid var(--border);}
+.tlo-c{text-align:center;}
+.tlo-c .lbl{font-family:var(--mono);font-size:7px;color:var(--muted);margin-bottom:2px;}
+.tlo-c .val{font-family:var(--mono);font-size:9px;margin-bottom:2px;}
+
+/* ══ TREND STATUS ══════════════════════════════════════ */
+.ts{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;}
+.ts th{padding:6px 6px;font-size:8px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;font-weight:500;}
+.ts th:first-child{text-align:left;}
+.ts td{padding:5px 6px;text-align:center;border-bottom:1px solid rgba(125,130,145,.1);font-size:9px;}
+.ts tr:last-child td{border-bottom:none;}
+.ts td:first-child{text-align:left;color:var(--muted);font-size:8px;}
+.ty{color:var(--green);font-weight:600;} .tn{color:var(--red);font-weight:600;}
+
+/* ══ POWER TREND / FACTORS ════════════════════════════ */
+.ptb,.fb{padding:8px 11px;}
+.ptr,.fr{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(125,130,145,.1);}
+.ptr:last-child,.fr:last-child{border-bottom:none;}
+.ptr .lbl,.fr .lbl{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.ptr .val,.fr .val{font-family:var(--mono);font-size:10px;font-weight:600;}
+.vno{color:var(--red);} .vyes{color:var(--green);} .vnum{color:var(--text);}
+
+/* ══ RS GAINERS ════════════════════════════════════════ */
+.rss{padding:8px;}
+.rsi{display:flex;align-items:center;gap:7px;padding:5px 4px;border-radius:5px;transition:background .15s;cursor:pointer;}
+.rsi:hover{background:var(--surface2);}
+.rsb{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 4px;border-radius:3px;min-width:44px;text-align:center;flex-shrink:0;}
+.r100{background:rgba(0,208,132,.15);color:var(--green);border:1px solid rgba(0,208,132,.3);}
+.r65{background:rgba(245,200,66,.15);color:var(--yellow);border:1px solid rgba(245,200,66,.3);}
+.r50{background:rgba(255,68,102,.1);color:var(--red);border:1px solid rgba(255,68,102,.2);}
+.ri{flex:1;}
+.ri .tn2{font-family:var(--mono);font-size:11px;font-weight:500;}
+.ri .sc{font-size:9px;color:var(--muted);}
+.rr{text-align:right;}
+.rr .rp{font-family:var(--mono);font-size:11px;font-weight:500;}
+.rr .rc{font-family:var(--mono);font-size:10px;font-weight:600;}
+.slbl{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:6px 4px 3px;}
+
+/* ══ SECTOR TABLE ══════════════════════════════════════ */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;}
+thead th{padding:6px 8px;text-align:left;font-size:8px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody tr{border-bottom:1px solid rgba(125,130,145,.1);transition:background .15s;cursor:pointer;}
+tbody tr:hover{background:var(--surface2);}
+tbody tr:last-child{border-bottom:none;}
+td{padding:6px 8px;white-space:nowrap;}
+.rsc{font-weight:600;font-size:9px;width:30px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:3px;}
+.rh{background:rgba(0,208,132,.2);color:var(--green);}
+.rm{background:rgba(245,200,66,.15);color:var(--yellow);}
+.rl{background:rgba(255,68,102,.12);color:var(--red);}
+.rvl{background:rgba(255,68,102,.07);color:var(--red);opacity:.7;}
+.tck{color:var(--blue);font-weight:500;font-size:10px;}
+.tname{color:var(--text);font-family:var(--sans);font-size:10px;}
+.nc{text-align:right;}
+
+/* ══ TAG GRIDS ═════════════════════════════════════════ */
+.tg{padding:9px;display:flex;flex-wrap:wrap;gap:5px;}
+.tag{font-family:var(--mono);font-size:10px;padding:3px 7px;border-radius:3px;background:var(--surface2);border:1px solid var(--border);color:var(--text);transition:all .15s;cursor:pointer;position:relative;}
+.tag:hover{border-color:var(--accent);color:var(--accent);}
+.thl{background:rgba(0,208,132,.1);border-color:rgba(0,208,132,.3);color:var(--green);}
+.tyw{background:rgba(245,200,66,.1);border-color:rgba(245,200,66,.25);color:var(--yellow);}
+.tip{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:9px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:10;}
+.tag:hover .tip{opacity:1;}
+
+/* ══ ERROR BANNER ══════════════════════════════════════ */
+.err{background:rgba(255,68,102,.08);border:1px solid rgba(255,68,102,.2);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-family:var(--mono);font-size:10px;color:var(--red);display:none;}
+.err.show{display:block;}
+
+/* ══ SKELETON ══════════════════════════════════════════ */
+.sk{background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:3px;display:inline-block;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
+@media(max-width:1400px){.r1{grid-template-columns:185px 225px 1fr 175px}}
+@media(max-width:1200px){.r1{grid-template-columns:1fr 1fr;}.r1 .pnl:nth-child(3){grid-column:1/-1;}}
+@media(max-width:1024px){.r2{grid-template-columns:1fr;}.r3{grid-template-columns:1fr 1fr;}}
+
+@media(max-width:768px){
+  .idx{grid-template-columns:repeat(4,1fr);}
+  .r1,.r3{grid-template-columns:1fr 1fr;}
+  .r1 .pnl{grid-column:auto;}
+  .hdr-right .dt{display:none;}
+}
+@media(max-width:540px){
+  .idx{grid-template-columns:repeat(2,1fr);}
+  .r1,.r2,.r3{grid-template-columns:1fr;}
+  body{padding:10px 10px calc(env(safe-area-inset-bottom,10px) + 10px);}
+  .hdr h1 .label{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span>📈 Markets</span>
+      DASHBOARD
+    </div>
+    <input type="password" id="pwInput" placeholder="API Key eingeben…" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Anmelden</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ── Main App ── -->
+<div id="app" style="display:none">
+
+  <div class="hdr">
+    <h1><span class="label">Market </span>Dashboard</h1>
+    <div class="hdr-right">
+      <span class="last-upd" id="lastUpd"></span>
+      <div class="pill loading" id="pill" onclick="refreshAll()">
+        <span class="dot pulse" id="pillDot"></span>
+        <span id="pillTxt">Loading…</span>
+      </div>
+      <button class="th-btn" id="thBtn" onclick="toggleTheme()" title="Dark/Light Mode">🌙</button>
+      <div class="dt" id="dtEl"></div>
+    </div>
+  </div>
+
+  <div class="err" id="errBanner">⚠ API nicht erreichbar — statische Fallback-Daten</div>
+
+  <div class="idx" id="idxRow"></div>
+
+  <div class="r1">
+    <!-- Market Conditions -->
+    <div class="pnl">
+      <div class="ph"><h3>Market Conditions</h3></div>
+      <div class="mc">
+        <div class="mc-row">
+          <div class="mc-badge neg" id="mcBadge">—</div>
+          <div class="mc-pct" id="mcPct">—</div>
+        </div>
+        <div class="mc-sub">SPY vs 52W High</div>
+        <div class="mc-chart"><svg viewBox="0 0 200 52" preserveAspectRatio="none">
+          <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff4466" stop-opacity=".2" id="cgStop"/>
+            <stop offset="100%" stop-color="#ff4466" stop-opacity=".01"/>
+          </linearGradient></defs>
+          <path id="mcL" fill="none" stroke="#ff4466" stroke-width="1.3"
+            d="M0,40 C8,38 16,26 30,24 C44,22 52,13 65,16 C78,19 88,32 102,35 C116,38 126,44 138,42 C150,40 160,46 172,49 C184,52 194,46 200,44"/>
+          <path id="mcF" fill="url(#cg)"
+            d="M0,40 C8,38 16,26 30,24 C44,22 52,13 65,16 C78,19 88,32 102,35 C116,38 126,44 138,42 C150,40 160,46 172,49 C184,52 194,46 200,44 L200,52 L0,52Z"/>
+        </svg></div>
+      </div>
+    </div>
+
+    <!-- Performance -->
+    <div class="pnl">
+      <div class="ph"><h3>Performance Overview</h3></div>
+      <table class="ptable">
+        <thead><tr><th>YTD</th><th>1W</th><th>1M</th><th>1Y</th><th>52W Hi</th><th>VIX</th></tr></thead>
+        <tbody>
+          <tr id="perfR"><td colspan="6" style="text-align:center"><span class="sk" style="width:85%;height:11px"></span></td></tr>
+          <tr id="perfB"><td colspan="6"></td></tr>
+        </tbody>
+      </table>
+      <div class="tlo">
+        <div class="tlo-c"><div class="lbl">10SMA</div><div class="val sk" style="width:38px;height:10px"></div></div>
+        <div class="tlo-c"><div class="lbl">20SMA</div><div class="val sk" style="width:38px;height:10px"></div></div>
+        <div class="tlo-c"><div class="lbl">50SMA</div><div class="val sk" style="width:38px;height:10px"></div></div>
+        <div class="tlo-c"><div class="lbl">200SMA</div><div class="val sk" style="width:38px;height:10px"></div></div>
+        <div class="tlo-c"><div class="lbl">20&gt;50</div><div class="val sk" style="width:38px;height:10px"></div></div>
+        <div class="tlo-c"><div class="lbl">50&gt;200</div><div class="val sk" style="width:38px;height:10px"></div></div>
+      </div>
+    </div>
+
+    <!-- Trend Status -->
+    <div class="pnl">
+      <div class="ph"><h3>Trend Status</h3></div>
+      <table class="ts">
+        <thead><tr><th>Signal</th><th>SPY</th><th>RSP</th><th>QQQ</th><th>QQQE</th></tr></thead>
+        <tbody id="trendTbl"></tbody>
+      </table>
+    </div>
+
+    <!-- Power Trend -->
+    <div class="pnl">
+      <div class="ph"><h3>Power Trend (QQQ)</h3></div>
+      <div class="ptb" id="ptEl"></div>
+    </div>
+
+    <!-- Factors -->
+    <div class="pnl">
+      <div class="ph"><h3>Factors vs SP500</h3></div>
+      <div class="fb" id="facEl"></div>
+    </div>
+  </div>
+
+  <div class="r2">
+    <div class="pnl">
+      <div class="ph"><h3>RS Gainers</h3></div>
+      <div class="rss" id="rsEl"></div>
+    </div>
+    <div class="pnl">
+      <div class="ph"><h3>Sector Leaders</h3></div>
+      <div class="tw"><table>
+        <thead><tr><th>RS</th><th>Ticker</th><th>Name</th><th class="nc">Day%</th><th class="nc">Wk%</th><th class="nc">Mth%</th><th class="nc">RS Day%</th><th class="nc">RS Wk%</th><th class="nc">RS Mth%</th><th class="nc">52W Hi</th></tr></thead>
+        <tbody id="secTbl"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="r3">
+    <div class="pnl"><div class="ph"><h3>21EMA Watch</h3></div><div class="tg" id="emaEl"></div></div>
+    <div class="pnl"><div class="ph"><h3>Healthy Charts</h3></div><div class="tg" id="hcEl"></div></div>
+    <div class="pnl"><div class="ph"><h3>Momentum 97</h3></div><div class="tg" id="m97El"></div></div>
+  </div>
+
+  <div class="r3">
+    <div class="pnl"><div class="ph"><h3>4% Gainers (1D)</h3></div><div class="tg" id="g4El"></div></div>
+    <div class="pnl"><div class="ph"><h3>Vol Up Gainers (1D)</h3></div><div class="tg" id="vgEl"></div></div>
+    <div class="pnl"><div class="ph"><h3>High Est. EPS Growth</h3></div><div class="tg" id="epsEl"></div></div>
+  </div>
+
+</div><!-- /#app -->
+
+<script>
+// ══════════════════════════════════════════════════════
+//  CONFIG — replace with your Railway URL after deploy
+// ══════════════════════════════════════════════════════
+const API_BASE = localStorage.getItem('apiBase') || 'https://web-production-3f902.up.railway.app';
+const REFRESH  = 5 * 60 * 1000;
+
+// ── Theme ─────────────────────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+  html.dataset.theme = next;
+  localStorage.setItem('theme', next);
+  document.getElementById('thBtn').textContent = next === 'dark' ? '🌙' : '☀️';
+  document.getElementById('themeColorMeta').content = next === 'dark' ? '#0a0b0e' : '#f0f2f5';
+}
+// Init theme
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.dataset.theme = savedTheme;
+document.getElementById('thBtn').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+
+// ── Auth ──────────────────────────────────────────────
+const SESSION_KEY = 'mkt_auth';
+
+function doLogin() {
+  const pw   = document.getElementById('pwInput').value.trim();
+  const err  = document.getElementById('loginErr');
+  if (!pw) { err.textContent = 'Bitte API Key eingeben'; return; }
+
+  // Store key and verify against API
+  sessionStorage.setItem(SESSION_KEY, pw);
+  verifyKey(pw);
+}
+
+document.getElementById('pwInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+async function verifyKey(key) {
+  const err = document.getElementById('loginErr');
+  try {
+    const res = await fetch(`${API_BASE}/api/indices?key=${encodeURIComponent(key)}`);
+    if (res.ok) {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('app').style.display = 'block';
+      setTimeout(() => document.getElementById('loginScreen').style.display = 'none', 350);
+      init();
+    } else {
+      err.textContent = 'Falscher API Key';
+      sessionStorage.removeItem(SESSION_KEY);
+    }
+  } catch(e) {
+    // Server not reachable — allow login for offline/fallback mode
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('app').style.display = 'block';
+    setTimeout(() => document.getElementById('loginScreen').style.display = 'none', 350);
+    init();
+  }
+}
+
+// Check session on load
+const savedKey = sessionStorage.getItem(SESSION_KEY);
+if (savedKey) verifyKey(savedKey);
+
+// ── Helpers ───────────────────────────────────────────
+const KEY = () => sessionStorage.getItem(SESSION_KEY) || '';
+
+async function apiFetch(path) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'X-API-Key': KEY() }
+  });
+  if (!res.ok) throw new Error(res.status);
+  return res.json();
+}
+
+function setStatus(state, text) {
+  document.getElementById('pill').className = `pill ${state}`;
+  document.getElementById('pillDot').className = `dot${state==='live'?' pulse':''}`;
+  document.getElementById('pillTxt').textContent = text;
+}
+
+function pct(v, d=2) {
+  if (v==null) return '—';
+  return `<span class="${v>=0?'up':'dn'}">${v>=0?'+':''}${v.toFixed(d)}%</span>`;
+}
+function bdg(v) {
+  if (v==null) return '<span class="bdg bu">—</span>';
+  if (v>0)  return '<span class="bdg bp">Positive</span>';
+  if (v<0)  return '<span class="bdg bn">Negative</span>';
+  return '<span class="bdg bu">Neutral</span>';
+}
+function rsClass(rs) {
+  if (rs>=80) return 'rh'; if (rs>=60) return 'rm'; if (rs>=40) return 'rl'; return 'rvl';
+}
+function fmtPrice(p, sym) {
+  if (sym==='BTC-USD') return '$'+Math.round(p).toLocaleString();
+  return '$'+p.toFixed(2);
+}
+
+// ── Date ──────────────────────────────────────────────
+document.getElementById('dtEl').textContent =
+  new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+
+// ── Index Cards ───────────────────────────────────────
+const IDX_ORDER = ['SPY','RSP','QQQ','QQQE','IWM','^VIX','BTC-USD'];
+
+function renderIdx(data) {
+  const row = document.getElementById('idxRow');
+  row.innerHTML = '';
+  IDX_ORDER.forEach((sym,i) => {
+    const d = data[sym]; if (!d) return;
+    const cls = d.change_pct>=0?'up':'dn';
+    const s   = d.change_pct>=0?'+':'';
+    const disp = sym.replace('^','').replace('-USD','');
+    row.innerHTML += `<div class="ic" style="animation-delay:${i*.05}s">
+      <div class="tk">${disp}</div>
+      <div class="pr">${fmtPrice(d.price, sym)}</div>
+      <div class="ch ${cls}">${s}${d.change_pct.toFixed(2)}%</div>
+      <div class="nm">${d.name}</div></div>`;
+  });
+}
+
+// ── Market Conditions ─────────────────────────────────
+function renderMC(perf) {
+  if (!perf||perf.ytd==null) return;
+  const v = perf['52wh'] ?? perf.ytd;
+  const badge = document.getElementById('mcBadge');
+  const pctEl = document.getElementById('mcPct');
+  const color  = v>-5?'#00d084':'#ff4466';
+  if (v>-2) { badge.textContent='Positive'; badge.className='mc-badge pos'; }
+  else if (v<-10){ badge.textContent='Negative'; badge.className='mc-badge neg'; }
+  else { badge.textContent='Neutral'; badge.className='mc-badge neu'; }
+  pctEl.textContent = (v>=0?'+':'')+v.toFixed(1)+'%';
+  document.getElementById('mcL').setAttribute('stroke', color);
+  document.getElementById('cgStop').setAttribute('stop-color', color);
+}
+
+// ── Performance ───────────────────────────────────────
+function renderPerf(p, vix) {
+  if (!p) return;
+  const vixStr = vix!=null ? vix.toFixed(2) : '—';
+  document.getElementById('perfR').innerHTML = `
+    <td>${p.ytd!=null?(p.ytd>=0?'+':'')+p.ytd.toFixed(2)+'%':'—'}</td>
+    <td>${p['1w']!=null?(p['1w']>=0?'+':'')+p['1w'].toFixed(2)+'%':'—'}</td>
+    <td>${p['1m']!=null?(p['1m']>=0?'+':'')+p['1m'].toFixed(2)+'%':'—'}</td>
+    <td>${p['1y']!=null?(p['1y']>=0?'+':'')+p['1y'].toFixed(2)+'%':'—'}</td>
+    <td>${p['52wh']!=null?(p['52wh']>=0?'+':'')+p['52wh'].toFixed(2)+'%':'—'}</td>
+    <td>${vixStr}</td>`;
+  document.getElementById('perfB').innerHTML =
+    `<td>${bdg(p.ytd)}</td><td>${bdg(p['1w'])}</td><td>${bdg(p['1m'])}</td><td>${bdg(p['1y'])}</td><td>${bdg(p['52wh'])}</td><td><span class="bdg bu">—</span></td>`;
+}
+
+// ── Trend Status ──────────────────────────────────────
+const TREND_KEYS=[['9ema','9 EMA'],['21ema_high','21 EMA High'],['21ema','21 EMA'],['21ema_low','21 EMA Low'],['3d_21ema','3D>21 EMA'],['50ema','50 EMA'],['200ema','200 EMA'],['52w_high','52W High']];
+
+function renderTrend(data) {
+  const tb=document.getElementById('trendTbl'); tb.innerHTML='';
+  if(!data) return;
+  TREND_KEYS.forEach(([key,label])=>{
+    const tr=document.createElement('tr');
+    let cells=`<td>${label}</td>`;
+    ['SPY','RSP','QQQ','QQQE'].forEach(t=>{
+      const v=data[t]?data[t][key]:null;
+      if(v==null){cells+=`<td>—</td>`;return;}
+      if(typeof v==='boolean') cells+=`<td class="${v?'ty':'tn'}">${v?'Yes':'No'}</td>`;
+      else cells+=`<td class="${v>=0?'up':'dn'}">${v>=0?'+':''}${v.toFixed(2)}%</td>`;
+    });
+    tr.innerHTML=cells; tb.appendChild(tr);
+  });
+}
+
+// ── Power Trend ───────────────────────────────────────
+function renderPT(data, yields) {
+  const el=document.getElementById('ptEl'); el.innerHTML='';
+  const rows=[['3d_20sma','3D > 20 SMA'],['3d_50sma','3D > 50 SMA'],['3d_200sma','3D > 200 SMA'],['20_50sma','20 > 50 SMA'],['20_200sma','20 > 200 SMA'],['50_200sma','50 > 200 SMA']];
+  rows.forEach(([k,l])=>{
+    const d=document.createElement('div'); d.className='ptr';
+    const v=data?data[k]:null;
+    d.innerHTML=`<span class="lbl">${l}</span><span class="val ${v==null?'vnum':v?'vyes':'vno'}">${v==null?'—':v?'Yes':'No'}</span>`;
+    el.appendChild(d);
+  });
+  [['10y','US 10Y Yield'],['2y','US 02Y Yield']].forEach(([k,l])=>{
+    const d=document.createElement('div'); d.className='ptr';
+    d.innerHTML=`<span class="lbl">${l}</span><span class="val vnum">${yields&&yields[k]!=null?yields[k]:'—'}</span>`;
+    el.appendChild(d);
+  });
+}
+
+// ── Factors ───────────────────────────────────────────
+function renderFac(data) {
+  const el=document.getElementById('facEl'); el.innerHTML='';
+  if(!data||!data.length) return;
+  data.forEach(r=>{
+    const d=document.createElement('div'); d.className='fr';
+    d.innerHTML=`<span class="lbl">${r.label}</span><span class="val ${r.val>=0?'up':'dn'}">${r.val>=0?'+':''}${r.val.toFixed(2)}%</span>`;
+    el.appendChild(d);
+  });
+}
+
+// ── Sectors ───────────────────────────────────────────
+function rsGainerBadge(rs){return rs>=80?'r100':rs>=60?'r65':'r50';}
+
+function renderSectors(data) {
+  const tb=document.getElementById('secTbl'); tb.innerHTML='';
+  const rsEl=document.getElementById('rsEl'); rsEl.innerHTML='';
+  const sorted=Object.entries(data).sort((a,b)=>b[1].rs-a[1].rs);
+
+  sorted.forEach(([sym,s])=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><div class="rsc ${rsClass(s.rs)}">${s.rs}</div></td><td class="tck">${sym}</td><td class="tname">${s.name}</td><td class="nc">${pct(s.day,1)}</td><td class="nc">${pct(s.wk,1)}</td><td class="nc">${pct(s.mth,1)}</td><td class="nc">${pct(s.rs_day)}</td><td class="nc">${pct(s.rs_wk)}</td><td class="nc">${pct(s.rs_mth)}</td><td class="nc"><span class="${s.high52<-3?'dn':s.high52<0?'':'up'}">${s.high52.toFixed(1)}%</span></td>`;
+    tb.appendChild(tr);
+  });
+
+  const topD=[...sorted].slice(0,3);
+  const topW=[...sorted].sort((a,b)=>b[1].wk-a[1].wk).slice(0,3);
+  const card=(sym,s,val,cls)=>`<div class="rsi"><div class="rsb ${rsGainerBadge(s.rs)}">RS:${s.rs}</div><div class="ri"><div class="tn2">${sym}</div><div class="sc">${s.name}</div></div><div class="rr"><div class="rp">$${s.price.toFixed(2)}</div><div class="rc ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div></div>`;
+  rsEl.innerHTML='<div class="slbl">Daily</div>'+topD.map(([sym,s])=>card(sym,s,s.day,s.day>=0?'up':'dn')).join('')+
+    '<div class="slbl">Weekly</div>'+topW.map(([sym,s])=>card(sym,s,s.wk,s.wk>=0?'up':'dn')).join('');
+}
+
+// ── Screener tags ─────────────────────────────────────
+function renderScreener(elId, data) {
+  const el=document.getElementById(elId); el.innerHTML='';
+  if(!data||!data.length) return;
+  data.forEach(item=>{
+    const s=document.createElement('span');
+    s.className='tag'+(item.change_pct>=4?' thl':item.change_pct>=1?' tyw':'');
+    s.innerHTML=`${item.ticker}<span class="tip">${item.change_pct>=0?'+':''}${item.change_pct.toFixed(2)}%</span>`;
+    el.appendChild(s);
+  });
+}
+
+// ── Fallbacks ─────────────────────────────────────────
+function staticTags(elId,tickers,hl=[],yw=[]) {
+  const el=document.getElementById(elId); el.innerHTML='';
+  const hlS=new Set(hl), ywS=new Set(yw);
+  tickers.forEach(t=>{
+    const s=document.createElement('span');
+    s.className='tag'+(hlS.has(t)?' thl':ywS.has(t)?' tyw':'');
+    s.textContent=t; el.appendChild(s);
+  });
+}
+
+function renderFallback() {
+  const IDX_FB=[
+    {sym:'SPY',price:684.48,chg:-0.26,name:'S&P 500'},{sym:'RSP',price:203.14,chg:-0.21,name:'S&P 500 EQ WT'},
+    {sym:'QQQ',price:603.47,chg:-0.38,name:'NASDAQ 100'},{sym:'QQQE',price:102.74,chg:-0.42,name:'NASDAQ 100 EQ WT'},
+    {sym:'IWM',price:264.60,chg:+0.23,name:'RUSSELL 2000'},{sym:'VIX',price:20.23,chg:+3.11,name:'VOLATILITY'},
+    {sym:'BTC',price:67761,chg:+1.20,name:'BITCOIN'},
+  ];
+  const row=document.getElementById('idxRow'); row.innerHTML='';
+  IDX_FB.forEach((d,i)=>{
+    const cls=d.chg>=0?'up':'dn';
+    row.innerHTML+=`<div class="ic" style="animation-delay:${i*.05}s"><div class="tk">${d.sym}</div><div class="pr">$${d.price.toLocaleString()}</div><div class="ch ${cls}">${d.chg>=0?'+':''}${d.chg.toFixed(2)}%</div><div class="nm">${d.name}</div></div>`;
+  });
+  renderMC({ytd:3.74,'52wh':-1.91});
+  renderPerf({ytd:3.74,'1w':1.55,'1m':-1.02,'1y':14.79,'52wh':-1.91}, 20.23);
+  renderTrend({SPY:{9ema:-0.22,21ema_high:-0.99,21ema:-0.44,21ema_low:2.82,'3d_21ema':false,50ema:-0.17,200ema:4.75,52w_high:-1.91},RSP:{9ema:0.42,21ema_high:0.71,21ema:1.23,21ema_low:1.85,'3d_21ema':true,50ema:2.82,200ema:7.53,52w_high:-1.02},QQQ:{9ema:-0.50,21ema_high:-2.09,21ema:-1.30,21ema_low:-0.54,'3d_21ema':false,50ema:-1.74,200ema:3.32,52w_high:-5.27},QQQE:{9ema:-0.03,21ema_high:-1.07,21ema:-0.42,21ema_low:0.29,'3d_21ema':false,50ema:-0.48,200ema:2.86,52w_high:-4.04}});
+  renderPT({3d_20sma:false,3d_50sma:false,3d_200sma:true,20_50sma:false,20_200sma:true,50_200sma:true},{10y:4.09,2y:3.47});
+  renderFac([{label:'Growth',val:-0.06},{label:'Value',val:0.11},{label:'High Dividend',val:0},{label:'Large-Cap',val:0.10},{label:'Mid-Cap',val:0.25},{label:'Small-Cap',val:0.07},{label:'Momentum',val:0.18},{label:'IPOs',val:0.53}]);
+  const SEC_FB={RSPG:{name:'Energy',price:0,day:1.6,wk:2.0,mth:17.4,rs_day:1.8,rs_wk:3.2,rs_mth:16.2,high52:0,rs:100},RSPN:{name:'Industrials',price:0,day:.3,wk:0,mth:6.2,rs_day:.5,rs_wk:1.1,rs_mth:5.1,high52:0,rs:100},RSPU:{name:'Utilities',price:0,day:1.2,wk:3.6,mth:7.8,rs_day:1.4,rs_wk:4.7,rs_mth:6.7,high52:-.7,rs:90},RSPH:{name:'Health Care',price:0,day:-.1,wk:.5,mth:.9,rs_day:.2,rs_wk:1.6,rs_mth:-.2,high52:-1.3,rs:90},RSPR:{name:'Real Estate',price:0,day:-.2,wk:.5,mth:2.5,rs_day:.1,rs_wk:1.6,rs_mth:1.4,high52:-1.7,rs:90},RSPM:{name:'Materials',price:0,day:-.5,wk:-2.2,mth:10.5,rs_day:-.3,rs_wk:-1.1,rs_mth:9.4,high52:-2.2,rs:75},RSPS:{name:'Cons Stpl',price:0,day:-.4,wk:-1.2,mth:6,rs_day:-.2,rs_wk:-.1,rs_mth:4.9,high52:-1.6,rs:75},RSPC:{name:'Comm Svcs',price:0,day:.2,wk:-1.1,mth:-1,rs_day:.5,rs_wk:0,rs_mth:-2,high52:-7.4,rs:55},RSPD:{name:'Cons Disc',price:0,day:-1.3,wk:-1.5,mth:2.1,rs_day:-1,rs_wk:-.4,rs_mth:1.1,high52:-2,rs:50},RSPT:{name:'Technology',price:0,day:-.7,wk:-1.4,mth:1.4,rs_day:-.4,rs_wk:-.4,rs_mth:.4,high52:-4,rs:45},RSPF:{name:'Financials',price:0,day:-.8,wk:-.4,mth:-2.6,rs_day:-.6,rs_wk:.7,rs_mth:-3.6,high52:-6.7,rs:15}};
+  renderSectors(SEC_FB);
+  staticTags('emaEl',['WSC','ALH','AESI','NVT','AR','VIK','NCLH','LRCX','ASO','VFC','FFIV','GAP','CAVA','STNE','BWXT','CAKE','REZI','VSCO','FLEX','BVN','WERN','APH','CALX','MGM','RUN','YPF','SMCI'],['STNE','BWXT'],['CAKE']);
+  staticTags('hcEl',['CIEN','LITE','AAOI','SNDK','WDC','ACMR','LRCX','TER','AMAT','GORO','TRX','IAG','IAUX','AU','BVN','SSRM','ALM','BORR','RIG','VAL','ASX','COHR','ATI','NESR','CSTM','CENX','VSAT','GLW','FSLY'],['CIEN','SNDK','WDC'],[]);
+  staticTags('m97El',['CWBHF','NCI','HYMC','BATL','ATOM','CVSI','NAMM','PL','HLF','LPTH','ONDS','FSLY','ZIM','UMAC','CLMT','CGNX','TPH','KTOS','WORX','IRDM','RIME','RELY'],[],['IRDM']);
+  staticTags('g4El',['RELY','HLF','COLD','OMC','MPT','AG','SSRM','EQX','SMCI','AAOI','LITE','PWR','BAK','XP','LINE','CDE','NGD','HLX','NG','PAAS','IAG','ARCO','SA','BTE','AGI','RIOT','CENX','CALX','DNN','NEXT'],['RELY','HLF','LITE'],[]);
+  staticTags('vgEl',['RELY','HLF','COLD','OMC','MPT','SSRM','OII','ETSY','KRMN','KTOS','FUN','XP','XPRO','ARCO','CENX','FLR','EBAY','DASH','HLIT','IHS','SM','AKAM'],['KRMN'],['EBAY']);
+  staticTags('epsEl',['CIEN','LITE','MU','SNDK','WDC','TER','APH','VRT','AMSC','ECO','FTAI','MOD','FN','UI','CRDO','STNG','EQT','AS','BKV','CALX','CECO','SII','WT','NET'],['VRT','CRDO'],['MU']);
+}
+
+// ── Main Refresh ──────────────────────────────────────
+async function refreshAll() {
+  setStatus('loading','Loading…');
+  try {
+    const [idx,perf,trend,pt,sec,fac,yld,ema,hc,m97,g4,vg,eps] = await Promise.allSettled([
+      apiFetch('/api/indices'), apiFetch('/api/performance'),
+      apiFetch('/api/trend_status'), apiFetch('/api/power_trend'),
+      apiFetch('/api/sectors'), apiFetch('/api/factors'), apiFetch('/api/yields'),
+      apiFetch('/api/screener/ema_watch'), apiFetch('/api/screener/healthy'),
+      apiFetch('/api/screener/momentum97'), apiFetch('/api/screener/gainers4'),
+      apiFetch('/api/screener/vol_gainers'), apiFetch('/api/screener/eps_growth'),
+    ]);
+    document.getElementById('errBanner').classList.remove('show');
+
+    if(idx.status==='fulfilled')  renderIdx(idx.value);   else renderFallback();
+    const pd = perf.status==='fulfilled' ? perf.value : null;
+    const vix= idx.status==='fulfilled'&&idx.value['^VIX'] ? idx.value['^VIX'].price : null;
+    renderMC(pd); renderPerf(pd, vix);
+    if(trend.status==='fulfilled') renderTrend(trend.value);
+    renderPT(pt.status==='fulfilled'?pt.value:null, yld.status==='fulfilled'?yld.value:null);
+    if(fac.status==='fulfilled')  renderFac(fac.value);
+    if(sec.status==='fulfilled')  renderSectors(sec.value);
+    if(ema.status==='fulfilled')  renderScreener('emaEl', ema.value);
+    if(hc.status==='fulfilled')   renderScreener('hcEl',  hc.value);
+    if(m97.status==='fulfilled')  renderScreener('m97El', m97.value);
+    if(g4.status==='fulfilled')   renderScreener('g4El',  g4.value);
+    if(vg.status==='fulfilled')   renderScreener('vgEl',  vg.value);
+    if(eps.status==='fulfilled')  renderScreener('epsEl', eps.value);
+
+    setStatus('live','Live · 5 min');
+    document.getElementById('lastUpd').textContent =
+      'Updated '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  } catch(e) {
+    setStatus('error','Offline');
+    document.getElementById('errBanner').classList.add('show');
+    renderFallback();
+  }
+}
+
+function init() {
+  refreshAll();
+  setInterval(refreshAll, REFRESH);
+}
+
+// ── PWA Service Worker ────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
