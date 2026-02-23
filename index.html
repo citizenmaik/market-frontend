@@ -492,17 +492,26 @@ document.getElementById('dtEl').textContent =
 // ══════════════════════════════════════════════════════
 
 // ── 1. Index Cards ────────────────────────────────────
-const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','IWM','VIX','BINANCE:BTCUSDT'];
+const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','IWM','BINANCE:BTCUSDT'];
 const IDX_META = {
   'SPY':'S&P 500','RSP':'S&P 500 EQ WT','QQQ':'NASDAQ 100',
   'QQQE':'NASDAQ 100 EQ WT','IWM':'RUSSELL 2000',
-  'VIX':'VOLATILITY','BINANCE:BTCUSDT':'BITCOIN'
+  'BINANCE:BTCUSDT':'BITCOIN'
 };
 
 async function loadIndices() {
   const data = await getQuotes(IDX_SYMS);
   const row  = document.getElementById('idxRow');
   row.innerHTML = '';
+  // Add VIX from Yahoo via proxy
+  let vixPrice = null;
+  try {
+    const vixRes = await fetch(`${API}?type=vix`);
+    const vixData = await vixRes.json();
+    vixPrice = vixData.vix;
+  } catch(e) {}
+
+  const allSyms = [...IDX_SYMS];
   IDX_SYMS.forEach((sym,i) => {
     const q     = data[sym];
     const price = q?.c || 0;
@@ -516,7 +525,23 @@ async function loadIndices() {
       <div class="ch ${chg>=0?'up':'dn'}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
       <div class="nm">${name}</div></div>`;
   });
-  return data;
+
+  // VIX card (6th position)
+  if (vixPrice != null) {
+    const vixCard = `<div class="ic" style="animation-delay:0.3s">
+      <div class="tk">VIX</div><div class="pr">$${vixPrice.toFixed(2)}</div>
+      <div class="ch" style="color:var(--muted)">VOLATILITY INDEX</div>
+      <div class="nm">VOLATILITY</div></div>`;
+    // Insert before BTC (last card)
+    const cards = row.innerHTML.split('</div>');
+    row.innerHTML = row.innerHTML.replace(
+      row.lastElementChild?.outerHTML || '',
+      vixCard + (row.lastElementChild?.outerHTML || '')
+    );
+  }
+
+  data['VIX'] = { c: vixPrice, pc: vixPrice };
+  return { ...data, vixPrice };
 }
 
 // ── 2. SPY Performance ────────────────────────────────
@@ -582,7 +607,7 @@ async function loadMarketConditions(spyCloses) {
   const breadth= document.getElementById('mcBreadth');
 
   // Fetch NYSE breadth symbols via proxy (^ encoded as __)
-  const breadthSyms = ['^NYMO','^NASI','^NYA50R','^NYA200R','^NYHL'];
+  const breadthSyms = ['__NYMO','__NASI','__NYA50R','__NYA200R','__NYHL'];
   const bData = await getCandles(breadthSyms, '3mo').catch(()=>({}));
 
   const getLast = sym => {
@@ -592,11 +617,11 @@ async function loadMarketConditions(spyCloses) {
     return c.length ? c[c.length-1] : null;
   };
 
-  const moVal  = getLast('^NYMO');
-  const siVal  = getLast('^NASI');
-  const p50Val = getLast('^NYA50R');
-  const p200Val= getLast('^NYA200R');
-  const hlVal  = getLast('^NYHL');
+  const moVal  = getLast('__NYMO');
+  const siVal  = getLast('__NASI');
+  const p50Val = getLast('__NYA50R');
+  const p200Val= getLast('__NYA200R');
+  const hlVal  = getLast('__NYHL');
 
   // SPY EMA/SMA checks
   const c     = spyCloses;
@@ -829,7 +854,7 @@ async function refreshAll() {
   try {
     // Batch 1: indices + SPY performance (parallel)
     const [idxData, perfData] = await Promise.all([loadIndices(), loadPerf()]);
-    const vixPrice = idxData['VIX']?.c || null;
+    const vixPrice = idxData?.vixPrice || idxData?.['VIX']?.c || null;
     renderPerf(perfData, vixPrice);
 
     const spyMth=perfData?.spyMthPct||0;
