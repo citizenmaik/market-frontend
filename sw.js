@@ -1,8 +1,6 @@
-const CACHE = 'market-dashboard-v1';
-const STATIC = ['/', '/index.html', '/manifest.json'];
+const CACHE = 'market-dashboard-v2';
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)));
   self.skipWaiting();
 });
 
@@ -13,14 +11,7 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
+// Pass everything through — no interception that could block fonts or API
 self.addEventListener('fetch', e => {
-  // API calls: network only (no cache)
-  if (e.request.url.includes('/api/')) {
-    e.respondWith(fetch(e.request).catch(() => new Response('{"error":"offline"}', {headers:{'Content-Type':'application/json'}})));
-    return;
-  }
-  // Static: cache first
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
-  );
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
