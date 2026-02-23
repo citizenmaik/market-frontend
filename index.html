@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="Markets">
 <meta name="theme-color" content="#0a0b0e" id="themeColorMeta">
 <title>Market Dashboard</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+
+
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ══════════════════════════════════════════════════════
@@ -247,6 +247,17 @@ td{padding:6px 8px;white-space:nowrap;}
 <body>
 
 <!-- ── Login Screen ── -->
+<script>
+// Kill service worker immediately on page load
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(r) { r.unregister(); });
+  });
+  if (window.caches) {
+    caches.keys().then(function(keys) { keys.forEach(function(k) { caches.delete(k); }); });
+  }
+}
+</script>
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">
@@ -828,8 +839,12 @@ function init() {
   setInterval(refreshAll, REFRESH);
 }
 
+// Kill all service workers and caches
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 }
 </script>
 </body>
