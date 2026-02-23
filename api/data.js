@@ -1,24 +1,32 @@
-// Vercel Serverless Function — Yahoo Finance Proxy
-// Deployed automatically by Vercel, no config needed
+// Vercel Serverless Function — Market Data Proxy
+// Yahoo Finance for candles + VIX, Finnhub for quotes
 
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
 
   const { type, symbols, range } = req.query;
 
+  const yhFetch = async (sym, r='1y') => {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=${r}`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' } });
+    const d = await res.json();
+    const result = d?.chart?.result?.[0];
+    if (!result) return { sym, error: 'no data' };
+    return { sym, c: result.indicators.quote[0].close, t: result.timestamp };
+  };
+
   try {
     if (type === 'quotes') {
-      // Batch quotes via Finnhub — symbols=SPY,QQQ,IWM
+      // Batch Finnhub quotes
       const syms = (symbols || '').split(',').filter(Boolean);
       const key  = req.headers['x-fh-key'] || req.query.fhkey || '';
       const results = await Promise.allSettled(
         syms.map(s =>
           fetch(`https://finnhub.io/api/v1/quote?symbol=${s}&token=${key}`)
             .then(r => r.json())
-            .then(d => ({ sym: s, c: d.c, pc: d.pc, o: d.o, h: d.h, l: d.l }))
+            .then(d => ({ sym: s, c: d.c, pc: d.pc }))
         )
       );
       const data = {};
@@ -29,28 +37,11 @@ export default async function handler(req, res) {
     }
 
     if (type === 'candles') {
-      // Batch candles from Yahoo Finance
-      const syms  = (symbols || '').split(',').filter(Boolean);
-      const r     = range || '1y';
+      // Batch Yahoo Finance candles (^ encoded as __ in URL)
+      const syms = (symbols || '').split(',').filter(Boolean);
+      const r    = range || '1y';
       const results = await Promise.allSettled(
-        syms.map(sym => {
-          const yhSym = sym.replace('__', '^'); // encode ^ as __
-          const url   = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yhSym)}?interval=1d&range=${r}`;
-          return fetch(url, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0',
-              'Accept': 'application/json',
-            }
-          })
-          .then(r => r.json())
-          .then(d => {
-            const result = d?.chart?.result?.[0];
-            if (!result) return { sym, error: 'no data' };
-            const closes = result.indicators.quote[0].close;
-            const times  = result.timestamp;
-            return { sym, c: closes, t: times };
-          });
-        })
+        syms.map(sym => yhFetch(sym.replace('__', '^'), r))
       );
       const data = {};
       results.forEach((r, i) => {
@@ -59,7 +50,14 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    return res.status(400).json({ error: 'Unknown type. Use type=quotes or type=candles' });
+    if (type === 'vix') {
+      // VIX via Yahoo Finance (Finnhub Free Tier doesn't support it)
+      const d = await yhFetch('^VIX', '5d');
+      const c = (d.c || []).filter(v => v != null);
+      return res.status(200).json({ vix: c.length ? c[c.length-1] : null });
+    }
+
+    return res.status(400).json({ error: 'Unknown type' });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
