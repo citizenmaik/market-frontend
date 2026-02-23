@@ -253,7 +253,7 @@ td{padding:6px 8px;white-space:nowrap;}
       <span>📈 Markets</span>
       DASHBOARD
     </div>
-    <input type="password" id="pwInput" placeholder="API Key eingeben…" autocomplete="current-password">
+    <input type="password" id="pwInput" placeholder="Finnhub API Key eingeben…" autocomplete="current-password">
     <button class="login-btn" onclick="doLogin()">Anmelden</button>
     <div class="login-err" id="loginErr"></div>
   </div>
@@ -374,10 +374,11 @@ td{padding:6px 8px;white-space:nowrap;}
 
 <script>
 // ══════════════════════════════════════════════════════
-//  CONFIG — replace with your Railway URL after deploy
+//  FINNHUB — direkt im Browser, kein Backend nötig
+//  API Key: https://finnhub.io (kostenlos, 60 req/min)
 // ══════════════════════════════════════════════════════
-const API_BASE = localStorage.getItem('apiBase') || 'https://web-production-3f902.up.railway.app';
-const REFRESH  = 5 * 60 * 1000;
+const REFRESH = 5 * 60 * 1000;
+let FKEY = '';
 
 // ── Theme ─────────────────────────────────────────────
 function toggleTheme() {
@@ -388,24 +389,20 @@ function toggleTheme() {
   document.getElementById('thBtn').textContent = next === 'dark' ? '🌙' : '☀️';
   document.getElementById('themeColorMeta').content = next === 'dark' ? '#0a0b0e' : '#f0f2f5';
 }
-// Init theme
 const savedTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.dataset.theme = savedTheme;
 document.getElementById('thBtn').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
 
 // ── Auth ──────────────────────────────────────────────
-const SESSION_KEY = 'mkt_auth';
+const SESSION_KEY = 'fh_key';
 
 function doLogin() {
-  const pw   = document.getElementById('pwInput').value.trim();
-  const err  = document.getElementById('loginErr');
-  if (!pw) { err.textContent = 'Bitte API Key eingeben'; return; }
-
-  // Store key and verify against API
-  sessionStorage.setItem(SESSION_KEY, pw);
+  const pw  = document.getElementById('pwInput').value.trim();
+  const err = document.getElementById('loginErr');
+  if (!pw) { err.textContent = 'Bitte Finnhub API Key eingeben'; return; }
+  err.textContent = 'Verbinde…';
   verifyKey(pw);
 }
-
 document.getElementById('pwInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
@@ -413,48 +410,46 @@ document.getElementById('pwInput').addEventListener('keydown', e => {
 async function verifyKey(key) {
   const err = document.getElementById('loginErr');
   try {
-    const res = await fetch(`${API_BASE}/api/indices?key=${encodeURIComponent(key)}`);
-    if (res.ok) {
+    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=SPY&token=${key}`);
+    const data = await res.json();
+    if (data && data.c > 0) {
+      FKEY = key;
+      localStorage.setItem(SESSION_KEY, key);
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('app').style.display = 'block';
       setTimeout(() => document.getElementById('loginScreen').style.display = 'none', 350);
       init();
     } else {
-      err.textContent = 'Falscher API Key';
-      sessionStorage.removeItem(SESSION_KEY);
+      err.textContent = 'Ungültiger API Key';
     }
   } catch(e) {
-    // Server not reachable — allow login for offline/fallback mode
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('app').style.display = 'block';
-    setTimeout(() => document.getElementById('loginScreen').style.display = 'none', 350);
-    init();
+    err.textContent = 'Verbindungsfehler';
   }
 }
 
-// Check session on load
-const savedKey = sessionStorage.getItem(SESSION_KEY);
-if (savedKey) verifyKey(savedKey);
+// Auto-login if key saved
+const savedKey = localStorage.getItem(SESSION_KEY);
+if (savedKey) { FKEY = savedKey; verifyKey(savedKey); }
 
-// ── Helpers ───────────────────────────────────────────
-const KEY = () => sessionStorage.getItem(SESSION_KEY) || '';
-
-async function apiFetch(path) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'X-API-Key': KEY() }
-  });
-  if (!res.ok) throw new Error(res.status);
+// ── Finnhub API ───────────────────────────────────────
+async function fhQuote(symbol) {
+  const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FKEY}`);
   return res.json();
 }
 
+async function fhCandles(symbol, from, to) {
+  const res = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}&token=${FKEY}`);
+  return res.json();
+}
+
+// ── Helpers ───────────────────────────────────────────
 function setStatus(state, text) {
   document.getElementById('pill').className = `pill ${state}`;
   document.getElementById('pillDot').className = `dot${state==='live'?' pulse':''}`;
   document.getElementById('pillTxt').textContent = text;
 }
-
 function pct(v, d=2) {
-  if (v==null) return '—';
+  if (v==null||isNaN(v)) return '—';
   return `<span class="${v>=0?'up':'dn'}">${v>=0?'+':''}${v.toFixed(d)}%</span>`;
 }
 function bdg(v) {
@@ -466,84 +461,196 @@ function bdg(v) {
 function rsClass(rs) {
   if (rs>=80) return 'rh'; if (rs>=60) return 'rm'; if (rs>=40) return 'rl'; return 'rvl';
 }
-function fmtPrice(p, sym) {
-  if (sym==='BTC-USD') return '$'+Math.round(p).toLocaleString();
-  return '$'+p.toFixed(2);
+function ema(arr, period) {
+  const k = 2/(period+1);
+  let e = arr[0];
+  for (let i=1;i<arr.length;i++) e = arr[i]*k + e*(1-k);
+  return e;
 }
+function sma(arr, period) {
+  const s = arr.slice(-period);
+  return s.reduce((a,b)=>a+b,0)/s.length;
+}
+function nowTs()  { return Math.floor(Date.now()/1000); }
+function agoTs(d) { return nowTs() - d*86400; }
 
-// ── Date ──────────────────────────────────────────────
 document.getElementById('dtEl').textContent =
   new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
 
 // ── Index Cards ───────────────────────────────────────
-const IDX_ORDER = ['SPY','RSP','QQQ','QQQE','IWM','^VIX','BTC-USD'];
+const INDICES = [
+  {sym:'SPY',  name:'S&P 500'},
+  {sym:'RSP',  name:'S&P 500 EQ WT'},
+  {sym:'QQQ',  name:'NASDAQ 100'},
+  {sym:'QQQE', name:'NASDAQ 100 EQ WT'},
+  {sym:'IWM',  name:'RUSSELL 2000'},
+  {sym:'VIX',  name:'VOLATILITY'},
+  {sym:'BTC',  name:'BITCOIN'},
+];
+const BTC_SYM = 'BINANCE:BTCUSDT';
+const VIX_SYM = 'VIX';
 
-function renderIdx(data) {
+async function loadIndices() {
   const row = document.getElementById('idxRow');
+  const quotes = await Promise.allSettled(
+    INDICES.map(i => fhQuote(i.sym === 'BTC' ? BTC_SYM : i.sym === 'VIX' ? VIX_SYM : i.sym))
+  );
   row.innerHTML = '';
-  IDX_ORDER.forEach((sym,i) => {
-    const d = data[sym]; if (!d) return;
-    const cls = d.change_pct>=0?'up':'dn';
-    const s   = d.change_pct>=0?'+':'';
-    const disp = sym.replace('^','').replace('-USD','');
+  INDICES.forEach((idx, i) => {
+    const q = quotes[i].status === 'fulfilled' ? quotes[i].value : null;
+    const price = q ? q.c : 0;
+    const prev  = q ? q.pc : 0;
+    const chg   = prev > 0 ? (price - prev) / prev * 100 : 0;
+    const cls   = chg >= 0 ? 'up' : 'dn';
+    const priceStr = idx.sym === 'BTC'
+      ? '$' + Math.round(price).toLocaleString()
+      : '$' + price.toFixed(2);
     row.innerHTML += `<div class="ic" style="animation-delay:${i*.05}s">
-      <div class="tk">${disp}</div>
-      <div class="pr">${fmtPrice(d.price, sym)}</div>
-      <div class="ch ${cls}">${s}${d.change_pct.toFixed(2)}%</div>
-      <div class="nm">${d.name}</div></div>`;
+      <div class="tk">${idx.sym}</div>
+      <div class="pr">${priceStr}</div>
+      <div class="ch ${cls}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
+      <div class="nm">${idx.name}</div></div>`;
   });
+  return quotes;
 }
 
-// ── Market Conditions ─────────────────────────────────
-function renderMC(perf) {
-  if (!perf||perf.ytd==null) return;
-  const v = perf['52wh'] ?? perf.ytd;
+// ── Performance & Trend (from candles) ───────────────
+async function loadPerf() {
+  try {
+    const data = await fhCandles('SPY', agoTs(400), nowTs());
+    if (!data.c || data.c.length < 5) return null;
+    const closes = data.c;
+    const price  = closes[closes.length-1];
+    const ytdIdx = closes.findIndex((v,i) => {
+      const d = new Date(data.t[i]*1000);
+      return d.getFullYear() === new Date().getFullYear();
+    });
+    const ytdPrice = ytdIdx >= 0 ? closes[ytdIdx] : closes[0];
+    const wk  = closes.length>6  ? closes[closes.length-6]  : closes[0];
+    const mth  = closes.length>22 ? closes[closes.length-22] : closes[0];
+    const yr   = closes.length>252? closes[closes.length-252]: closes[0];
+    const h52  = Math.max(...closes.slice(-252));
+    const vixQ = await fhQuote(VIX_SYM);
+    return {
+      ytd:  (price/ytdPrice-1)*100,
+      w1:   (price/wk-1)*100,
+      m1:   (price/mth-1)*100,
+      y1:   (price/yr-1)*100,
+      h52w: (price/h52-1)*100,
+      vix:  vixQ ? vixQ.c : null,
+      closes, times: data.t, price, h52,
+    };
+  } catch(e) { return null; }
+}
+
+function renderPerf(p) {
+  if (!p) return;
+  const f = v => v!=null ? `${v>=0?'+':''}${v.toFixed(2)}%` : '—';
+  document.getElementById('perfR').innerHTML = `
+    <td>${f(p.ytd)}</td><td>${f(p.w1)}</td><td>${f(p.m1)}</td>
+    <td>${f(p.y1)}</td><td>${f(p.h52w)}</td>
+    <td>${p.vix!=null?p.vix.toFixed(2):'—'}</td>`;
+  document.getElementById('perfB').innerHTML =
+    `<td>${bdg(p.ytd)}</td><td>${bdg(p.w1)}</td><td>${bdg(p.m1)}</td><td>${bdg(p.y1)}</td><td>${bdg(p.h52w)}</td><td><span class="bdg bu">—</span></td>`;
+
+  // Market conditions
+  const v = p.h52w;
   const badge = document.getElementById('mcBadge');
   const pctEl = document.getElementById('mcPct');
-  const color  = v>-5?'#00d084':'#ff4466';
-  if (v>-2) { badge.textContent='Positive'; badge.className='mc-badge pos'; }
-  else if (v<-10){ badge.textContent='Negative'; badge.className='mc-badge neg'; }
+  const color  = v > -5 ? '#00d084' : '#ff4466';
+  if (v > -2)  { badge.textContent='Positive'; badge.className='mc-badge pos'; }
+  else if (v < -10) { badge.textContent='Negative'; badge.className='mc-badge neg'; }
   else { badge.textContent='Neutral'; badge.className='mc-badge neu'; }
   pctEl.textContent = (v>=0?'+':'')+v.toFixed(1)+'%';
   document.getElementById('mcL').setAttribute('stroke', color);
   document.getElementById('cgStop').setAttribute('stop-color', color);
-}
 
-// ── Performance ───────────────────────────────────────
-function renderPerf(p, vix) {
-  if (!p) return;
-  const vixStr = vix!=null ? vix.toFixed(2) : '—';
-  document.getElementById('perfR').innerHTML = `
-    <td>${p.ytd!=null?(p.ytd>=0?'+':'')+p.ytd.toFixed(2)+'%':'—'}</td>
-    <td>${p['1w']!=null?(p['1w']>=0?'+':'')+p['1w'].toFixed(2)+'%':'—'}</td>
-    <td>${p['1m']!=null?(p['1m']>=0?'+':'')+p['1m'].toFixed(2)+'%':'—'}</td>
-    <td>${p['1y']!=null?(p['1y']>=0?'+':'')+p['1y'].toFixed(2)+'%':'—'}</td>
-    <td>${p['52wh']!=null?(p['52wh']>=0?'+':'')+p['52wh'].toFixed(2)+'%':'—'}</td>
-    <td>${vixStr}</td>`;
-  document.getElementById('perfB').innerHTML =
-    `<td>${bdg(p.ytd)}</td><td>${bdg(p['1w'])}</td><td>${bdg(p['1m'])}</td><td>${bdg(p['1y'])}</td><td>${bdg(p['52wh'])}</td><td><span class="bdg bu">—</span></td>`;
+  // Trend line overview (% above each SMA)
+  const c = p.closes;
+  const s10  = sma(c,10), s20=sma(c,20), s50=sma(c,50), s200=sma(c,200);
+  const pct20_50  = ((s20/s50-1)*100).toFixed(1)+'%';
+  const pct50_200 = ((s50/s200-1)*100).toFixed(1)+'%';
+  const tlo = document.getElementById('tloRow');
+  tlo.innerHTML = `
+    <div class="tlo-c"><div class="lbl">10SMA</div><div class="val">${s10.toFixed(0)}</div><div class="bdg bu" style="font-size:8px;padding:1px 4px;">${p.price>s10?'Above':'Below'}</div></div>
+    <div class="tlo-c"><div class="lbl">20SMA</div><div class="val">${s20.toFixed(0)}</div><div class="bdg ${p.price>s20?'bp':'bn'}" style="font-size:8px;padding:1px 4px;">${p.price>s20?'Above':'Below'}</div></div>
+    <div class="tlo-c"><div class="lbl">50SMA</div><div class="val">${s50.toFixed(0)}</div><div class="bdg ${p.price>s50?'bp':'bn'}" style="font-size:8px;padding:1px 4px;">${p.price>s50?'Above':'Below'}</div></div>
+    <div class="tlo-c"><div class="lbl">200SMA</div><div class="val">${s200.toFixed(0)}</div><div class="bdg ${p.price>s200?'bp':'bn'}" style="font-size:8px;padding:1px 4px;">${p.price>s200?'Above':'Below'}</div></div>
+    <div class="tlo-c"><div class="lbl">20&gt;50</div><div class="val">${pct20_50}</div><div class="bdg ${s20>s50?'bp':'bn'}" style="font-size:8px;padding:1px 4px;">${s20>s50?'Yes':'No'}</div></div>
+    <div class="tlo-c"><div class="lbl">50&gt;200</div><div class="val">${pct50_200}</div><div class="bdg ${s50>s200?'bp':'bn'}" style="font-size:8px;padding:1px 4px;">${s50>s200?'Yes':'No'}</div></div>`;
 }
 
 // ── Trend Status ──────────────────────────────────────
-const TREND_KEYS=[['ema9','9 EMA'],['ema21h','21 EMA High'],['ema21','21 EMA'],['ema21l','21 EMA Low'],['d3ema21','3D>21 EMA'],['ema50','50 EMA'],['ema200','200 EMA'],['w52high','52W High']];
+const TREND_LABELS=[['ema9','9 EMA'],['ema21','21 EMA'],['ema50','50 EMA'],['ema200','200 EMA'],['d3ema21','3D>21 EMA'],['w52h','52W High']];
+
+async function loadTrendStatus() {
+  const syms = ['SPY','RSP','QQQ','QQQE'];
+  const results = {};
+  await Promise.all(syms.map(async sym => {
+    try {
+      const d = await fhCandles(sym, agoTs(400), nowTs());
+      if (!d.c || d.c.length < 50) return;
+      const c = d.c;
+      const price = c[c.length-1];
+      const e9    = ema(c.slice(-50),  9);
+      const e21   = ema(c.slice(-100), 21);
+      const e50   = ema(c.slice(-150), 50);
+      const e200  = ema(c, 200);
+      const h52   = Math.max(...c.slice(-252));
+      const last3AboveE21 = c.slice(-3).every(v => v > e21);
+      results[sym] = {
+        ema9:    (price-e9)  /e9  *100,
+        ema21:   (price-e21) /e21 *100,
+        ema50:   (price-e50) /e50 *100,
+        ema200:  (price-e200)/e200*100,
+        d3ema21: last3AboveE21,
+        w52h:    (price-h52) /h52 *100,
+      };
+    } catch(e) {}
+  }));
+  return results;
+}
 
 function renderTrend(data) {
-  const tb=document.getElementById('trendTbl'); tb.innerHTML='';
-  if(!data) return;
-  TREND_KEYS.forEach(([key,label])=>{
-    const tr=document.createElement('tr');
-    let cells=`<td>${label}</td>`;
-    ['SPY','RSP','QQQ','QQQE'].forEach(t=>{
-      const v=data[t]?data[t][key]:null;
-      if(v==null){cells+=`<td>—</td>`;return;}
-      if(typeof v==='boolean') cells+=`<td class="${v?'ty':'tn'}">${v?'Yes':'No'}</td>`;
+  const tb = document.getElementById('trendTbl'); tb.innerHTML='';
+  if (!data) return;
+  TREND_LABELS.forEach(([key,label]) => {
+    const tr = document.createElement('tr');
+    let cells = `<td>${label}</td>`;
+    ['SPY','RSP','QQQ','QQQE'].forEach(t => {
+      const v = data[t] ? data[t][key] : null;
+      if (v==null) { cells+=`<td>—</td>`; return; }
+      if (typeof v==='boolean') cells+=`<td class="${v?'ty':'tn'}">${v?'Yes':'No'}</td>`;
       else cells+=`<td class="${v>=0?'up':'dn'}">${v>=0?'+':''}${v.toFixed(2)}%</td>`;
     });
     tr.innerHTML=cells; tb.appendChild(tr);
   });
 }
 
-// ── Power Trend ───────────────────────────────────────
+// ── Power Trend (QQQ) ─────────────────────────────────
+async function loadPowerTrend() {
+  try {
+    const d = await fhCandles('QQQ', agoTs(400), nowTs());
+    if (!d.c) return null;
+    const c = d.c;
+    const avg3   = (c[c.length-1]+c[c.length-2]+c[c.length-3])/3;
+    const s20    = sma(c,20), s50=sma(c,50), s200=sma(c,200);
+    return {
+      sma3d20:  avg3>s20, sma3d50: avg3>s50, sma3d200: avg3>s200,
+      sma20_50: s20>s50,  sma20_200: s20>s200, sma50_200: s50>s200,
+    };
+  } catch(e) { return null; }
+}
+
+async function loadYields() {
+  try {
+    const [t10, t2] = await Promise.all([
+      fhQuote('US10Y'), fhQuote('US02Y')
+    ]);
+    return { y10: t10?.c, y2: t2?.c };
+  } catch(e) { return {}; }
+}
+
 function renderPT(data, yields) {
   const el=document.getElementById('ptEl'); el.innerHTML='';
   const rows=[['sma3d20','3D > 20 SMA'],['sma3d50','3D > 50 SMA'],['sma3d200','3D > 200 SMA'],['sma20_50','20 > 50 SMA'],['sma20_200','20 > 200 SMA'],['sma50_200','50 > 200 SMA']];
@@ -555,15 +662,35 @@ function renderPT(data, yields) {
   });
   [['y10','US 10Y Yield'],['y2','US 02Y Yield']].forEach(([k,l])=>{
     const d=document.createElement('div'); d.className='ptr';
-    d.innerHTML=`<span class="lbl">${l}</span><span class="val vnum">${yields&&yields[k]!=null?yields[k]:'—'}</span>`;
+    const v=yields?yields[k]:null;
+    d.innerHTML=`<span class="lbl">${l}</span><span class="val vnum">${v!=null?v.toFixed(2):'—'}</span>`;
     el.appendChild(d);
   });
 }
 
-// ── Factors ───────────────────────────────────────────
+// ── Factors vs SP500 ──────────────────────────────────
+const FACTORS = [
+  {sym:'IVW',label:'Growth'},{sym:'IVE',label:'Value'},
+  {sym:'HDV',label:'High Dividend'},{sym:'OEF',label:'Large-Cap'},
+  {sym:'IJH',label:'Mid-Cap'},{sym:'IJR',label:'Small-Cap'},
+  {sym:'MTUM',label:'Momentum'},{sym:'IPO',label:'IPOs'},
+];
+
+async function loadFactors(spyMth) {
+  const quotes = await Promise.allSettled(
+    FACTORS.map(f => fhCandles(f.sym, agoTs(35), nowTs()))
+  );
+  return FACTORS.map((f,i) => {
+    const d = quotes[i].status==='fulfilled' ? quotes[i].value : null;
+    if (!d || !d.c || d.c.length < 2) return {label:f.label, val:0};
+    const mth = (d.c[d.c.length-1]/d.c[0]-1)*100;
+    return {label:f.label, val:mth-spyMth};
+  });
+}
+
 function renderFac(data) {
   const el=document.getElementById('facEl'); el.innerHTML='';
-  if(!data||!data.length) return;
+  if (!data) return;
   data.forEach(r=>{
     const d=document.createElement('div'); d.className='fr';
     d.innerHTML=`<span class="lbl">${r.label}</span><span class="val ${r.val>=0?'up':'dn'}">${r.val>=0?'+':''}${r.val.toFixed(2)}%</span>`;
@@ -572,30 +699,77 @@ function renderFac(data) {
 }
 
 // ── Sectors ───────────────────────────────────────────
+const SECTORS = {
+  RSPG:'Energy', RSPN:'Industrials', RSPU:'Utilities', RSPH:'Health Care',
+  RSPR:'Real Estate', RSPM:'Materials', RSPS:'Cons Stpl', RSPC:'Comm Svcs',
+  RSPD:'Cons Disc', RSPT:'Technology', RSPF:'Financials',
+};
+
+async function loadSectors(spyDay, spyWk, spyMth) {
+  const entries = Object.entries(SECTORS);
+  const candles = await Promise.allSettled(
+    entries.map(([sym]) => fhCandles(sym, agoTs(35), nowTs()))
+  );
+  const result = {};
+  entries.forEach(([sym,name],i) => {
+    const d = candles[i].status==='fulfilled' ? candles[i].value : null;
+    if (!d||!d.c||d.c.length<5) return;
+    const c = d.c;
+    const price = c[c.length-1];
+    const day   = (price/c[c.length-2]-1)*100;
+    const wk    = c.length>6  ? (price/c[c.length-6]-1)*100  : 0;
+    const mth   = c.length>22 ? (price/c[c.length-22]-1)*100 : 0;
+    const h52   = Math.max(...c.slice(-252));
+    const rs    = Math.min(100, Math.max(0, Math.round(50+(mth-spyMth)*3)));
+    result[sym] = {
+      name, price: price.toFixed(2),
+      day: +day.toFixed(2), wk: +wk.toFixed(2), mth: +mth.toFixed(2),
+      rs_day: +(day-spyDay).toFixed(2), rs_wk: +(wk-spyWk).toFixed(2), rs_mth: +(mth-spyMth).toFixed(2),
+      high52: +((price/h52-1)*100).toFixed(2), rs,
+    };
+  });
+  return result;
+}
+
 function rsGainerBadge(rs){return rs>=80?'r100':rs>=60?'r65':'r50';}
 
 function renderSectors(data) {
   const tb=document.getElementById('secTbl'); tb.innerHTML='';
   const rsEl=document.getElementById('rsEl'); rsEl.innerHTML='';
   const sorted=Object.entries(data).sort((a,b)=>b[1].rs-a[1].rs);
-
   sorted.forEach(([sym,s])=>{
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><div class="rsc ${rsClass(s.rs)}">${s.rs}</div></td><td class="tck">${sym}</td><td class="tname">${s.name}</td><td class="nc">${pct(s.day,1)}</td><td class="nc">${pct(s.wk,1)}</td><td class="nc">${pct(s.mth,1)}</td><td class="nc">${pct(s.rs_day)}</td><td class="nc">${pct(s.rs_wk)}</td><td class="nc">${pct(s.rs_mth)}</td><td class="nc"><span class="${s.high52<-3?'dn':s.high52<0?'':'up'}">${s.high52.toFixed(1)}%</span></td>`;
     tb.appendChild(tr);
   });
-
   const topD=[...sorted].slice(0,3);
   const topW=[...sorted].sort((a,b)=>b[1].wk-a[1].wk).slice(0,3);
-  const card=(sym,s,val,cls)=>`<div class="rsi"><div class="rsb ${rsGainerBadge(s.rs)}">RS:${s.rs}</div><div class="ri"><div class="tn2">${sym}</div><div class="sc">${s.name}</div></div><div class="rr"><div class="rp">$${s.price.toFixed(2)}</div><div class="rc ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div></div>`;
+  const card=(sym,s,val,cls)=>`<div class="rsi"><div class="rsb ${rsGainerBadge(s.rs)}">RS:${s.rs}</div><div class="ri"><div class="tn2">${sym}</div><div class="sc">${s.name}</div></div><div class="rr"><div class="rp">$${s.price}</div><div class="rc ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div></div>`;
   rsEl.innerHTML='<div class="slbl">Daily</div>'+topD.map(([sym,s])=>card(sym,s,s.day,s.day>=0?'up':'dn')).join('')+
     '<div class="slbl">Weekly</div>'+topW.map(([sym,s])=>card(sym,s,s.wk,s.wk>=0?'up':'dn')).join('');
 }
 
-// ── Screener tags ─────────────────────────────────────
+// ── Screener Tags (% change) ──────────────────────────
+const SCREENERS = {
+  emaEl:  ['WSC','ALH','AESI','NVT','AR','NCLH','LRCX','ASO','VFC','FFIV','CAVA','STNE','BWXT','CAKE','REZI','FLEX','BVN','APH','CALX','MGM','RUN','YPF','SMCI'],
+  hcEl:   ['CIEN','LITE','AAOI','SNDK','WDC','LRCX','TER','AMAT','IAG','AU','BVN','SSRM','BORR','RIG','VAL','COHR','ATI','CENX','GLW','FSLY'],
+  m97El:  ['PL','HLF','LPTH','FSLY','ZIM','CLMT','CGNX','KTOS','IRDM','RELY','SMCI','NVDA','ARM','PLTR'],
+  g4El:   ['RELY','HLF','SSRM','SMCI','AAOI','LITE','PWR','XP','CDE','NGD','PAAS','IAG','SA','BTE','AGI','RIOT','CENX','CALX'],
+  vgEl:   ['RELY','HLF','SSRM','OII','KRMN','KTOS','XP','CENX','FLR','EBAY','DASH','SM','AKAM'],
+  epsEl:  ['CIEN','LITE','MU','SNDK','WDC','TER','APH','VRT','FTAI','FN','CRDO','EQT','CALX','NET','NVDA'],
+};
+
+async function loadScreener(tickers) {
+  const quotes = await Promise.allSettled(tickers.map(t => fhQuote(t)));
+  return tickers.map((t,i) => {
+    const q = quotes[i].status==='fulfilled' ? quotes[i].value : null;
+    const chg = q && q.pc > 0 ? (q.c-q.pc)/q.pc*100 : 0;
+    return {ticker:t, change_pct: +chg.toFixed(2)};
+  }).sort((a,b)=>b.change_pct-a.change_pct);
+}
+
 function renderScreener(elId, data) {
   const el=document.getElementById(elId); el.innerHTML='';
-  if(!data||!data.length) return;
   data.forEach(item=>{
     const s=document.createElement('span');
     s.className='tag'+(item.change_pct>=4?' thl':item.change_pct>=1?' tyw':'');
@@ -604,80 +778,48 @@ function renderScreener(elId, data) {
   });
 }
 
-// ── Fallbacks ─────────────────────────────────────────
-function staticTags(elId,tickers,hl=[],yw=[]) {
-  const el=document.getElementById(elId); el.innerHTML='';
-  const hlS=new Set(hl), ywS=new Set(yw);
-  tickers.forEach(t=>{
-    const s=document.createElement('span');
-    s.className='tag'+(hlS.has(t)?' thl':ywS.has(t)?' tyw':'');
-    s.textContent=t; el.appendChild(s);
-  });
-}
-
-function renderFallback() {
-  const IDX_FB=[
-    {sym:'SPY',price:684.48,chg:-0.26,name:'S&P 500'},{sym:'RSP',price:203.14,chg:-0.21,name:'S&P 500 EQ WT'},
-    {sym:'QQQ',price:603.47,chg:-0.38,name:'NASDAQ 100'},{sym:'QQQE',price:102.74,chg:-0.42,name:'NASDAQ 100 EQ WT'},
-    {sym:'IWM',price:264.60,chg:+0.23,name:'RUSSELL 2000'},{sym:'VIX',price:20.23,chg:+3.11,name:'VOLATILITY'},
-    {sym:'BTC',price:67761,chg:+1.20,name:'BITCOIN'},
-  ];
-  const row=document.getElementById('idxRow'); row.innerHTML='';
-  IDX_FB.forEach((d,i)=>{
-    const cls=d.chg>=0?'up':'dn';
-    row.innerHTML+=`<div class="ic" style="animation-delay:${i*.05}s"><div class="tk">${d.sym}</div><div class="pr">$${d.price.toLocaleString()}</div><div class="ch ${cls}">${d.chg>=0?'+':''}${d.chg.toFixed(2)}%</div><div class="nm">${d.name}</div></div>`;
-  });
-  renderMC({ytd:3.74,'52wh':-1.91});
-  renderPerf({ytd:3.74,'1w':1.55,'1m':-1.02,'1y':14.79,'52wh':-1.91}, 20.23);
-  renderTrend({SPY:{"ema9":-0.22,"ema21h":-0.99,"ema21":-0.44,"ema21l":2.82,'d3ema21':false,"ema50":-0.17,"ema200":4.75,"w52high":-1.91},RSP:{"ema9":0.42,"ema21h":0.71,"ema21":1.23,"ema21l":1.85,'d3ema21':true,"ema50":2.82,"ema200":7.53,"w52high":-1.02},QQQ:{"ema9":-0.50,"ema21h":-2.09,"ema21":-1.30,"ema21l":-0.54,'d3ema21':false,"ema50":-1.74,"ema200":3.32,"w52high":-5.27},QQQE:{"ema9":-0.03,"ema21h":-1.07,"ema21":-0.42,"ema21l":0.29,'d3ema21':false,"ema50":-0.48,"ema200":2.86,"w52high":-4.04}});
-  renderPT({"sma3d20":false,"sma3d50":false,"sma3d200":true,"sma20_50":false,"sma20_200":true,"sma50_200":true},{"y10":4.09,"y2":3.47});
-  renderFac([{label:'Growth',val:-0.06},{label:'Value',val:0.11},{label:'High Dividend',val:0},{label:'Large-Cap',val:0.10},{label:'Mid-Cap',val:0.25},{label:'Small-Cap',val:0.07},{label:'Momentum',val:0.18},{label:'IPOs',val:0.53}]);
-  const SEC_FB={RSPG:{name:'Energy',price:0,day:1.6,wk:2.0,mth:17.4,rs_day:1.8,rs_wk:3.2,rs_mth:16.2,high52:0,rs:100},RSPN:{name:'Industrials',price:0,day:.3,wk:0,mth:6.2,rs_day:.5,rs_wk:1.1,rs_mth:5.1,high52:0,rs:100},RSPU:{name:'Utilities',price:0,day:1.2,wk:3.6,mth:7.8,rs_day:1.4,rs_wk:4.7,rs_mth:6.7,high52:-.7,rs:90},RSPH:{name:'Health Care',price:0,day:-.1,wk:.5,mth:.9,rs_day:.2,rs_wk:1.6,rs_mth:-.2,high52:-1.3,rs:90},RSPR:{name:'Real Estate',price:0,day:-.2,wk:.5,mth:2.5,rs_day:.1,rs_wk:1.6,rs_mth:1.4,high52:-1.7,rs:90},RSPM:{name:'Materials',price:0,day:-.5,wk:-2.2,mth:10.5,rs_day:-.3,rs_wk:-1.1,rs_mth:9.4,high52:-2.2,rs:75},RSPS:{name:'Cons Stpl',price:0,day:-.4,wk:-1.2,mth:6,rs_day:-.2,rs_wk:-.1,rs_mth:4.9,high52:-1.6,rs:75},RSPC:{name:'Comm Svcs',price:0,day:.2,wk:-1.1,mth:-1,rs_day:.5,rs_wk:0,rs_mth:-2,high52:-7.4,rs:55},RSPD:{name:'Cons Disc',price:0,day:-1.3,wk:-1.5,mth:2.1,rs_day:-1,rs_wk:-.4,rs_mth:1.1,high52:-2,rs:50},RSPT:{name:'Technology',price:0,day:-.7,wk:-1.4,mth:1.4,rs_day:-.4,rs_wk:-.4,rs_mth:.4,high52:-4,rs:45},RSPF:{name:'Financials',price:0,day:-.8,wk:-.4,mth:-2.6,rs_day:-.6,rs_wk:.7,rs_mth:-3.6,high52:-6.7,rs:15}};
-  renderSectors(SEC_FB);
-  staticTags('emaEl',['WSC','ALH','AESI','NVT','AR','VIK','NCLH','LRCX','ASO','VFC','FFIV','GAP','CAVA','STNE','BWXT','CAKE','REZI','VSCO','FLEX','BVN','WERN','APH','CALX','MGM','RUN','YPF','SMCI'],['STNE','BWXT'],['CAKE']);
-  staticTags('hcEl',['CIEN','LITE','AAOI','SNDK','WDC','ACMR','LRCX','TER','AMAT','GORO','TRX','IAG','IAUX','AU','BVN','SSRM','ALM','BORR','RIG','VAL','ASX','COHR','ATI','NESR','CSTM','CENX','VSAT','GLW','FSLY'],['CIEN','SNDK','WDC'],[]);
-  staticTags('m97El',['CWBHF','NCI','HYMC','BATL','ATOM','CVSI','NAMM','PL','HLF','LPTH','ONDS','FSLY','ZIM','UMAC','CLMT','CGNX','TPH','KTOS','WORX','IRDM','RIME','RELY'],[],['IRDM']);
-  staticTags('g4El',['RELY','HLF','COLD','OMC','MPT','AG','SSRM','EQX','SMCI','AAOI','LITE','PWR','BAK','XP','LINE','CDE','NGD','HLX','NG','PAAS','IAG','ARCO','SA','BTE','AGI','RIOT','CENX','CALX','DNN','NEXT'],['RELY','HLF','LITE'],[]);
-  staticTags('vgEl',['RELY','HLF','COLD','OMC','MPT','SSRM','OII','ETSY','KRMN','KTOS','FUN','XP','XPRO','ARCO','CENX','FLR','EBAY','DASH','HLIT','IHS','SM','AKAM'],['KRMN'],['EBAY']);
-  staticTags('epsEl',['CIEN','LITE','MU','SNDK','WDC','TER','APH','VRT','AMSC','ECO','FTAI','MOD','FN','UI','CRDO','STNG','EQT','AS','BKV','CALX','CECO','SII','WT','NET'],['VRT','CRDO'],['MU']);
-}
-
 // ── Main Refresh ──────────────────────────────────────
 async function refreshAll() {
   setStatus('loading','Loading…');
+  document.getElementById('errBanner').classList.remove('show');
   try {
-    const [idx,perf,trend,pt,sec,fac,yld,ema,hc,m97,g4,vg,eps] = await Promise.allSettled([
-      apiFetch('/api/indices'), apiFetch('/api/performance'),
-      apiFetch('/api/trend_status'), apiFetch('/api/power_trend'),
-      apiFetch('/api/sectors'), apiFetch('/api/factors'), apiFetch('/api/yields'),
-      apiFetch('/api/screener/ema_watch'), apiFetch('/api/screener/healthy'),
-      apiFetch('/api/screener/momentum97'), apiFetch('/api/screener/gainers4'),
-      apiFetch('/api/screener/vol_gainers'), apiFetch('/api/screener/eps_growth'),
+    // Load indices first to get SPY data
+    const [idxResult, perfData] = await Promise.all([
+      loadIndices(),
+      loadPerf(),
     ]);
-    document.getElementById('errBanner').classList.remove('show');
+    renderPerf(perfData);
 
-    if(idx.status==='fulfilled')  renderIdx(idx.value);   else renderFallback();
-    const pd = perf.status==='fulfilled' ? perf.value : null;
-    const vix= idx.status==='fulfilled'&&idx.value['^VIX'] ? idx.value['^VIX'].price : null;
-    renderMC(pd); renderPerf(pd, vix);
-    if(trend.status==='fulfilled') renderTrend(trend.value);
-    renderPT(pt.status==='fulfilled'?pt.value:null, yld.status==='fulfilled'?yld.value:null);
-    if(fac.status==='fulfilled')  renderFac(fac.value);
-    if(sec.status==='fulfilled')  renderSectors(sec.value);
-    if(ema.status==='fulfilled')  renderScreener('emaEl', ema.value);
-    if(hc.status==='fulfilled')   renderScreener('hcEl',  hc.value);
-    if(m97.status==='fulfilled')  renderScreener('m97El', m97.value);
-    if(g4.status==='fulfilled')   renderScreener('g4El',  g4.value);
-    if(vg.status==='fulfilled')   renderScreener('vgEl',  vg.value);
-    if(eps.status==='fulfilled')  renderScreener('epsEl', eps.value);
+    const spyMth = perfData ? perfData.m1 : 0;
+    const spyDay = perfData ? (perfData.closes[perfData.closes.length-1]/perfData.closes[perfData.closes.length-2]-1)*100 : 0;
+    const spyWk  = perfData && perfData.closes.length>6 ? (perfData.closes[perfData.closes.length-1]/perfData.closes[perfData.closes.length-6]-1)*100 : 0;
+
+    // Load remaining data in parallel batches to avoid rate limits
+    const [trend, pt, yields, sectors, factors] = await Promise.all([
+      loadTrendStatus(),
+      loadPowerTrend(),
+      loadYields(),
+      loadSectors(spyDay, spyWk, spyMth),
+      loadFactors(spyMth),
+    ]);
+    renderTrend(trend);
+    renderPT(pt, yields);
+    renderFac(factors);
+    renderSectors(sectors);
+
+    // Screeners sequentially to avoid rate limits
+    for (const [elId, tickers] of Object.entries(SCREENERS)) {
+      const data = await loadScreener(tickers);
+      renderScreener(elId, data);
+    }
 
     setStatus('live','Live · 5 min');
     document.getElementById('lastUpd').textContent =
       'Updated '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
   } catch(e) {
-    setStatus('error','Offline');
+    console.error(e);
+    setStatus('error','Fehler');
     document.getElementById('errBanner').classList.add('show');
-    renderFallback();
   }
 }
 
@@ -686,7 +828,6 @@ function init() {
   setInterval(refreshAll, REFRESH);
 }
 
-// ── PWA Service Worker ────────────────────────────────
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
