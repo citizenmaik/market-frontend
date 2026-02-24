@@ -606,22 +606,17 @@ async function loadMarketConditions(spyCloses) {
   const checks = document.getElementById('mcChecks');
   const breadth= document.getElementById('mcBreadth');
 
-  // Fetch NYSE breadth symbols via proxy (^ encoded as __)
-  const breadthSyms = ['__NYMO','__NASI','__NYA50R','__NYA200R','__NYHL'];
-  const bData = await getCandles(breadthSyms, '3mo').catch(()=>({}));
-
-  const getLast = sym => {
-    const d = bData[sym];
-    if (!d||!d.c) return null;
-    const c = clean(d.c);
-    return c.length ? c[c.length-1] : null;
-  };
-
-  const moVal  = getLast('__NYMO');
-  const siVal  = getLast('__NASI');
-  const p50Val = getLast('__NYA50R');
-  const p200Val= getLast('__NYA200R');
-  const hlVal  = getLast('__NYHL');
+  // Fetch breadth from dedicated endpoint
+  let moVal=null, siVal=null, p50Val=null, p200Val=null, hlVal=null;
+  try {
+    const bRes  = await fetch(`${API}?type=breadth`);
+    const bData = await bRes.json();
+    moVal  = bData.nymo;
+    siVal  = bData.nasi;
+    hlVal  = bData.nyhl;
+    p50Val = bData.pct50;
+    p200Val= bData.pct200;
+  } catch(e) { console.error('Breadth error:', e); }
 
   // SPY EMA/SMA checks
   const c     = spyCloses;
