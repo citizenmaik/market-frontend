@@ -136,35 +136,35 @@ body {
 .r1{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 /* Zeile 2: Power Trend | Factors | RS Gainers (full width) */
 .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 /* Zeile 3: RS Gainers sidebar | Sector Table */
-.r2{display:grid;grid-template-columns:320px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 
-@media(max-width:1400px){.r1b{grid-template-columns:200px 240px 1fr}.r2{grid-template-columns:280px 1fr}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .r1 .pnl:nth-child(3){grid-column:1/-1;}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1024px){.r1b{grid-template-columns:1fr 1fr;}}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
 @media(max-width:768px){
   .idx{grid-template-columns:repeat(4,1fr);}
   .r1,.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
   .r1 .pnl{grid-column:auto;}
 }
 @media(max-width:540px){
   .idx{grid-template-columns:repeat(2,1fr);}
-  .r1,.r1b,.r2{display:grid;grid-template-columns:320px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+  .r1,.r1b,.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
   body{padding:10px 10px calc(env(safe-area-inset-bottom,10px) + 10px);}
 }
 
@@ -262,15 +262,15 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
-@media(max-width:1400px){.r1b{grid-template-columns:200px 240px 1fr}.r2{grid-template-columns:280px 1fr}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1024px){.r1b{grid-template-columns:1fr 1fr;}}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r3{grid-template-columns:1fr 1fr;}}
+@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r3{grid-template-columns:1fr 1fr;}}
 
 @media(max-width:768px){
   .idx{grid-template-columns:repeat(4,1fr);}
@@ -408,35 +408,35 @@ body {
 .r1{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 /* Zeile 2: Power Trend | Factors | RS Gainers (full width) */
 .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 /* Zeile 3: RS Gainers sidebar | Sector Table */
-.r2{display:grid;grid-template-columns:320px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 
-@media(max-width:1400px){.r1b{grid-template-columns:200px 240px 1fr}.r2{grid-template-columns:280px 1fr}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .r1 .pnl:nth-child(3){grid-column:1/-1;}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1024px){.r1b{grid-template-columns:1fr 1fr;}}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
 @media(max-width:768px){
   .idx{grid-template-columns:repeat(4,1fr);}
   .r1,.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
   .r1 .pnl{grid-column:auto;}
 }
 @media(max-width:540px){
   .idx{grid-template-columns:repeat(2,1fr);}
-  .r1,.r1b,.r2{display:grid;grid-template-columns:320px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+  .r1,.r1b,.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
   body{padding:10px 10px calc(env(safe-area-inset-bottom,10px) + 10px);}
 }
 
@@ -534,15 +534,15 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
-@media(max-width:1400px){.r1b{grid-template-columns:200px 240px 1fr}.r2{grid-template-columns:280px 1fr}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1024px){.r1b{grid-template-columns:1fr 1fr;}}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r3{grid-template-columns:1fr 1fr;}}
+@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r3{grid-template-columns:1fr 1fr;}}
 
 @media(max-width:768px){
   .idx{grid-template-columns:repeat(4,1fr);}
@@ -679,35 +679,35 @@ body {
 .r1{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 /* Zeile 2: Power Trend | Factors | RS Gainers (full width) */
 .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 /* Zeile 3: RS Gainers sidebar | Sector Table */
-.r2{display:grid;grid-template-columns:320px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 
-@media(max-width:1400px){.r1b{grid-template-columns:200px 240px 1fr}.r2{grid-template-columns:280px 1fr}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .r1 .pnl:nth-child(3){grid-column:1/-1;}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1024px){.r1b{grid-template-columns:1fr 1fr;}}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
 @media(max-width:768px){
   .idx{grid-template-columns:repeat(4,1fr);}
   .r1,.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
   .r1 .pnl{grid-column:auto;}
 }
 @media(max-width:540px){
   .idx{grid-template-columns:repeat(2,1fr);}
-  .r1,.r1b,.r2{display:grid;grid-template-columns:320px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+  .r1,.r1b,.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
   body{padding:10px 10px calc(env(safe-area-inset-bottom,10px) + 10px);}
 }
 
@@ -805,15 +805,15 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
-@media(max-width:1400px){.r1b{grid-template-columns:200px 240px 1fr}.r2{grid-template-columns:280px 1fr}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1024px){.r1b{grid-template-columns:1fr 1fr;}}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
-.r1b{display:grid;grid-template-columns:220px 260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r3{grid-template-columns:1fr 1fr;}}
+@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r3{grid-template-columns:1fr 1fr;}}
 
 @media(max-width:768px){
   .idx{grid-template-columns:repeat(4,1fr);}
@@ -843,7 +843,7 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
   </div>
 </div>
 
-<!-- ── Main App ── -->
+<!-- v1771965424 ── Main App ── -->
 <div id="app" style="display:none">
 
   <div class="hdr">
@@ -904,7 +904,7 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
     </div>
 
     <div class="pnl">
-      <div class="ph"><h3>Performance Overview</h3></div>
+      <div class="ph"><h3>SPY Performance <span style="font-size:9px;opacity:.5;font-weight:400">(S&amp;P 500)</span></h3></div>
       <table class="ptable">
         <thead><tr><th>YTD</th><th>1W</th><th>1M</th><th>1Y</th><th>52W Hi</th></tr></thead>
         <tbody>
@@ -937,7 +937,7 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 
   </div>
 
-  <!-- ── Zeile 3: Power Trend | Factors | RS Gainers ── -->
+  <!-- ── Zeile 3: Power Trend | Factors (full width, 2 col) ── -->
   <div class="r1b">
 
     <div class="pnl">
@@ -950,15 +950,14 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
       <div class="fb" id="facEl"></div>
     </div>
 
+  </div>
+
+    <!-- ── Zeile 4: RS Gainers | Sector Leaders ── -->
+  <div class="r2">
+
     <div class="pnl">
       <div class="ph"><h3>RS Gainers</h3></div>
       <div class="rss" id="rsEl"></div>
-    </div>
-
-  </div>
-
-  <!-- ── Zeile 4: Sector Leaders (full width) ── -->
-  <div class="r2">
 
     <div class="pnl">
       <div class="ph"><h3>Sector Leaders</h3></div>
@@ -981,38 +980,31 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 
 <script>
 // ══════════════════════════════════════════════════════
-//  Market Dashboard — Vercel Serverless Proxy
-//  Finnhub (quotes) + Yahoo Finance via /api/data
+//  Market Dashboard — Vercel Proxy
 // ══════════════════════════════════════════════════════
-const REFRESH  = 5 * 60 * 1000;
-const API      = '/api/data';
-let   FKEY     = '';
+const REFRESH = 5 * 60 * 1000;
+const API     = '/api/data';
+let   FKEY    = '';
 
-// Kill old service workers
+// Kill old service workers + cache
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(r => r.forEach(sw => sw.unregister()));
   if (window.caches) caches.keys().then(ks => ks.forEach(k => caches.delete(k)));
-  // Force reload if old cached version
-  if (window.location.hash !== '#v3') {
-    window.location.hash = '#v3';
-    window.location.reload(true);
-  }
 }
 
-// Theme
+// ── Theme ────────────────────────────────────────────
 function toggleTheme() {
   const html = document.documentElement;
   const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
   html.dataset.theme = next;
   localStorage.setItem('theme', next);
   document.getElementById('thBtn').textContent = next === 'dark' ? '🌙' : '☀️';
-  document.getElementById('themeColorMeta').content = next === 'dark' ? '#0a0b0e' : '#f0f2f5';
 }
 const savedTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.dataset.theme = savedTheme;
 document.getElementById('thBtn').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
 
-// Auth
+// ── Auth ─────────────────────────────────────────────
 function doLogin() {
   const pw  = document.getElementById('pwInput').value.trim();
   const err = document.getElementById('loginErr');
@@ -1020,9 +1012,7 @@ function doLogin() {
   err.textContent = 'Verbinde…';
   verifyKey(pw);
 }
-document.getElementById('pwInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
+document.getElementById('pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 async function verifyKey(key) {
   const err = document.getElementById('loginErr');
@@ -1036,34 +1026,32 @@ async function verifyKey(key) {
       document.getElementById('app').style.display = 'block';
       setTimeout(() => document.getElementById('loginScreen').style.display = 'none', 350);
       init();
-    } else {
-      err.textContent = 'Ungültiger API Key';
-    }
+    } else { err.textContent = 'Ungültiger API Key'; }
   } catch(e) { err.textContent = 'Verbindungsfehler'; }
 }
 const savedKey = localStorage.getItem('fh_key');
 if (savedKey) { FKEY = savedKey; verifyKey(savedKey); }
 
-// API helpers
+// ── API helpers ──────────────────────────────────────
 async function getQuotes(symbols) {
   const res = await fetch(`${API}?type=quotes&symbols=${symbols.join(',')}&fhkey=${FKEY}`);
   return res.json();
 }
-async function getCandles(symbols, range='1y') {
+async function getCandles(symbols, range = '1y') {
   const encoded = symbols.map(s => s.replace(/\^/g, '__'));
   const res = await fetch(`${API}?type=candles&symbols=${encoded.join(',')}&range=${range}`);
   const data = await res.json();
   const out = {};
-  Object.entries(data).forEach(([k,v]) => { out[k.replace(/__/g,'^')] = v; });
+  Object.entries(data).forEach(([k, v]) => { out[k.replace(/__/g, '^')] = v; });
   return out;
 }
-function clean(arr) { return (arr||[]).filter(v => v != null && !isNaN(v)); }
+function clean(arr) { return (arr || []).filter(v => v != null && !isNaN(v)); }
 
-// Math
-function sma(arr, n) { const s=arr.slice(-n); return s.reduce((a,b)=>a+b,0)/s.length; }
-function emaCalc(arr, n) { const k=2/(n+1); let e=arr[0]; for(let i=1;i<arr.length;i++) e=arr[i]*k+e*(1-k); return e; }
+// ── Math ─────────────────────────────────────────────
+function sma(arr, n) { const s = arr.slice(-n); return s.reduce((a, b) => a + b, 0) / s.length; }
+function emaCalc(arr, n) { const k = 2/(n+1); let e = arr[0]; for (let i=1;i<arr.length;i++) e = arr[i]*k + e*(1-k); return e; }
 
-// UI
+// ── UI helpers ────────────────────────────────────────
 function setStatus(state, text) {
   document.getElementById('pill').className = `pill ${state}`;
   document.getElementById('pillDot').className = `dot${state==='live'?' pulse':''}`;
@@ -1079,109 +1067,89 @@ function bdg(v) {
   if (v<0) return '<span class="bdg bn">Negative</span>';
   return '<span class="bdg bu">Neutral</span>';
 }
-function rsClass(rs) { if(rs>=80) return 'rh'; if(rs>=60) return 'rm'; if(rs>=40) return 'rl'; return 'rvl'; }
+function rsClass(rs) { return rs>=80?'rh':rs>=60?'rm':rs>=40?'rl':'rvl'; }
 
 document.getElementById('dtEl').textContent =
   new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
 
 // ── 1. Index Cards ────────────────────────────────────
 const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','IWM','BINANCE:BTCUSDT'];
-const IDX_META = {
-  'SPY':'S&P 500','RSP':'S&P 500 EQ WT','QQQ':'NASDAQ 100',
-  'QQQE':'NASDAQ 100 EQ WT','IWM':'RUSSELL 2000','BINANCE:BTCUSDT':'BITCOIN'
-};
+const IDX_META = {SPY:'S&P 500',RSP:'S&P 500 EQ WT',QQQ:'NASDAQ 100',QQQE:'NASDAQ 100 EQ WT',IWM:'RUSSELL 2000','BINANCE:BTCUSDT':'BITCOIN'};
 
 async function loadIndices() {
   const [quotesData, vixRes] = await Promise.all([
     getQuotes(IDX_SYMS),
-    fetch(`${API}?type=vix`).then(r=>r.json()).catch(()=>({}))
+    fetch(`${API}?type=vix`).then(r => r.json()).catch(() => ({}))
   ]);
   const row = document.getElementById('idxRow');
   row.innerHTML = '';
-  IDX_SYMS.forEach((sym,i) => {
-    const q     = quotesData[sym];
-    const price = q?.c || 0;
-    const prev  = q?.pc || 0;
-    const chg   = prev>0 ? (price-prev)/prev*100 : 0;
-    const disp  = sym==='BINANCE:BTCUSDT' ? 'BTC' : sym;
-    const pstr  = sym==='BINANCE:BTCUSDT' ? '$'+Math.round(price).toLocaleString() : '$'+price.toFixed(2);
+  IDX_SYMS.forEach((sym, i) => {
+    const q = quotesData[sym];
+    const price = q?.c || 0, prev = q?.pc || 0;
+    const chg = prev > 0 ? (price-prev)/prev*100 : 0;
+    const disp = sym === 'BINANCE:BTCUSDT' ? 'BTC' : sym;
+    const pstr = sym === 'BINANCE:BTCUSDT' ? '$'+Math.round(price).toLocaleString() : '$'+price.toFixed(2);
     row.innerHTML += `<div class="ic" style="animation-delay:${i*.05}s">
       <div class="tk">${disp}</div><div class="pr">${pstr}</div>
       <div class="ch ${chg>=0?'up':'dn'}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
       <div class="nm">${IDX_META[sym]}</div></div>`;
   });
-  // VIX card
   const vix = vixRes.vix;
   if (vix != null) {
-    row.innerHTML += `<div class="ic" style="animation-delay:0.35s">
-      <div class="tk">VIX</div><div class="pr">${vix.toFixed(2)}</div>
-      <div class="ch" style="color:var(--muted)">—</div>
-      <div class="nm">VOLATILITY</div></div>`;
+    row.innerHTML += `<div class="ic"><div class="tk">VIX</div><div class="pr">${vix.toFixed(2)}</div>
+      <div class="ch" style="color:var(--muted)">—</div><div class="nm">VOLATILITY</div></div>`;
   }
   return { quotes: quotesData, vix };
 }
 
 // ── 2. SPY Performance ────────────────────────────────
+// Bezieht sich auf SPY (S&P 500 ETF): YTD, 1W, 1M, 1Y, 52W High Abstand
 async function loadPerf() {
   try {
-    const data  = await getCandles(['SPY'], '2y');
-    const d     = data['SPY'];
+    const data = await getCandles(['SPY'], '2y');
+    const d = data['SPY'];
     if (!d||!d.c) return null;
-    const c     = clean(d.c);
-    const price = c[c.length-1];
-    const now   = new Date();
-    const wk    = c[c.length-6]   || c[0];
-    const mth   = c[c.length-22]  || c[0];
-    const yr    = c[c.length-252] || c[0];
-    const h52   = Math.max(...c.slice(-252));
+    const c = clean(d.c), price = c[c.length-1];
+    const now = new Date();
+    const wk  = c[c.length-6]   || c[0];
+    const mth = c[c.length-22]  || c[0];
+    const yr  = c[c.length-252] || c[0];
+    const h52 = Math.max(...c.slice(-252));
     const times = d.t || [];
-    const ytdIdx= times.findIndex(ts => new Date(ts*1000).getFullYear()===now.getFullYear());
-    const ytdP  = ytdIdx>=0 ? c[ytdIdx] : c[0];
+    const ytdIdx = times.findIndex(ts => new Date(ts*1000).getFullYear() === now.getFullYear());
+    const ytdP = ytdIdx >= 0 ? c[ytdIdx] : c[0];
     const s10=sma(c,10), s20=sma(c,20), s50=sma(c,50), s200=sma(c,200);
     return {
-      ytd:(price/ytdP-1)*100, w1:(price/wk-1)*100,
-      m1:(price/mth-1)*100, y1:(price/yr-1)*100,
-      h52w:(price/h52-1)*100,
-      price, closes:c,
-      s10,s20,s50,s200,
+      ytd:(price/ytdP-1)*100, w1:(price/wk-1)*100, m1:(price/mth-1)*100,
+      y1:(price/yr-1)*100, h52w:(price/h52-1)*100,
+      price, closes:c, s10, s20, s50, s200,
       spyDayPct:(price/c[c.length-2]-1)*100,
-      spyWkPct:(price/wk-1)*100,
-      spyMthPct:(price/mth-1)*100,
+      spyWkPct:(price/wk-1)*100, spyMthPct:(price/mth-1)*100,
     };
-  } catch(e) { console.error('Perf error',e); return null; }
+  } catch(e) { console.error('Perf:', e); return null; }
 }
 
 function renderPerf(p) {
   if (!p) return;
-  const f = v => v!=null ? `${v>=0?'+':''}${v.toFixed(2)}%` : '—';
-  document.getElementById('perfR').innerHTML = `
-    <td>${f(p.ytd)}</td><td>${f(p.w1)}</td><td>${f(p.m1)}</td>
-    <td>${f(p.y1)}</td><td>${f(p.h52w)}</td>`;
+  const f = v => v != null ? `${v>=0?'+':''}${v.toFixed(2)}%` : '—';
+  document.getElementById('perfR').innerHTML =
+    `<td>${f(p.ytd)}</td><td>${f(p.w1)}</td><td>${f(p.m1)}</td><td>${f(p.y1)}</td><td>${f(p.h52w)}</td>`;
   document.getElementById('perfB').innerHTML =
-    `<td>${bdg(p.ytd)}</td><td>${bdg(p.w1)}</td><td>${bdg(p.m1)}</td>
-     <td>${bdg(p.y1)}</td><td>${bdg(p.h52w)}</td>`;
+    `<td>${bdg(p.ytd)}</td><td>${bdg(p.w1)}</td><td>${bdg(p.m1)}</td><td>${bdg(p.y1)}</td><td>${bdg(p.h52w)}</td>`;
   const {s10,s20,s50,s200,price} = p;
-  const mk=(s,lbl)=>`<div class="tlo-c"><div class="lbl">${lbl}</div>
+  const mk = (s,lbl) => `<div class="tlo-c"><div class="lbl">${lbl}</div>
     <div class="val">${s.toFixed(0)}</div>
     <div class="bdg ${price>s?'bp':'bn'}" style="font-size:7px;padding:1px 4px">${price>s?'▲':'▼'}</div></div>`;
-  const p2050=((s20/s50-1)*100).toFixed(1)+'%', p50200=((s50/s200-1)*100).toFixed(1)+'%';
+  const p2050 = ((s20/s50-1)*100).toFixed(1)+'%', p50200 = ((s50/s200-1)*100).toFixed(1)+'%';
   document.getElementById('tloRow').innerHTML =
     mk(s10,'10SMA')+mk(s20,'20SMA')+mk(s50,'50SMA')+mk(s200,'200SMA')+
     `<div class="tlo-c"><div class="lbl">20&gt;50</div><div class="val">${p2050}</div>
      <div class="bdg ${s20>s50?'bp':'bn'}" style="font-size:7px;padding:1px 4px">${s20>s50?'Yes':'No'}</div></div>`+
     `<div class="tlo-c"><div class="lbl">50&gt;200</div><div class="val">${p50200}</div>
      <div class="bdg ${s50>s200?'bp':'bn'}" style="font-size:7px;padding:1px 4px">${s50>s200?'Yes':'No'}</div></div>`;
-  // Market conditions badge based on h52w
-  const v=p.h52w;
-  const badge=document.getElementById('mcBadge');
-  if(badge && badge.textContent==='—') {
-    if(v>-2){badge.textContent='Positive';badge.className='mc-badge pos';}
-    else if(v<-10){badge.textContent='Negative';badge.className='mc-badge neg';}
-    else{badge.textContent='Neutral';badge.className='mc-badge neu';}
-  }
 }
 
-// ── 3. Market Conditions (PTMM-style) ─────────────────
+// ── 3. Market Conditions (Pine Script Trend Score) ────
 async function loadMarketConditions(spyCloses) {
   const badge  = document.getElementById('mcBadge');
   const score  = document.getElementById('mcScore');
@@ -1189,185 +1157,250 @@ async function loadMarketConditions(spyCloses) {
   const checks = document.getElementById('mcChecks');
   const breadth= document.getElementById('mcBreadth');
 
-  // ── Breadth data vom Proxy ────────────────────────
   let moVal=null, siVal=null, p50Val=null, p200Val=null, hlVal=null;
   try {
-    const bRes  = await fetch(`${API}?type=breadth`);
+    const bRes = await fetch(`${API}?type=breadth`);
     const bData = await bRes.json();
-    moVal  = bData.nymo;
-    siVal  = bData.nasi;
-    hlVal  = bData.nyhl;
-    p50Val = bData.pct50;
-    p200Val= bData.pct200;
-  } catch(e) { console.error('Breadth:', e); }
+    moVal=bData.nymo; siVal=bData.nasi; hlVal=bData.nyhl; p50Val=bData.pct50; p200Val=bData.pct200;
+  } catch(e) {}
 
-  // ── SPY Berechnungen ──────────────────────────────
-  const c      = spyCloses;
-  const price  = c[c.length-1];
-  const prev   = c[c.length-2];
-  const c8ago  = c[c.length-9]  || c[0];
-  const e8     = emaCalc(c.slice(-40),  8);
-  const e21    = emaCalc(c.slice(-100), 21);
-  const s50    = sma(c, 50);
-  const s200   = sma(c, 200);
+  const c = spyCloses, price = c[c.length-1];
+  const c8ago = c[c.length-9] || c[0];
+  const e8  = emaCalc(c.slice(-40),  8);
+  const e21 = emaCalc(c.slice(-100), 21);
+  const s50 = sma(c, 50), s200 = sma(c, 200);
 
-  // RSI (14)
-  const calcRSI = (closes, n=14) => {
-    let gains=0, losses=0;
-    for(let i=closes.length-n; i<closes.length; i++){
-      const d = closes[i]-closes[i-1];
-      if(d>0) gains+=d; else losses+=Math.abs(d);
-    }
-    const rs = (gains/n) / (losses/n + 1e-10);
-    return 100 - 100/(1+rs);
+  // RSI 14
+  const calcRSI = (arr, n=14) => {
+    let g=0, l=0;
+    for (let i=arr.length-n; i<arr.length; i++) { const d=arr[i]-arr[i-1]; d>0?g+=d:l+=Math.abs(d); }
+    return 100 - 100/(1+(g/n)/(l/n+1e-10));
   };
-  const rsi = calcRSI(c, 14);
-
-  // Momentum (8-bar)
+  const rsi = calcRSI(c);
   const momentum = (price - c8ago) / c8ago * 100;
 
-  // Volatility (ATR10 vs ATR SMA)
-  const atr10 = (() => {
-    let sum=0;
-    for(let i=c.length-10;i<c.length;i++){
-      sum += Math.abs(c[i]-(c[i-1]||c[i]));
-    }
-    return sum/10;
-  })();
-  const atrAvg = (() => {
-    let sum=0;
-    for(let i=c.length-22;i<c.length-10;i++){
-      sum += Math.abs(c[i]-(c[i-1]||c[i]));
-    }
-    return sum/12;
-  })();
-  const atrRatio = atrAvg > 0 ? atr10/atrAvg : 1;
-  const volStatus = atrRatio > 1.4 ? 'HIGH' : atrRatio > 1.1 ? 'MODERATE' : atrRatio < 0.7 ? 'LOW' : 'NORMAL';
+  // ATR volatility
+  const atr10 = c.slice(-10).reduce((s,v,i,a)=>s+Math.abs(v-(a[i-1]||v)),0)/10;
+  const atrAvg = c.slice(-22,-10).reduce((s,v,i,a)=>s+Math.abs(v-(a[i-1]||v)),0)/12;
+  const atrRatio = atrAvg>0 ? atr10/atrAvg : 1;
+  const volStatus = atrRatio>1.4?'HIGH':atrRatio>1.1?'MOD':atrRatio<0.7?'LOW':'NORMAL';
 
-  // MA Alignment
-  const maAlignBull = e8 > e21 && e21 > s50 && price > e21;
-  const maAlignBear = e8 < e21 && e21 < s50 && price < e21;
-  const maStrength  = ((e8 - s50) / s50 * 100).toFixed(2);
+  const maAlignBull = e8>e21 && e21>s50 && price>e21;
+  const maAlignBear = e8<e21 && e21<s50 && price<e21;
+  const maStr = ((e8-s50)/s50*100).toFixed(2);
 
-  // ── SCORE BERECHNUNG (Pine Script Logik) ──────────
-  let trendScore = 0;
+  // Scores (Pine Script weights)
+  const rsiW=25, maW=35, volW=20, brdW=12, nhW=8;
+  const rsiScore = rsi>75?rsiW:rsi>65?rsiW*.72:rsi>55?rsiW*.48:rsi>50?rsiW*.24:rsi<25?-rsiW:rsi<35?-rsiW*.72:rsi<45?-rsiW*.48:-rsiW*.24;
+  const alignBonus = Math.abs(parseFloat(maStr))>5 ? maW*.167 : 0;
+  const maScore = maAlignBull?maW+alignBonus:maAlignBear?-(maW+alignBonus):price>s50&&e8>e21?maW*.6:price<s50&&e8<e21?-maW*.6:price>s50?maW*.333:-maW*.333;
+  const momDir = momentum>0?1:-1, hasMom = Math.abs(momentum)>1.5;
+  const volScore = atrRatio>1.4&&hasMom?volW*momDir:atrRatio>1.1&&hasMom?volW*.6*momDir:atrRatio>1.4?volW*.4*momDir:atrRatio<0.7?-volW*.25:0;
+  const brdScore = moVal!=null?(moVal>60?brdW:moVal>20?brdW*.6:moVal>0?brdW*.25:moVal<-60?-brdW:moVal<-20?-brdW*.6:-brdW*.25):(p50Val!=null?(p50Val>70?brdW:p50Val>55?brdW*.5:p50Val<30?-brdW:p50Val<45?-brdW*.5:0):0);
+  const nhScore = hlVal!=null?(hlVal>50?nhW:hlVal>20?nhW*.625:hlVal>0?nhW*.25:hlVal<-50?-nhW:hlVal<-20?-nhW*.625:-nhW*.25):0;
 
-  // RSI Score (weight 25)
-  const rsiW = 25;
-  const rsiScore = rsi > 75 ? rsiW : rsi > 65 ? rsiW*0.72 : rsi > 55 ? rsiW*0.48 : rsi > 50 ? rsiW*0.24
-    : rsi < 25 ? -rsiW : rsi < 35 ? -rsiW*0.72 : rsi < 45 ? -rsiW*0.48 : -rsiW*0.24;
-  trendScore += rsiScore * 1.1;
+  let trendScore = Math.max(-100, Math.min(100, rsiScore*1.1 + maScore + volScore + brdScore + nhScore));
+  const tr = Math.round(trendScore*10)/10;
+  const zone = trendScore>=30?'BULLISH':trendScore<=-30?'BEARISH':'NEUTRAL';
+  const zoneCls = trendScore>=30?'pos':trendScore<=-30?'neg':'neu';
+  const zoneColor = trendScore>=30?'var(--green)':trendScore<=-30?'var(--red)':'var(--yellow)';
 
-  // MA Score (weight 35)
-  const maW = 35;
-  const alignBonus = Math.abs(parseFloat(maStrength)) > 5 ? maW*0.167 : 0;
-  const maScore = maAlignBull ? maW + alignBonus : maAlignBear ? -(maW + alignBonus)
-    : price > s50 && e8 > e21 ? maW*0.6 : price < s50 && e8 < e21 ? -maW*0.6
-    : price > s50 ? maW*0.333 : -maW*0.333;
-  trendScore += maScore;
+  badge.textContent = zone; badge.className = `mc-badge ${zoneCls}`;
+  score.textContent = (tr>=0?'+':'')+tr; score.style.color = zoneColor;
 
-  // Volatility Score (weight 20)
-  const volW = 20;
-  const momDir = momentum > 0 ? 1 : -1;
-  const hasMom = Math.abs(momentum) > 1.5;
-  const volScore = atrRatio > 1.4 && hasMom ? volW * momDir
-    : atrRatio > 1.1 && hasMom ? volW*0.6*momDir
-    : atrRatio > 1.4 ? volW*0.4*momDir
-    : atrRatio < 0.7 ? -volW*0.25 : 0;
-  trendScore += volScore;
-
-  // McClellan Breadth Score (weight 12, replaces volume)
-  const breadthW = 12;
-  let breadthScore = 0;
-  if (moVal != null) {
-    breadthScore = moVal > 60 ? breadthW : moVal > 20 ? breadthW*0.6
-      : moVal > 0 ? breadthW*0.25 : moVal < -60 ? -breadthW
-      : moVal < -20 ? -breadthW*0.6 : -breadthW*0.25;
-  } else if (p50Val != null) {
-    breadthScore = p50Val > 70 ? breadthW : p50Val > 55 ? breadthW*0.5 : p50Val < 30 ? -breadthW : p50Val < 45 ? -breadthW*0.5 : 0;
-  }
-  trendScore += breadthScore;
-
-  // Net Highs Score (weight 8)
-  const nhW = 8;
-  let nhScore = 0;
-  if (hlVal != null) {
-    nhScore = hlVal > 50 ? nhW : hlVal > 20 ? nhW*0.625 : hlVal > 0 ? nhW*0.25
-      : hlVal < -50 ? -nhW : hlVal < -20 ? -nhW*0.625 : -nhW*0.25;
-  }
-  trendScore += nhScore;
-
-  // Clamp -100 bis +100
-  trendScore = Math.max(-100, Math.min(100, trendScore));
-  const trendRound = Math.round(trendScore * 10) / 10;
-
-  // ── Zone ─────────────────────────────────────────
-  const zone = trendScore >= 30 ? 'BULLISH' : trendScore <= -30 ? 'BEARISH' : 'NEUTRAL';
-  const zoneCls = trendScore >= 30 ? 'pos' : trendScore <= -30 ? 'neg' : 'neu';
-  const zoneColor = trendScore >= 30 ? 'var(--green)' : trendScore <= -30 ? 'var(--red)' : 'var(--yellow)';
-
-  badge.textContent = zone;
-  badge.className = `mc-badge ${zoneCls}`;
-  score.textContent = (trendScore >= 0 ? '+' : '') + trendRound;
-  score.style.color = zoneColor;
-
-  // Score Bar (0% = -100, 50% = 0, 100% = +100)
   if (bar) {
-    const barPct = Math.round(50 + trendScore / 2);
-    const barColor = trendScore >= 30 ? 'var(--green)' : trendScore <= -30 ? 'var(--red)' : 'var(--yellow)';
-    // Bar startet bei 50% (Mitte = 0), geht links oder rechts
-    if (trendScore >= 0) {
-      bar.style.left = '50%';
-      bar.style.width = (trendScore / 2) + '%';
-      bar.style.background = barColor;
-      bar.style.borderRadius = '0 3px 3px 0';
+    bar.style.position='absolute';
+    if (trendScore>=0) {
+      bar.style.left='50%'; bar.style.width=(trendScore/2)+'%';
+      bar.style.borderRadius='0 3px 3px 0';
     } else {
-      bar.style.left = (50 + trendScore / 2) + '%';
-      bar.style.width = Math.abs(trendScore / 2) + '%';
-      bar.style.background = barColor;
-      bar.style.borderRadius = '3px 0 0 3px';
+      bar.style.left=(50+trendScore/2)+'%'; bar.style.width=Math.abs(trendScore/2)+'%';
+      bar.style.borderRadius='3px 0 0 3px';
     }
-    bar.style.position = 'absolute';
+    bar.style.background=zoneColor;
   }
 
-  // ── Komponenten-Zeilen (Pine Script Gewichte) ────
   const comps = [
-    { label: 'MA Alignment',   weight: 35, score: maScore,     detail: maAlignBull ? 'Bull' : maAlignBear ? 'Bear' : 'Mixed', val: maStrength+'%' },
-    { label: 'RSI (14)',        weight: 25, score: rsiScore,    detail: rsi.toFixed(1), val: '' },
-    { label: 'Volatility/Mom', weight: 20, score: volScore,     detail: volStatus, val: momentum.toFixed(2)+'%' },
-    { label: 'Breadth',        weight: 12, score: breadthScore, detail: moVal != null ? 'McC. Osc.' : '%>50SMA', val: moVal != null ? moVal.toFixed(0) : p50Val != null ? p50Val.toFixed(1)+'%' : '—' },
-    { label: 'Net Highs/Lows', weight:  8, score: nhScore,     detail: '', val: hlVal != null ? (hlVal>0?'+':'')+hlVal.toFixed(0) : '—' },
+    {label:'MA Alignment', weight:35, score:maScore, detail:maAlignBull?'Bull':maAlignBear?'Bear':'Mixed', val:maStr+'%'},
+    {label:'RSI (14)',      weight:25, score:rsiScore,detail:rsi.toFixed(1), val:''},
+    {label:'Vol / Momentum',weight:20, score:volScore, detail:volStatus, val:momentum.toFixed(2)+'%'},
+    {label:'Breadth',       weight:12, score:brdScore, detail:moVal!=null?'McC.Osc':'%>50SMA', val:moVal!=null?moVal.toFixed(0):p50Val!=null?p50Val.toFixed(1)+'%':'—'},
+    {label:'Net Highs/Lows',weight:8,  score:nhScore,  detail:'', val:hlVal!=null?(hlVal>0?'+':'')+hlVal.toFixed(0):'—'},
   ];
-
-  checks.innerHTML = comps.map(c => {
-    const pct = Math.round(Math.abs(c.score) / (c.weight * 1.2) * 100);
-    const col  = c.score > 0.5 ? 'var(--green)' : c.score < -0.5 ? 'var(--red)' : 'var(--muted)';
-    const bar  = `<div style="height:3px;background:var(--surface2);border-radius:2px;margin-top:3px;">
-      <div style="height:100%;width:${Math.min(100,pct)}%;background:${col};border-radius:2px;"></div></div>`;
+  checks.innerHTML = comps.map(comp => {
+    const pct2 = Math.min(100, Math.round(Math.abs(comp.score)/(comp.weight*1.2)*100));
+    const col2  = comp.score>0.5?'var(--green)':comp.score<-0.5?'var(--red)':'var(--muted)';
     return `<div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:4px 0;">
       <div>
-        <div style="font-family:var(--mono);font-size:11px;color:var(--muted);">${c.label} <span style="font-size:9px;opacity:.6">${c.weight}%</span></div>
-        ${bar}
+        <div style="font-family:var(--mono);font-size:11px;color:var(--muted);">${comp.label} <span style="font-size:9px;opacity:.6">${comp.weight}%</span></div>
+        <div style="height:3px;background:var(--surface2);border-radius:2px;margin-top:3px;">
+          <div style="height:100%;width:${pct2}%;background:${col2};border-radius:2px;"></div></div>
       </div>
-      <div style="font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;">${c.detail}</div>
-      <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:${col};text-align:right;min-width:40px;">${c.score >= 0 ? '+' : ''}${c.score.toFixed(1)}</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;">${comp.detail}</div>
+      <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:${col2};text-align:right;min-width:40px;">${comp.score>=0?'+':''}${comp.score.toFixed(1)}</div>
     </div>`;
   }).join('');
 
-  // ── Detail-Kacheln ────────────────────────────────
-  const bItems = [
-    { label: 'RSI(14)',      val: rsi.toFixed(1),       cls: rsi>55?'up':rsi<45?'dn':'' },
-    { label: 'Momentum',     val: (momentum>0?'+':'')+momentum.toFixed(2)+'%', cls: momentum>0?'up':'dn' },
-    { label: 'Volatility',   val: volStatus,             cls: atrRatio>1.4?'dn':atrRatio<0.7?'':'up' },
-    { label: 'MA Strength',  val: (parseFloat(maStrength)>0?'+':'')+maStrength+'%', cls: parseFloat(maStrength)>0?'up':'dn' },
-    { label: 'McC. Osc.',    val: moVal!=null?moVal.toFixed(0):'—', cls: moVal!=null?moVal>0?'up':'dn':'' },
-    { label: 'SPY/200 SMA',  val: ((price/s200-1)*100>0?'+':'')+((price/s200-1)*100).toFixed(2)+'%', cls: price>s200?'up':'dn' },
-  ];
-  breadth.style.gridTemplateColumns = '1fr 1fr 1fr';
-  breadth.innerHTML = bItems.map(b =>
-    `<div class="mc-bitem"><div class="bl">${b.label}</div>
-     <div class="bv ${b.cls}">${b.val}</div></div>`
-  ).join('');
+  breadth.style.gridTemplateColumns='1fr 1fr 1fr';
+  breadth.innerHTML = [
+    {label:'RSI(14)',     val:rsi.toFixed(1),                                cls:rsi>55?'up':rsi<45?'dn':''},
+    {label:'Momentum',   val:(momentum>0?'+':'')+momentum.toFixed(2)+'%',   cls:momentum>0?'up':'dn'},
+    {label:'Volatility', val:volStatus,                                      cls:atrRatio>1.4?'dn':atrRatio<0.7?'':'up'},
+    {label:'MA Strength',val:(parseFloat(maStr)>0?'+':'')+maStr+'%',        cls:parseFloat(maStr)>0?'up':'dn'},
+    {label:'McC. Osc.',  val:moVal!=null?moVal.toFixed(0):'—',              cls:moVal!=null?moVal>0?'up':'dn':''},
+    {label:'SPY/200SMA', val:((price/s200-1)*100>0?'+':'')+((price/s200-1)*100).toFixed(2)+'%', cls:price>s200?'up':'dn'},
+  ].map(b => `<div class="mc-bitem"><div class="bl">${b.label}</div><div class="bv ${b.cls}">${b.val}</div></div>`).join('');
+}
+
+// ── 4. Trend Status ───────────────────────────────────
+const TREND_LABELS = [['ema9','9 EMA'],['ema21','21 EMA'],['ema50','50 EMA'],['ema200','200 EMA'],['d3ema21','3D>21 EMA'],['w52h','52W High']];
+
+async function loadTrend() {
+  const syms = ['SPY','RSP','QQQ','QQQE'];
+  const data  = await getCandles(syms, '1y');
+  const result = {};
+  syms.forEach(sym => {
+    const d = data[sym]; if (!d||!d.c) return;
+    const c = clean(d.c); if (c.length < 50) return;
+    const price = c[c.length-1];
+    const e9  = emaCalc(c.slice(-50),   9);
+    const e21 = emaCalc(c.slice(-100), 21);
+    const e50 = emaCalc(c.slice(-200), 50);
+    const e200= emaCalc(c, 200);
+    const h52 = Math.max(...c.slice(-252));
+    result[sym] = {
+      ema9:(price-e9)/e9*100,    ema21:(price-e21)/e21*100,
+      ema50:(price-e50)/e50*100, ema200:(price-e200)/e200*100,
+      d3ema21: c.slice(-3).every(v => v > emaCalc(c.slice(-100), 21)),
+      w52h:(price-h52)/h52*100,
+    };
+  });
+  return result;
+}
+
+function renderTrend(data) {
+  const tb = document.getElementById('trendTbl'); tb.innerHTML = '';
+  if (!data) return;
+  TREND_LABELS.forEach(([key, label]) => {
+    const tr = document.createElement('tr');
+    let cells = `<td>${label}</td>`;
+    ['SPY','RSP','QQQ','QQQE'].forEach(t => {
+      const v = data[t]?.[key];
+      if (v == null) { cells += '<td>—</td>'; return; }
+      if (typeof v === 'boolean') cells += `<td class="${v?'ty':'tn'}">${v?'Yes':'No'}</td>`;
+      else cells += `<td class="${v>=0?'up':'dn'}">${v>=0?'+':''}${v.toFixed(2)}%</td>`;
+    });
+    tr.innerHTML = cells; tb.appendChild(tr);
+  });
+}
+
+// ── 5. Power Trend QQQ ────────────────────────────────
+async function loadPT() {
+  try {
+    const data = await getCandles(['QQQ'], '1y');
+    const c = clean(data['QQQ']?.c || []);
+    if (c.length < 50) return null;
+    const avg3 = (c[c.length-1]+c[c.length-2]+c[c.length-3])/3;
+    const s20=sma(c,20), s50=sma(c,50), s200=sma(c,200);
+    return {sma3d20:avg3>s20, sma3d50:avg3>s50, sma3d200:avg3>s200, sma20_50:s20>s50, sma20_200:s20>s200, sma50_200:s50>s200};
+  } catch(e) { return null; }
+}
+
+async function loadYields() {
+  try {
+    const data = await getCandles(['^TNX','^IRX'], '5d');
+    const getLast = sym => { const c=clean(data[sym]?.c||[]); return c.length?c[c.length-1]:null; };
+    return {y10:getLast('^TNX'), y2:getLast('^IRX')};
+  } catch(e) { return {}; }
+}
+
+function renderPT(data, yields) {
+  const el = document.getElementById('ptEl'); el.innerHTML = '';
+  [['sma3d20','3D > 20 SMA'],['sma3d50','3D > 50 SMA'],['sma3d200','3D > 200 SMA'],
+   ['sma20_50','20 > 50 SMA'],['sma20_200','20 > 200 SMA'],['sma50_200','50 > 200 SMA']].forEach(([k,l]) => {
+    const d = document.createElement('div'); d.className = 'ptr';
+    const v = data?.[k];
+    d.innerHTML = `<span class="lbl">${l}</span><span class="val ${v==null?'vnum':v?'vyes':'vno'}">${v==null?'—':v?'Yes':'No'}</span>`;
+    el.appendChild(d);
+  });
+  [['y10','US 10Y Yield'],['y2','US 02Y Yield']].forEach(([k,l]) => {
+    const d = document.createElement('div'); d.className = 'ptr';
+    const v = yields?.[k];
+    d.innerHTML = `<span class="lbl">${l}</span><span class="val vnum">${v!=null?v.toFixed(2):'—'}</span>`;
+    el.appendChild(d);
+  });
+}
+
+// ── 6. Factors vs SP500 ───────────────────────────────
+const FAC_SYMS = ['IVW','IVE','HDV','OEF','IJH','IJR','MTUM','IPO'];
+const FAC_LBLS = {IVW:'Growth',IVE:'Value',HDV:'High Dividend',OEF:'Large-Cap',IJH:'Mid-Cap',IJR:'Small-Cap',MTUM:'Momentum',IPO:'IPOs'};
+
+async function loadFactors(spyMth) {
+  const data = await getCandles(FAC_SYMS, '1mo');
+  return FAC_SYMS.map(sym => {
+    const c = clean(data[sym]?.c || []);
+    if (c.length < 2) return {label:FAC_LBLS[sym], val:0};
+    return {label:FAC_LBLS[sym], val:+((c[c.length-1]/c[0]-1)*100 - spyMth).toFixed(2)};
+  });
+}
+
+function renderFac(data) {
+  const el = document.getElementById('facEl'); el.innerHTML = '';
+  data.forEach(r => {
+    const d = document.createElement('div'); d.className = 'fr';
+    d.innerHTML = `<span class="lbl">${r.label}</span><span class="val ${r.val>=0?'up':'dn'}">${r.val>=0?'+':''}${r.val.toFixed(2)}%</span>`;
+    el.appendChild(d);
+  });
+}
+
+// ── 7. Sectors ────────────────────────────────────────
+const SEC_SYMS  = ['RSPG','RSPN','RSPU','RSPH','RSPR','RSPM','RSPS','RSPC','RSPD','RSPT','RSPF'];
+const SEC_NAMES = {RSPG:'Energy',RSPN:'Industrials',RSPU:'Utilities',RSPH:'Health Care',
+  RSPR:'Real Estate',RSPM:'Materials',RSPS:'Cons Stpl',RSPC:'Comm Svcs',RSPD:'Cons Disc',RSPT:'Technology',RSPF:'Financials'};
+
+async function loadSectors(spyDay, spyWk, spyMth) {
+  const data = await getCandles(SEC_SYMS, '6mo');
+  const result = {};
+  SEC_SYMS.forEach(sym => {
+    const c = clean(data[sym]?.c || []); if (c.length < 5) return;
+    const price = c[c.length-1];
+    const day  = (price/c[c.length-2]-1)*100;
+    const wk   = c.length>6  ? (price/c[c.length-6]-1)*100  : 0;
+    const mth  = c.length>22 ? (price/c[c.length-22]-1)*100 : 0;
+    const h52  = Math.max(...c.slice(-252));
+    const rs   = Math.min(100, Math.max(0, Math.round(50+(mth-spyMth)*3)));
+    result[sym] = {name:SEC_NAMES[sym], price:price.toFixed(2),
+      day:+day.toFixed(2), wk:+wk.toFixed(2), mth:+mth.toFixed(2),
+      rs_day:+(day-spyDay).toFixed(2), rs_wk:+(wk-spyWk).toFixed(2), rs_mth:+(mth-spyMth).toFixed(2),
+      high52:+((price/h52-1)*100).toFixed(2), rs};
+  });
+  return result;
+}
+
+function rsGB(rs) { return rs>=80?'r100':rs>=60?'r65':'r50'; }
+
+function renderSectors(data) {
+  const tb = document.getElementById('secTbl'); tb.innerHTML = '';
+  const rsEl = document.getElementById('rsEl'); rsEl.innerHTML = '';
+  const sorted = Object.entries(data).sort((a,b) => b[1].rs - a[1].rs);
+  sorted.forEach(([sym, s]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><div class="rsc ${rsClass(s.rs)}">${s.rs}</div></td>
+      <td class="tck">${sym}</td><td class="tname">${s.name}</td>
+      <td class="nc">${pct(s.day,1)}</td><td class="nc">${pct(s.wk,1)}</td><td class="nc">${pct(s.mth,1)}</td>
+      <td class="nc">${pct(s.rs_day)}</td><td class="nc">${pct(s.rs_wk)}</td><td class="nc">${pct(s.rs_mth)}</td>
+      <td class="nc"><span class="${s.high52<-3?'dn':s.high52<0?'':'up'}">${s.high52.toFixed(1)}%</span></td>`;
+    tb.appendChild(tr);
+  });
+  const topD = [...sorted].slice(0,3);
+  const topW = [...sorted].sort((a,b) => b[1].wk-a[1].wk).slice(0,3);
+  const card = (sym,s,val,cls) => `<div class="rsi">
+    <div class="rsb ${rsGB(s.rs)}">RS:${s.rs}</div>
+    <div class="ri"><div class="tn2">${sym}</div><div class="sc">${s.name}</div></div>
+    <div class="rr"><div class="rp">$${s.price}</div>
+    <div class="rc ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div></div>`;
+  rsEl.innerHTML = '<div class="slbl">Daily</div>'+topD.map(([s,v])=>card(s,v,v.day,v.day>=0?'up':'dn')).join('')+
+    '<div class="slbl">Weekly</div>'+topW.map(([s,v])=>card(s,v,v.wk,v.wk>=0?'up':'dn')).join('');
 }
 
 // ── Main Refresh ──────────────────────────────────────
@@ -1378,17 +1411,17 @@ async function refreshAll() {
     const [idxData, perfData] = await Promise.all([loadIndices(), loadPerf()]);
     renderPerf(perfData);
 
-    const spyMth=perfData?.spyMthPct||0;
-    const spyDay=perfData?.spyDayPct||0;
-    const spyWk =perfData?.spyWkPct ||0;
+    const spyMth = perfData?.spyMthPct || 0;
+    const spyDay = perfData?.spyDayPct || 0;
+    const spyWk  = perfData?.spyWkPct  || 0;
 
-    const [trend,pt,yields,sectors,factors] = await Promise.all([
+    const [trend, pt, yields, sectors, factors] = await Promise.all([
       loadTrend(), loadPT(), loadYields(),
-      loadSectors(spyDay,spyWk,spyMth),
+      loadSectors(spyDay, spyWk, spyMth),
       loadFactors(spyMth),
     ]);
     renderTrend(trend);
-    renderPT(pt,yields);
+    renderPT(pt, yields);
     renderFac(factors);
     renderSectors(sectors);
 
@@ -1404,7 +1437,18 @@ async function refreshAll() {
   }
 }
 
-function init() { refreshAll(); setInterval(refreshAll,REFRESH); }
+function init() {
+  // Clear cached version mismatch
+  const V = 'v1771965424';
+  if (localStorage.getItem('dash_ver') !== V) {
+    localStorage.setItem('dash_ver', V);
+    // slight delay then reload to pick up fresh JS
+    setTimeout(() => window.location.reload(true), 100);
+    return;
+  }
+  refreshAll();
+  setInterval(refreshAll, REFRESH);
+}
 </script>
 </body>
 </html>
