@@ -83,10 +83,10 @@ body {
   margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);
   gap:10px;flex-wrap:wrap;
 }
-.hdr h1{font-family:var(--mono);font-size:13px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;}
+.hdr h1{font-family:var(--mono);font-size:12px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;}
 .hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .dt{font-family:var(--mono);font-size:12px;color:var(--muted);}
-.last-upd{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.last-upd{font-family:var(--mono);font-size:12px;color:var(--muted);}
 
 /* Theme toggle */
 .th-btn {
@@ -98,7 +98,7 @@ body {
 
 /* Status pill */
 .pill {
-  font-family:var(--mono);font-size:11px;padding:5px 12px;
+  font-family:var(--mono);font-size:12px;padding:5px 12px;
   border-radius:10px;border:1px solid var(--border);
   color:var(--muted);display:flex;align-items:center;gap:5px;
   cursor:pointer;transition:all .2s;white-space:nowrap;
@@ -115,27 +115,28 @@ body {
 .idx{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:14px;}
 .ic{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 16px;min-height:90px;display:flex;flex-direction:column;justify-content:space-between;transition:var(--transition),border-color .2s;cursor:pointer;}
 .ic:hover{border-color:var(--accent);}
-.ic .tk{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;margin-bottom:5px;}
+.ic .tk{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em;margin-bottom:5px;}
 .ic .pr{font-family:var(--mono);font-size:18px;font-weight:500;margin-bottom:4px;}
 .ic .ch{font-family:var(--mono);font-size:12px;font-weight:600;margin-bottom:5px;}
-.ic .nm{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+.ic .nm{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
 .up{color:var(--green);} .dn{color:var(--red);}
 
 /* ══ PANELS ════════════════════════════════════════════ */
 .pnl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:var(--transition);}
 .ph{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
 .ph::before{content:'';display:block;width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0;}
-.ph h3{font-family:var(--mono);font-size:11px;letter-spacing:.11em;text-transform:uppercase;font-weight:500;}
+.ph h3{font-family:var(--mono);font-size:12px;letter-spacing:.11em;text-transform:uppercase;font-weight:500;}
 
 /* ══ LAYOUT ════════════════════════════════════════════ */
-.r1{display:grid;grid-template-columns:260px 320px 1fr 210px 250px;gap:var(--gap);margin-bottom:var(--gap);}
-.r2{display:grid;grid-template-columns:260px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1{display:grid;grid-template-columns:280px 340px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b{display:grid;grid-template-columns:220px 240px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r2{display:grid;grid-template-columns:220px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);margin-bottom:var(--gap);}
 
 /* ══ MARKET CONDITIONS ═════════════════════════════════ */
 .mc{padding:11px 13px;}
 .mc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-.mc-badge{font-family:var(--mono);font-size:14px;font-weight:600;padding:4px 12px;border-radius:4px;}
+.mc-badge{font-family:var(--mono);font-size:13px;font-weight:600;padding:4px 12px;border-radius:4px;}
 .mc-badge.neg{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3);}
 .mc-badge.pos{background:rgba(0,208,132,.15);color:var(--green);border:1px solid rgba(0,208,132,.3);}
 .mc-badge.neu{background:rgba(90,96,112,.2);color:var(--muted);border:1px solid rgba(90,96,112,.2);}
@@ -146,10 +147,10 @@ body {
 
 /* ══ PERF TABLE ════════════════════════════════════════ */
 .ptable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;table-layout:fixed;}
-.ptable th{padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);text-align:center;font-weight:500;}
-.ptable td{padding:8px 10px;text-align:center;border-bottom:1px solid rgba(125,130,145,.12);font-size:13px;}
+.ptable th{padding:8px 10px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);text-align:center;font-weight:500;}
+.ptable td{padding:8px 10px;text-align:center;border-bottom:1px solid rgba(125,130,145,.12);font-size:12px;}
 .ptable tr:last-child td{border-bottom:none;}
-.bdg{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600;}
+.bdg{display:inline-block;padding:2px 7px;border-radius:3px;font-size:12px;font-weight:600;}
 .bp{background:rgba(0,208,132,.15);color:var(--green);}
 .bn{background:rgba(255,68,102,.12);color:var(--red);}
 .bu{background:rgba(90,96,112,.18);color:var(--muted);}
@@ -160,46 +161,46 @@ body {
 
 /* ══ TREND STATUS ══════════════════════════════════════ */
 .ts{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;}
-.ts th{padding:8px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;font-weight:500;}
+.ts th{padding:8px 10px;font-size:12px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;font-weight:500;}
 .ts th:first-child{text-align:left;}
 .ts td{padding:7px 10px;text-align:center;border-bottom:1px solid rgba(125,130,145,.1);font-size:12px;}
 .ts tr:last-child td{border-bottom:none;}
-.ts td:first-child{text-align:left;color:var(--muted);font-size:11px;}
+.ts td:first-child{text-align:left;color:var(--muted);font-size:12px;}
 .ty{color:var(--green);font-weight:600;} .tn{color:var(--red);font-weight:600;}
 
 /* ══ POWER TREND / FACTORS ════════════════════════════ */
 .ptb,.fb{padding:10px 13px;}
 .ptr,.fr{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(125,130,145,.1);}
 .ptr:last-child,.fr:last-child{border-bottom:none;}
-.ptr .lbl,.fr .lbl{font-family:var(--mono);font-size:11px;color:var(--muted);}
-.ptr .val,.fr .val{font-family:var(--mono);font-size:13px;font-weight:600;}
+.ptr .lbl,.fr .lbl{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.ptr .val,.fr .val{font-family:var(--mono);font-size:12px;font-weight:600;}
 .vno{color:var(--red);} .vyes{color:var(--green);} .vnum{color:var(--text);}
 
 /* ══ RS GAINERS ════════════════════════════════════════ */
 .rss{padding:10px;}
 .rsi{display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:5px;transition:background .15s;cursor:pointer;}
 .rsi:hover{background:var(--surface2);}
-.rsb{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 6px;border-radius:3px;min-width:50px;text-align:center;flex-shrink:0;}
+.rsb{font-family:var(--mono);font-size:12px;font-weight:600;padding:3px 6px;border-radius:3px;min-width:50px;text-align:center;flex-shrink:0;}
 .r100{background:rgba(0,208,132,.15);color:var(--green);border:1px solid rgba(0,208,132,.3);}
 .r65{background:rgba(245,200,66,.15);color:var(--yellow);border:1px solid rgba(245,200,66,.3);}
 .r50{background:rgba(255,68,102,.1);color:var(--red);border:1px solid rgba(255,68,102,.2);}
 .ri{flex:1;}
-.ri .tn2{font-family:var(--mono);font-size:13px;font-weight:500;}
-.ri .sc{font-size:11px;color:var(--muted);}
+.ri .tn2{font-family:var(--mono);font-size:12px;font-weight:500;}
+.ri .sc{font-size:12px;color:var(--muted);}
 .rr{text-align:right;}
-.rr .rp{font-family:var(--mono);font-size:13px;font-weight:500;}
+.rr .rp{font-family:var(--mono);font-size:12px;font-weight:500;}
 .rr .rc{font-family:var(--mono);font-size:12px;font-weight:600;}
-.slbl{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 4px 4px;}
+.slbl{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 4px 4px;}
 
 /* ══ SECTOR TABLE ══════════════════════════════════════ */
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;}
-thead th{padding:9px 10px;text-align:center;font-size:10px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap;}
+thead th{padding:9px 10px;text-align:center;font-size:12px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap;}
 tbody tr{border-bottom:1px solid rgba(125,130,145,.1);transition:background .15s;cursor:pointer;}
 tbody tr:hover{background:var(--surface2);}
 tbody tr:last-child{border-bottom:none;}
 td{padding:8px 10px;white-space:nowrap;vertical-align:middle;}
-.rsc{font-weight:600;font-size:11px;width:34px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:3px;}
+.rsc{font-weight:600;font-size:12px;width:34px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:3px;}
 .rh{background:rgba(0,208,132,.2);color:var(--green);}
 .rm{background:rgba(245,200,66,.15);color:var(--yellow);}
 .rl{background:rgba(255,68,102,.12);color:var(--red);}
@@ -226,9 +227,9 @@ td{padding:8px 10px;white-space:nowrap;vertical-align:middle;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
-@media(max-width:1400px){.r1{grid-template-columns:240px 290px 1fr 185px 220px}}
-@media(max-width:1200px){.r1{grid-template-columns:1fr 1fr;}.r1 .pnl:nth-child(3){grid-column:1/-1;}}
-@media(max-width:1024px){.r2{grid-template-columns:1fr;}.r3{grid-template-columns:1fr 1fr;}}
+@media(max-width:1400px){.r1{grid-template-columns:260px 310px 1fr}.r1b{grid-template-columns:200px 220px 1fr}}
+@media(max-width:1200px){.r1{grid-template-columns:1fr 1fr;}.r1 .pnl:nth-child(3){grid-column:1/-1;}.r1b{grid-template-columns:1fr 1fr;}}
+@media(max-width:1024px){.r2{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r3{grid-template-columns:1fr 1fr;}}
 
 @media(max-width:768px){
   .idx{grid-template-columns:repeat(4,1fr);}
@@ -286,7 +287,7 @@ td{padding:8px 10px;white-space:nowrap;vertical-align:middle;}
       <div class="mc">
         <div class="mc-row">
           <div class="mc-badge neg" id="mcBadge">—</div>
-          <div class="mc-score" id="mcScore" style="font-family:var(--mono);font-size:13px;color:var(--muted);">0/4</div>
+          <div class="mc-score" id="mcScore" style="font-family:var(--mono);font-size:12px;color:var(--muted);">0/4</div>
         </div>
         <div class="mc-checks" id="mcChecks" style="display:flex;flex-direction:column;gap:4px;"></div>
         <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;">
@@ -299,10 +300,10 @@ td{padding:8px 10px;white-space:nowrap;vertical-align:middle;}
     <div class="pnl">
       <div class="ph"><h3>Performance Overview</h3></div>
       <table class="ptable">
-        <thead><tr><th>YTD</th><th>1W</th><th>1M</th><th>1Y</th><th>52W Hi</th><th>VIX</th></tr></thead>
+        <thead><tr><th>YTD</th><th>1W</th><th>1M</th><th>1Y</th><th>52W Hi</th></tr></thead>
         <tbody>
-          <tr id="perfR"><td colspan="6" style="text-align:center"><span class="sk" style="width:85%;height:11px"></span></td></tr>
-          <tr id="perfB"><td colspan="6"></td></tr>
+          <tr id="perfR"><td colspan="5" style="text-align:center"><span class="sk" style="width:85%;height:11px"></span></td></tr>
+          <tr id="perfB"><td colspan="5"></td></tr>
         </tbody>
       </table>
       <div class="tlo" id="tloRow">
@@ -324,6 +325,9 @@ td{padding:8px 10px;white-space:nowrap;vertical-align:middle;}
       </table>
     </div>
 
+  </div>
+
+  <div class="r1b">
     <!-- Power Trend -->
     <div class="pnl">
       <div class="ph"><h3>Power Trend (QQQ)</h3></div>
@@ -522,16 +526,15 @@ async function loadPerf() {
   } catch(e) { console.error('Perf error',e); return null; }
 }
 
-function renderPerf(p, vix) {
+function renderPerf(p) {
   if (!p) return;
   const f = v => v!=null ? `${v>=0?'+':''}${v.toFixed(2)}%` : '—';
   document.getElementById('perfR').innerHTML = `
     <td>${f(p.ytd)}</td><td>${f(p.w1)}</td><td>${f(p.m1)}</td>
-    <td>${f(p.y1)}</td><td>${f(p.h52w)}</td>
-    <td>${vix!=null?vix.toFixed(2):'—'}</td>`;
+    <td>${f(p.y1)}</td><td>${f(p.h52w)}</td>`;
   document.getElementById('perfB').innerHTML =
     `<td>${bdg(p.ytd)}</td><td>${bdg(p.w1)}</td><td>${bdg(p.m1)}</td>
-     <td>${bdg(p.y1)}</td><td>${bdg(p.h52w)}</td><td><span class="bdg bu">—</span></td>`;
+     <td>${bdg(p.y1)}</td><td>${bdg(p.h52w)}</td>`;
   const {s10,s20,s50,s200,price} = p;
   const mk=(s,lbl)=>`<div class="tlo-c"><div class="lbl">${lbl}</div>
     <div class="val">${s.toFixed(0)}</div>
@@ -589,7 +592,7 @@ async function loadMarketConditions(spyCloses) {
     <div class="mc-check">
       <span class="lbl">${c.label}</span>
       <span class="val" style="display:flex;align-items:center;gap:5px;">
-        <span style="font-size:9px;color:var(--muted)">${c.val}</span>
+        <span style="font-size:12px;color:var(--muted)">${c.val}</span>
         <span class="${c.pass?'ty':'tn'}">${c.pass?'✓':'✗'}</span>
       </span>
     </div>`).join('');
@@ -768,7 +771,7 @@ async function refreshAll() {
   document.getElementById('errBanner').classList.remove('show');
   try {
     const [idxData, perfData] = await Promise.all([loadIndices(), loadPerf()]);
-    renderPerf(perfData, idxData.vix);
+    renderPerf(perfData);
 
     const spyMth=perfData?.spyMthPct||0;
     const spyDay=perfData?.spyDayPct||0;
