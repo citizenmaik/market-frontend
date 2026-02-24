@@ -286,19 +286,12 @@ td{padding:8px 10px;white-space:nowrap;}
       <div class="mc">
         <div class="mc-row">
           <div class="mc-badge neg" id="mcBadge">—</div>
-          <div class="mc-pct" id="mcPct">—</div>
+          <div class="mc-score" id="mcScore" style="font-family:var(--mono);font-size:11px;color:var(--muted);">0/4</div>
         </div>
-        <div class="mc-sub">SPY vs 52W High</div>
-        <div class="mc-chart"><svg viewBox="0 0 200 52" preserveAspectRatio="none">
-          <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#ff4466" stop-opacity=".2" id="cgStop"/>
-            <stop offset="100%" stop-color="#ff4466" stop-opacity=".01"/>
-          </linearGradient></defs>
-          <path id="mcL" fill="none" stroke="#ff4466" stroke-width="1.3"
-            d="M0,40 C8,38 16,26 30,24 C44,22 52,13 65,16 C78,19 88,32 102,35 C116,38 126,44 138,42 C150,40 160,46 172,49 C184,52 194,46 200,44"/>
-          <path id="mcF" fill="url(#cg)"
-            d="M0,40 C8,38 16,26 30,24 C44,22 52,13 65,16 C78,19 88,32 102,35 C116,38 126,44 138,42 C150,40 160,46 172,49 C184,52 194,46 200,44 L200,52 L0,52Z"/>
-        </svg></div>
+        <div class="mc-checks" id="mcChecks" style="margin-top:6px;display:flex;flex-direction:column;gap:3px;"></div>
+        <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;" id="mcBreadth"></div>
+        </div>
       </div>
     </div>
 
@@ -312,7 +305,7 @@ td{padding:8px 10px;white-space:nowrap;}
           <tr id="perfB"><td colspan="6"></td></tr>
         </tbody>
       </table>
-      <div class="tlo">
+      <div class="tlo" id="tloRow">
         <div class="tlo-c"><div class="lbl">10SMA</div><div class="val sk" style="width:38px;height:10px"></div></div>
         <div class="tlo-c"><div class="lbl">20SMA</div><div class="val sk" style="width:38px;height:10px"></div></div>
         <div class="tlo-c"><div class="lbl">50SMA</div><div class="val sk" style="width:38px;height:10px"></div></div>
