@@ -138,20 +138,20 @@ body {
 .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 /* Zeile 3: RS Gainers sidebar | Sector Table */
-.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 
-@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+
+@media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .r1 .pnl:nth-child(3){grid-column:1/-1;}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}}}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -164,7 +164,7 @@ body {
 }
 @media(max-width:540px){
   .idx{grid-template-columns:repeat(2,1fr);}
-  .r1,.r1b,.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+  .r1,.r1b,
   body{padding:10px 10px calc(env(safe-area-inset-bottom,10px) + 10px);}
 }
 
@@ -261,14 +261,17 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 .sk{background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:3px;display:inline-block;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+.rsec{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.rrs{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
-@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}}}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r3{grid-template-columns:1fr 1fr;}}
 
@@ -410,20 +413,20 @@ body {
 .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 /* Zeile 3: RS Gainers sidebar | Sector Table */
-.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 
-@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+
+@media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .r1 .pnl:nth-child(3){grid-column:1/-1;}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}}}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -436,7 +439,7 @@ body {
 }
 @media(max-width:540px){
   .idx{grid-template-columns:repeat(2,1fr);}
-  .r1,.r1b,.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+  .r1,.r1b,
   body{padding:10px 10px calc(env(safe-area-inset-bottom,10px) + 10px);}
 }
 
@@ -533,14 +536,17 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 .sk{background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:3px;display:inline-block;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+.rsec{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.rrs{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
-@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}}}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r3{grid-template-columns:1fr 1fr;}}
 
@@ -681,20 +687,20 @@ body {
 .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 /* Zeile 3: RS Gainers sidebar | Sector Table */
-.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 
-@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+
+@media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .r1 .pnl:nth-child(3){grid-column:1/-1;}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}}}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -707,7 +713,7 @@ body {
 }
 @media(max-width:540px){
   .idx{grid-template-columns:repeat(2,1fr);}
-  .r1,.r1b,.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+  .r1,.r1b,
   body{padding:10px 10px calc(env(safe-area-inset-bottom,10px) + 10px);}
 }
 
@@ -804,14 +810,17 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 .sk{background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:3px;display:inline-block;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+.rsec{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.rrs{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
-@media(max-width:1400px){.r2{grid-template-columns:260px 1fr}}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}.r2{grid-template-columns:1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r2{display:grid;grid-template-columns:300px 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1024px){.r1b{grid-template-columns:1fr;}.r2{grid-template-columns:1fr;}}}
+@media(max-width:1024px){.r1b{grid-template-columns:1fr;}}}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r3{grid-template-columns:1fr 1fr;}}
 
@@ -952,13 +961,8 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 
   </div>
 
-    <!-- ── Zeile 4: RS Gainers | Sector Leaders ── -->
-  <div class="r2">
-
-    <div class="pnl">
-      <div class="ph"><h3>RS Gainers</h3></div>
-      <div class="rss" id="rsEl"></div>
-
+    <!-- ── Zeile 4: Sector Leaders (volle Breite) ── -->
+  <div class="rsec">
     <div class="pnl">
       <div class="ph"><h3>Sector Leaders</h3></div>
       <div class="tw">
@@ -973,7 +977,13 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
         </table>
       </div>
     </div>
+  </div>
 
+  <!-- ── Zeile 5: RS Gainers (volle Breite) ── -->
+  <div class="rrs">
+        <div class="pnl">
+      <div class="ph"><h3>RS Gainers</h3></div>
+      <div class="rss" id="rsEl"></div>
   </div>
 
 </div><!-- /#app -->
@@ -1399,8 +1409,14 @@ function renderSectors(data) {
     <div class="ri"><div class="tn2">${sym}</div><div class="sc">${s.name}</div></div>
     <div class="rr"><div class="rp">$${s.price}</div>
     <div class="rc ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div></div>`;
-  rsEl.innerHTML = '<div class="slbl">Daily</div>'+topD.map(([s,v])=>card(s,v,v.day,v.day>=0?'up':'dn')).join('')+
-    '<div class="slbl">Weekly</div>'+topW.map(([s,v])=>card(s,v,v.wk,v.wk>=0?'up':'dn')).join('');
+  const topM = [...sorted].sort((a,b) => b[1].mth-a[1].mth).slice(0,3);
+  rsEl.style.display = 'grid';
+  rsEl.style.gridTemplateColumns = '1fr 1fr 1fr';
+  rsEl.style.gap = '0';
+  rsEl.innerHTML =
+    '<div class="rss"><div class="slbl">Daily</div>'+topD.map(([s,v])=>card(s,v,v.day,v.day>=0?'up':'dn')).join('')+'</div>'+
+    '<div class="rss"><div class="slbl">Weekly</div>'+topW.map(([s,v])=>card(s,v,v.wk,v.wk>=0?'up':'dn')).join('')+'</div>'+
+    '<div class="rss"><div class="slbl">Monthly</div>'+topM.map(([s,v])=>card(s,v,v.mth,v.mth>=0?'up':'dn')).join('')+'</div>';
 }
 
 // ── Main Refresh ──────────────────────────────────────
