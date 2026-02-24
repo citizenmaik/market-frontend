@@ -83,10 +83,10 @@ body {
   margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);
   gap:10px;flex-wrap:wrap;
 }
-.hdr h1{font-family:var(--mono);font-size:11px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;}
+.hdr h1{font-family:var(--mono);font-size:13px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;}
 .hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.dt{font-family:var(--mono);font-size:10px;color:var(--muted);}
-.last-upd{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.dt{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.last-upd{font-family:var(--mono);font-size:11px;color:var(--muted);}
 
 /* Theme toggle */
 .th-btn {
@@ -98,7 +98,7 @@ body {
 
 /* Status pill */
 .pill {
-  font-family:var(--mono);font-size:9px;padding:4px 10px;
+  font-family:var(--mono);font-size:11px;padding:5px 12px;
   border-radius:10px;border:1px solid var(--border);
   color:var(--muted);display:flex;align-items:center;gap:5px;
   cursor:pointer;transition:all .2s;white-space:nowrap;
@@ -113,19 +113,19 @@ body {
 
 /* ══ INDEX CARDS ═══════════════════════════════════════ */
 .idx{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:12px;}
-.ic{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 12px;transition:var(--transition),border-color .2s;cursor:pointer;}
+.ic{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 15px;transition:var(--transition),border-color .2s;cursor:pointer;}
 .ic:hover{border-color:var(--accent);}
-.ic .tk{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:4px;}
-.ic .pr{font-family:var(--mono);font-size:14px;font-weight:500;margin-bottom:3px;}
-.ic .ch{font-family:var(--mono);font-size:10px;font-weight:600;margin-bottom:4px;}
-.ic .nm{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+.ic .tk{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;margin-bottom:5px;}
+.ic .pr{font-family:var(--mono);font-size:18px;font-weight:500;margin-bottom:4px;}
+.ic .ch{font-family:var(--mono);font-size:12px;font-weight:600;margin-bottom:5px;}
+.ic .nm{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
 .up{color:var(--green);} .dn{color:var(--red);}
 
 /* ══ PANELS ════════════════════════════════════════════ */
 .pnl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:var(--transition);}
-.ph{padding:9px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.ph{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
 .ph::before{content:'';display:block;width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0;}
-.ph h3{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;font-weight:500;}
+.ph h3{font-family:var(--mono);font-size:11px;letter-spacing:.11em;text-transform:uppercase;font-weight:500;}
 
 /* ══ LAYOUT ════════════════════════════════════════════ */
 .r1{display:grid;grid-template-columns:200px 240px 1fr 190px 220px;gap:var(--gap);margin-bottom:var(--gap);}
@@ -135,83 +135,77 @@ body {
 /* ══ MARKET CONDITIONS ═════════════════════════════════ */
 .mc{padding:12px;}
 .mc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.mc-badge{font-family:var(--mono);font-size:12px;font-weight:600;padding:3px 10px;border-radius:4px;}
+.mc-badge{font-family:var(--mono);font-size:14px;font-weight:600;padding:4px 12px;border-radius:4px;}
 .mc-badge.neg{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3);}
 .mc-badge.pos{background:rgba(0,208,132,.15);color:var(--green);border:1px solid rgba(0,208,132,.3);}
 .mc-badge.neu{background:rgba(90,96,112,.2);color:var(--muted);border:1px solid rgba(90,96,112,.2);}
 .mc-pct{font-family:var(--mono);font-size:17px;font-weight:600;}
-.mc-check{display:flex;justify-content:space-between;align-items:center;padding:2px 0;}
-.mc-check .lbl{font-family:var(--mono);font-size:9px;color:var(--muted);}
-.mc-check .val{font-family:var(--mono);font-size:9px;font-weight:600;}
-.mc-bitem{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:5px 7px;}
-.mc-bitem .bl{font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:2px;}
-.mc-bitem .bv{font-family:var(--mono);font-size:11px;font-weight:600;}
 .mc-sub{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:8px;}
 .mc-chart{height:52px;}
 .mc-chart svg{width:100%;height:100%;}
 
 /* ══ PERF TABLE ════════════════════════════════════════ */
-.ptable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;}
-.ptable th{padding:6px 7px;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);text-align:center;font-weight:500;}
-.ptable td{padding:5px 7px;text-align:center;border-bottom:1px solid rgba(125,130,145,.12);}
+.ptable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;}
+.ptable th{padding:7px 9px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);text-align:center;font-weight:500;}
+.ptable td{padding:7px 9px;text-align:center;border-bottom:1px solid rgba(125,130,145,.12);}
 .ptable tr:last-child td{border-bottom:none;}
-.bdg{display:inline-block;padding:1px 6px;border-radius:3px;font-size:8px;font-weight:600;}
+.bdg{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600;}
 .bp{background:rgba(0,208,132,.15);color:var(--green);}
 .bn{background:rgba(255,68,102,.12);color:var(--red);}
 .bu{background:rgba(90,96,112,.18);color:var(--muted);}
 .tlo{display:grid;grid-template-columns:repeat(6,1fr);padding:7px;gap:3px;border-top:1px solid var(--border);}
 .tlo-c{text-align:center;}
-.tlo-c .lbl{font-family:var(--mono);font-size:7px;color:var(--muted);margin-bottom:2px;}
-.tlo-c .val{font-family:var(--mono);font-size:9px;margin-bottom:2px;}
+.tlo-c .lbl{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:3px;}
+.tlo-c .val{font-family:var(--mono);font-size:11px;margin-bottom:3px;}
 
 /* ══ TREND STATUS ══════════════════════════════════════ */
-.ts{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;}
-.ts th{padding:6px 6px;font-size:8px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;font-weight:500;}
+.ts{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;}
+.ts th{padding:8px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;font-weight:500;}
 .ts th:first-child{text-align:left;}
-.ts td{padding:5px 6px;text-align:center;border-bottom:1px solid rgba(125,130,145,.1);font-size:9px;}
+.ts td{padding:7px 8px;text-align:center;border-bottom:1px solid rgba(125,130,145,.1);font-size:11px;}
 .ts tr:last-child td{border-bottom:none;}
-.ts td:first-child{text-align:left;color:var(--muted);font-size:8px;}
+.ts td:first-child{text-align:left;color:var(--muted);font-size:10px;}
 .ty{color:var(--green);font-weight:600;} .tn{color:var(--red);font-weight:600;}
 
 /* ══ POWER TREND / FACTORS ════════════════════════════ */
 .ptb,.fb{padding:8px 11px;}
-.ptr,.fr{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(125,130,145,.1);}
+.ptr,.fr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(125,130,145,.1);}
 .ptr:last-child,.fr:last-child{border-bottom:none;}
-.ptr .lbl,.fr .lbl{font-family:var(--mono);font-size:9px;color:var(--muted);}
-.ptr .val,.fr .val{font-family:var(--mono);font-size:10px;font-weight:600;}
+.ptr .lbl,.fr .lbl{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.ptr .val,.fr .val{font-family:var(--mono);font-size:13px;font-weight:600;}
 .vno{color:var(--red);} .vyes{color:var(--green);} .vnum{color:var(--text);}
 
 /* ══ RS GAINERS ════════════════════════════════════════ */
 .rss{padding:8px;}
 .rsi{display:flex;align-items:center;gap:7px;padding:5px 4px;border-radius:5px;transition:background .15s;cursor:pointer;}
 .rsi:hover{background:var(--surface2);}
-.rsb{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 4px;border-radius:3px;min-width:44px;text-align:center;flex-shrink:0;}
+.rsb{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 6px;border-radius:3px;min-width:50px;text-align:center;flex-shrink:0;}
 .r100{background:rgba(0,208,132,.15);color:var(--green);border:1px solid rgba(0,208,132,.3);}
 .r65{background:rgba(245,200,66,.15);color:var(--yellow);border:1px solid rgba(245,200,66,.3);}
 .r50{background:rgba(255,68,102,.1);color:var(--red);border:1px solid rgba(255,68,102,.2);}
 .ri{flex:1;}
-.ri .tn2{font-family:var(--mono);font-size:11px;font-weight:500;}
-.ri .sc{font-size:9px;color:var(--muted);}
+.ri .tn2{font-family:var(--mono);font-size:13px;font-weight:500;}
+.ri .sc{font-size:11px;color:var(--muted);}
 .rr{text-align:right;}
-.rr .rp{font-family:var(--mono);font-size:11px;font-weight:500;}
-.rr .rc{font-family:var(--mono);font-size:10px;font-weight:600;}
-.slbl{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:6px 4px 3px;}
+.rr .rp{font-family:var(--mono);font-size:13px;font-weight:500;}
+.rr .rc{font-family:var(--mono);font-size:12px;font-weight:600;}
+.slbl{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 4px 4px;}
 
 /* ══ SECTOR TABLE ══════════════════════════════════════ */
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;}
-thead th{padding:6px 8px;text-align:left;font-size:8px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap;}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;}
+thead th{padding:8px 10px;text-align:left;font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap;}
 tbody tr{border-bottom:1px solid rgba(125,130,145,.1);transition:background .15s;cursor:pointer;}
 tbody tr:hover{background:var(--surface2);}
 tbody tr:last-child{border-bottom:none;}
-td{padding:6px 8px;white-space:nowrap;}
-.rsc{font-weight:600;font-size:9px;width:30px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:3px;}
+td{padding:8px 10px;white-space:nowrap;}
+.rsc{font-weight:600;font-size:11px;width:34px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:3px;}
 .rh{background:rgba(0,208,132,.2);color:var(--green);}
 .rm{background:rgba(245,200,66,.15);color:var(--yellow);}
 .rl{background:rgba(255,68,102,.12);color:var(--red);}
 .rvl{background:rgba(255,68,102,.07);color:var(--red);opacity:.7;}
-.tck{color:var(--blue);font-weight:500;font-size:10px;}
-.tname{color:var(--text);font-family:var(--sans);font-size:10px;}
+.tck{color:var(--blue);font-weight:500;font-size:12px;}
+.tname{color:var(--text);font-family:var(--sans);font-size:12px;}
 .nc{text-align:right;}
 
 /* ══ TAG GRIDS ═════════════════════════════════════════ */
@@ -292,12 +286,19 @@ td{padding:6px 8px;white-space:nowrap;}
       <div class="mc">
         <div class="mc-row">
           <div class="mc-badge neg" id="mcBadge">—</div>
-          <div class="mc-score" id="mcScore" style="font-family:var(--mono);font-size:10px;color:var(--muted);">0/4</div>
+          <div class="mc-pct" id="mcPct">—</div>
         </div>
-        <div class="mc-checks" id="mcChecks" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;"></div>
-        <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;" id="mcBreadth"></div>
-        </div>
+        <div class="mc-sub">SPY vs 52W High</div>
+        <div class="mc-chart"><svg viewBox="0 0 200 52" preserveAspectRatio="none">
+          <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff4466" stop-opacity=".2" id="cgStop"/>
+            <stop offset="100%" stop-color="#ff4466" stop-opacity=".01"/>
+          </linearGradient></defs>
+          <path id="mcL" fill="none" stroke="#ff4466" stroke-width="1.3"
+            d="M0,40 C8,38 16,26 30,24 C44,22 52,13 65,16 C78,19 88,32 102,35 C116,38 126,44 138,42 C150,40 160,46 172,49 C184,52 194,46 200,44"/>
+          <path id="mcF" fill="url(#cg)"
+            d="M0,40 C8,38 16,26 30,24 C44,22 52,13 65,16 C78,19 88,32 102,35 C116,38 126,44 138,42 C150,40 160,46 172,49 C184,52 194,46 200,44 L200,52 L0,52Z"/>
+        </svg></div>
       </div>
     </div>
 
@@ -311,7 +312,7 @@ td{padding:6px 8px;white-space:nowrap;}
           <tr id="perfB"><td colspan="6"></td></tr>
         </tbody>
       </table>
-      <div class="tlo" id="tloRow">
+      <div class="tlo">
         <div class="tlo-c"><div class="lbl">10SMA</div><div class="val sk" style="width:38px;height:10px"></div></div>
         <div class="tlo-c"><div class="lbl">20SMA</div><div class="val sk" style="width:38px;height:10px"></div></div>
         <div class="tlo-c"><div class="lbl">50SMA</div><div class="val sk" style="width:38px;height:10px"></div></div>
@@ -357,17 +358,7 @@ td{padding:6px 8px;white-space:nowrap;}
     </div>
   </div>
 
-  <div class="r3">
-    <div class="pnl"><div class="ph"><h3>21EMA Watch</h3></div><div class="tg" id="emaEl"></div></div>
-    <div class="pnl"><div class="ph"><h3>Healthy Charts</h3></div><div class="tg" id="hcEl"></div></div>
-    <div class="pnl"><div class="ph"><h3>Momentum 97</h3></div><div class="tg" id="m97El"></div></div>
-  </div>
-
-  <div class="r3">
-    <div class="pnl"><div class="ph"><h3>4% Gainers (1D)</h3></div><div class="tg" id="g4El"></div></div>
-    <div class="pnl"><div class="ph"><h3>Vol Up Gainers (1D)</h3></div><div class="tg" id="vgEl"></div></div>
-    <div class="pnl"><div class="ph"><h3>High Est. EPS Growth</h3></div><div class="tg" id="epsEl"></div></div>
-  </div>
+  
 
 </div><!-- /#app -->
 
@@ -380,13 +371,13 @@ const REFRESH  = 5 * 60 * 1000;
 const API      = '/api/data';
 let   FKEY     = '';
 
-// ── Kill old service workers ───────────────────────────
+// Kill old service workers
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(r => r.forEach(sw => sw.unregister()));
   if (window.caches) caches.keys().then(ks => ks.forEach(k => caches.delete(k)));
 }
 
-// ── Theme ─────────────────────────────────────────────
+// Theme
 function toggleTheme() {
   const html = document.documentElement;
   const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -399,7 +390,7 @@ const savedTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.dataset.theme = savedTheme;
 document.getElementById('thBtn').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
 
-// ── Auth ──────────────────────────────────────────────
+// Auth
 function doLogin() {
   const pw  = document.getElementById('pwInput').value.trim();
   const err = document.getElementById('loginErr');
@@ -414,7 +405,6 @@ document.getElementById('pwInput').addEventListener('keydown', e => {
 async function verifyKey(key) {
   const err = document.getElementById('loginErr');
   try {
-    // Test via our proxy
     const res  = await fetch(`${API}?type=quotes&symbols=SPY&fhkey=${key}`);
     const data = await res.json();
     if (data.SPY && data.SPY.c > 0) {
@@ -429,42 +419,29 @@ async function verifyKey(key) {
     }
   } catch(e) { err.textContent = 'Verbindungsfehler'; }
 }
-
 const savedKey = localStorage.getItem('fh_key');
 if (savedKey) { FKEY = savedKey; verifyKey(savedKey); }
 
-// ── API Helpers ───────────────────────────────────────
-// Fetch multiple quotes via proxy (batched)
+// API helpers
 async function getQuotes(symbols) {
-  const res  = await fetch(`${API}?type=quotes&symbols=${symbols.join(',')}&fhkey=${FKEY}`);
-  return res.json(); // { SPY: {c,pc,...}, QQQ: {...}, ... }
+  const res = await fetch(`${API}?type=quotes&symbols=${symbols.join(',')}&fhkey=${FKEY}`);
+  return res.json();
 }
-
-// Fetch candles via proxy (batched, ^ encoded as __)
 async function getCandles(symbols, range='1y') {
-  const encoded = symbols.map(s => s.replace('^','__'));
+  const encoded = symbols.map(s => s.replace(/\^/g, '__'));
   const res = await fetch(`${API}?type=candles&symbols=${encoded.join(',')}&range=${range}`);
   const data = await res.json();
-  // Remap __ back to ^
   const out = {};
-  Object.entries(data).forEach(([k,v]) => { out[k.replace('__','^')] = v; });
+  Object.entries(data).forEach(([k,v]) => { out[k.replace(/__/g,'^')] = v; });
   return out;
 }
-
 function clean(arr) { return (arr||[]).filter(v => v != null && !isNaN(v)); }
 
-// ── Math helpers ──────────────────────────────────────
-function sma(arr, n) {
-  const s = arr.slice(-n);
-  return s.reduce((a,b)=>a+b,0)/s.length;
-}
-function emaCalc(arr, n) {
-  const k=2/(n+1); let e=arr[0];
-  for (let i=1;i<arr.length;i++) e=arr[i]*k+e*(1-k);
-  return e;
-}
+// Math
+function sma(arr, n) { const s=arr.slice(-n); return s.reduce((a,b)=>a+b,0)/s.length; }
+function emaCalc(arr, n) { const k=2/(n+1); let e=arr[0]; for(let i=1;i<arr.length;i++) e=arr[i]*k+e*(1-k); return e; }
 
-// ── UI helpers ────────────────────────────────────────
+// UI
 function setStatus(state, text) {
   document.getElementById('pill').className = `pill ${state}`;
   document.getElementById('pillDot').className = `dot${state==='live'?' pulse':''}`;
@@ -480,68 +457,46 @@ function bdg(v) {
   if (v<0) return '<span class="bdg bn">Negative</span>';
   return '<span class="bdg bu">Neutral</span>';
 }
-function rsClass(rs) {
-  if (rs>=80) return 'rh'; if (rs>=60) return 'rm'; if (rs>=40) return 'rl'; return 'rvl';
-}
+function rsClass(rs) { if(rs>=80) return 'rh'; if(rs>=60) return 'rm'; if(rs>=40) return 'rl'; return 'rvl'; }
 
 document.getElementById('dtEl').textContent =
   new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-
-// ══════════════════════════════════════════════════════
-//  DATA LOADERS
-// ══════════════════════════════════════════════════════
 
 // ── 1. Index Cards ────────────────────────────────────
 const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','IWM','BINANCE:BTCUSDT'];
 const IDX_META = {
   'SPY':'S&P 500','RSP':'S&P 500 EQ WT','QQQ':'NASDAQ 100',
-  'QQQE':'NASDAQ 100 EQ WT','IWM':'RUSSELL 2000',
-  'BINANCE:BTCUSDT':'BITCOIN'
+  'QQQE':'NASDAQ 100 EQ WT','IWM':'RUSSELL 2000','BINANCE:BTCUSDT':'BITCOIN'
 };
 
 async function loadIndices() {
-  const data = await getQuotes(IDX_SYMS);
-  const row  = document.getElementById('idxRow');
+  const [quotesData, vixRes] = await Promise.all([
+    getQuotes(IDX_SYMS),
+    fetch(`${API}?type=vix`).then(r=>r.json()).catch(()=>({}))
+  ]);
+  const row = document.getElementById('idxRow');
   row.innerHTML = '';
-  // Add VIX from Yahoo via proxy
-  let vixPrice = null;
-  try {
-    const vixRes = await fetch(`${API}?type=vix`);
-    const vixData = await vixRes.json();
-    vixPrice = vixData.vix;
-  } catch(e) {}
-
-  const allSyms = [...IDX_SYMS];
   IDX_SYMS.forEach((sym,i) => {
-    const q     = data[sym];
+    const q     = quotesData[sym];
     const price = q?.c || 0;
     const prev  = q?.pc || 0;
     const chg   = prev>0 ? (price-prev)/prev*100 : 0;
     const disp  = sym==='BINANCE:BTCUSDT' ? 'BTC' : sym;
     const pstr  = sym==='BINANCE:BTCUSDT' ? '$'+Math.round(price).toLocaleString() : '$'+price.toFixed(2);
-    const name  = IDX_META[sym];
     row.innerHTML += `<div class="ic" style="animation-delay:${i*.05}s">
       <div class="tk">${disp}</div><div class="pr">${pstr}</div>
       <div class="ch ${chg>=0?'up':'dn'}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
-      <div class="nm">${name}</div></div>`;
+      <div class="nm">${IDX_META[sym]}</div></div>`;
   });
-
-  // VIX card (6th position)
-  if (vixPrice != null) {
-    const vixCard = `<div class="ic" style="animation-delay:0.3s">
-      <div class="tk">VIX</div><div class="pr">$${vixPrice.toFixed(2)}</div>
-      <div class="ch" style="color:var(--muted)">VOLATILITY INDEX</div>
+  // VIX card
+  const vix = vixRes.vix;
+  if (vix != null) {
+    row.innerHTML += `<div class="ic" style="animation-delay:0.35s">
+      <div class="tk">VIX</div><div class="pr">${vix.toFixed(2)}</div>
+      <div class="ch" style="color:var(--muted)">—</div>
       <div class="nm">VOLATILITY</div></div>`;
-    // Insert before BTC (last card)
-    const cards = row.innerHTML.split('</div>');
-    row.innerHTML = row.innerHTML.replace(
-      row.lastElementChild?.outerHTML || '',
-      vixCard + (row.lastElementChild?.outerHTML || '')
-    );
   }
-
-  data['VIX'] = { c: vixPrice, pc: vixPrice };
-  return { ...data, vixPrice };
+  return { quotes: quotesData, vix };
 }
 
 // ── 2. SPY Performance ────────────────────────────────
@@ -557,36 +512,34 @@ async function loadPerf() {
     const mth   = c[c.length-22]  || c[0];
     const yr    = c[c.length-252] || c[0];
     const h52   = Math.max(...c.slice(-252));
-    // YTD: find first close of this year
     const times = d.t || [];
     const ytdIdx= times.findIndex(ts => new Date(ts*1000).getFullYear()===now.getFullYear());
     const ytdP  = ytdIdx>=0 ? c[ytdIdx] : c[0];
     const s10=sma(c,10), s20=sma(c,20), s50=sma(c,50), s200=sma(c,200);
     return {
       ytd:(price/ytdP-1)*100, w1:(price/wk-1)*100,
-      m1:(price/mth-1)*100,   y1:(price/yr-1)*100,
+      m1:(price/mth-1)*100, y1:(price/yr-1)*100,
       h52w:(price/h52-1)*100,
-      price, h52, closes:c,
+      price, closes:c,
       s10,s20,s50,s200,
       spyDayPct:(price/c[c.length-2]-1)*100,
-      spyWkPct: (price/wk-1)*100,
+      spyWkPct:(price/wk-1)*100,
       spyMthPct:(price/mth-1)*100,
     };
   } catch(e) { console.error('Perf error',e); return null; }
 }
 
-function renderPerf(p, vixPrice) {
+function renderPerf(p, vix) {
   if (!p) return;
   const f = v => v!=null ? `${v>=0?'+':''}${v.toFixed(2)}%` : '—';
   document.getElementById('perfR').innerHTML = `
     <td>${f(p.ytd)}</td><td>${f(p.w1)}</td><td>${f(p.m1)}</td>
     <td>${f(p.y1)}</td><td>${f(p.h52w)}</td>
-    <td>${vixPrice!=null?vixPrice.toFixed(2):'—'}</td>`;
+    <td>${vix!=null?vix.toFixed(2):'—'}</td>`;
   document.getElementById('perfB').innerHTML =
     `<td>${bdg(p.ytd)}</td><td>${bdg(p.w1)}</td><td>${bdg(p.m1)}</td>
      <td>${bdg(p.y1)}</td><td>${bdg(p.h52w)}</td><td><span class="bdg bu">—</span></td>`;
-  // SMA Overview
-  const {s10,s20,s50,s200,price}=p;
+  const {s10,s20,s50,s200,price} = p;
   const mk=(s,lbl)=>`<div class="tlo-c"><div class="lbl">${lbl}</div>
     <div class="val">${s.toFixed(0)}</div>
     <div class="bdg ${price>s?'bp':'bn'}" style="font-size:7px;padding:1px 4px">${price>s?'▲':'▼'}</div></div>`;
@@ -597,6 +550,14 @@ function renderPerf(p, vixPrice) {
      <div class="bdg ${s20>s50?'bp':'bn'}" style="font-size:7px;padding:1px 4px">${s20>s50?'Yes':'No'}</div></div>`+
     `<div class="tlo-c"><div class="lbl">50&gt;200</div><div class="val">${p50200}</div>
      <div class="bdg ${s50>s200?'bp':'bn'}" style="font-size:7px;padding:1px 4px">${s50>s200?'Yes':'No'}</div></div>`;
+  // Market conditions badge based on h52w
+  const v=p.h52w;
+  const badge=document.getElementById('mcBadge');
+  if(badge && badge.textContent==='—') {
+    if(v>-2){badge.textContent='Positive';badge.className='mc-badge pos';}
+    else if(v<-10){badge.textContent='Negative';badge.className='mc-badge neg';}
+    else{badge.textContent='Neutral';badge.className='mc-badge neu';}
+  }
 }
 
 // ── 3. Market Conditions (PTMM-style) ─────────────────
@@ -605,8 +566,6 @@ async function loadMarketConditions(spyCloses) {
   const score  = document.getElementById('mcScore');
   const checks = document.getElementById('mcChecks');
   const breadth= document.getElementById('mcBreadth');
-
-  // Fetch breadth from dedicated endpoint
   let moVal=null, siVal=null, p50Val=null, p200Val=null, hlVal=null;
   try {
     const bRes  = await fetch(`${API}?type=breadth`);
@@ -617,34 +576,23 @@ async function loadMarketConditions(spyCloses) {
     p50Val = bData.pct50;
     p200Val= bData.pct200;
   } catch(e) { console.error('Breadth error:', e); }
-
-  // SPY EMA/SMA checks
-  const c     = spyCloses;
-  const price = c[c.length-1];
-  const e21   = emaCalc(c.slice(-100), 21);
-  const s50   = sma(c, 50);
-
-  // PTMM-style 4 conditions
+  const c=spyCloses, price=c[c.length-1];
+  const e21=emaCalc(c.slice(-100),21), s50=sma(c,50), s200=sma(c,200);
   const conds = [
-    { label:'SPY > 21 EMA',        pass:price>e21,               val:`${((price/e21-1)*100).toFixed(2)}%` },
-    { label:'SPY > 50 SMA',        pass:price>s50,               val:`${((price/s50-1)*100).toFixed(2)}%` },
-    { label:'McClellan Summ. > 0', pass:siVal!=null&&siVal>0,    val:siVal!=null?siVal.toFixed(0):'—'     },
-    { label:'% > 50 SMA > 60%',   pass:p50Val!=null&&p50Val>60, val:p50Val!=null?p50Val.toFixed(1)+'%':'—'},
+    {label:'SPY > 21 EMA', pass:price>e21, val:`${((price/e21-1)*100).toFixed(2)}%`},
+    {label:'SPY > 50 SMA', pass:price>s50, val:`${((price/s50-1)*100).toFixed(2)}%`},
+    {label:'McClellan Summ. > 0', pass:siVal!=null&&siVal>0, val:siVal!=null?siVal.toFixed(0):'—'},
+    {label:'% > 50 SMA > 60%', pass:p50Val!=null&&p50Val>60, val:p50Val!=null?p50Val.toFixed(1)+'%':'—'},
   ];
-
-  const passCount = conds.filter(c=>c.pass).length;
-  const reqPass   = conds[0].pass && conds[1].pass;
-
+  const passCount=conds.filter(c=>c.pass).length;
+  const reqPass=conds[0].pass&&conds[1].pass;
   let status,cls;
-  if (reqPass && passCount>=3) { status='UPTREND';   cls='pos'; }
-  else if (passCount<=1)       { status='DOWNTREND'; cls='neg'; }
-  else                         { status='MIXED';     cls='neu'; }
-
-  badge.textContent = status;
-  badge.className   = `mc-badge ${cls}`;
-  score.textContent = `${passCount}/4`;
-
-  checks.innerHTML = conds.map(c=>`
+  if(reqPass&&passCount>=3){status='UPTREND';cls='pos';}
+  else if(passCount<=1){status='DOWNTREND';cls='neg';}
+  else{status='MIXED';cls='neu';}
+  badge.textContent=status; badge.className=`mc-badge ${cls}`;
+  if(score) score.textContent=`${passCount}/4`;
+  if(checks) checks.innerHTML=conds.map(c=>`
     <div class="mc-check">
       <span class="lbl">${c.label}</span>
       <span class="val" style="display:flex;align-items:center;gap:5px;">
@@ -652,21 +600,21 @@ async function loadMarketConditions(spyCloses) {
         <span class="${c.pass?'ty':'tn'}">${c.pass?'✓':'✗'}</span>
       </span>
     </div>`).join('');
-
-  const s200=sma(c,200);
-  const bItems=[
-    {label:'McClellan Osc.',  val:moVal,   fmt:v=>v.toFixed(0),      cls:v=>v>0?'up':'dn'},
-    {label:'McClellan Sum.',  val:siVal,   fmt:v=>v.toFixed(0),      cls:v=>v>0?'up':'dn'},
-    {label:'% > 50 SMA',     val:p50Val,  fmt:v=>v.toFixed(1)+'%',  cls:v=>v>60?'up':v>40?'':'dn'},
-    {label:'% > 200 SMA',    val:p200Val, fmt:v=>v.toFixed(1)+'%',  cls:v=>v>60?'up':v>40?'':'dn'},
-    {label:'Net New Highs',  val:hlVal,   fmt:v=>(v>0?'+':'')+v.toFixed(0), cls:v=>v>0?'up':'dn'},
-    {label:'SPY vs 200 SMA', val:(price/s200-1)*100, fmt:v=>(v>0?'+':'')+v.toFixed(2)+'%', cls:v=>v>0?'up':'dn'},
-  ];
-  breadth.innerHTML = bItems.map(b=>{
-    const hasVal=b.val!=null&&!isNaN(b.val);
-    return `<div class="mc-bitem"><div class="bl">${b.label}</div>
-      <div class="bv ${hasVal?b.cls(b.val):''}">${hasVal?b.fmt(b.val):'—'}</div></div>`;
-  }).join('');
+  if(breadth) {
+    const bItems=[
+      {label:'McClellan Osc.',val:moVal,fmt:v=>v.toFixed(0),cls:v=>v>0?'up':'dn'},
+      {label:'McClellan Sum.',val:siVal,fmt:v=>v.toFixed(0),cls:v=>v>0?'up':'dn'},
+      {label:'% > 50 SMA',val:p50Val,fmt:v=>v.toFixed(1)+'%',cls:v=>v>60?'up':v>40?'':'dn'},
+      {label:'% > 200 SMA',val:p200Val,fmt:v=>v.toFixed(1)+'%',cls:v=>v>60?'up':v>40?'':'dn'},
+      {label:'Net New Highs',val:hlVal,fmt:v=>(v>0?'+':'')+v.toFixed(0),cls:v=>v>0?'up':'dn'},
+      {label:'SPY vs 200 SMA',val:(price/s200-1)*100,fmt:v=>(v>0?'+':'')+v.toFixed(2)+'%',cls:v=>v>0?'up':'dn'},
+    ];
+    breadth.innerHTML=bItems.map(b=>{
+      const has=b.val!=null&&!isNaN(b.val);
+      return `<div class="mc-bitem"><div class="bl">${b.label}</div>
+        <div class="bv ${has?b.cls(b.val):''}">${has?b.fmt(b.val):'—'}</div></div>`;
+    }).join('');
+  }
 }
 
 // ── 4. Trend Status ───────────────────────────────────
@@ -674,7 +622,7 @@ const TREND_LABELS=[['ema9','9 EMA'],['ema21','21 EMA'],['ema50','50 EMA'],['ema
 
 async function loadTrend() {
   const syms=['SPY','RSP','QQQ','QQQE'];
-  const data = await getCandles(syms,'1y');
+  const data=await getCandles(syms,'1y');
   const result={};
   syms.forEach(sym=>{
     const d=data[sym]; if(!d||!d.c) return;
@@ -731,8 +679,8 @@ async function loadYields() {
 
 function renderPT(data,yields) {
   const el=document.getElementById('ptEl'); el.innerHTML='';
-  const rows=[['sma3d20','3D > 20 SMA'],['sma3d50','3D > 50 SMA'],['sma3d200','3D > 200 SMA'],['sma20_50','20 > 50 SMA'],['sma20_200','20 > 200 SMA'],['sma50_200','50 > 200 SMA']];
-  rows.forEach(([k,l])=>{
+  [['sma3d20','3D > 20 SMA'],['sma3d50','3D > 50 SMA'],['sma3d200','3D > 200 SMA'],
+   ['sma20_50','20 > 50 SMA'],['sma20_200','20 > 200 SMA'],['sma50_200','50 > 200 SMA']].forEach(([k,l])=>{
     const d=document.createElement('div'); d.className='ptr';
     const v=data?data[k]:null;
     d.innerHTML=`<span class="lbl">${l}</span><span class="val ${v==null?'vnum':v?'vyes':'vno'}">${v==null?'—':v?'Yes':'No'}</span>`;
@@ -746,7 +694,7 @@ function renderPT(data,yields) {
   });
 }
 
-// ── 6. Factors vs SP500 ───────────────────────────────
+// ── 6. Factors ────────────────────────────────────────
 const FAC_SYMS=['IVW','IVE','HDV','OEF','IJH','IJR','MTUM','IPO'];
 const FAC_LBLS={IVW:'Growth',IVE:'Value',HDV:'High Dividend',OEF:'Large-Cap',IJH:'Mid-Cap',IJR:'Small-Cap',MTUM:'Momentum',IPO:'IPOs'};
 
@@ -755,8 +703,7 @@ async function loadFactors(spyMth) {
   return FAC_SYMS.map(sym=>{
     const c=clean(data[sym]?.c||[]);
     if(c.length<2) return{label:FAC_LBLS[sym],val:0};
-    const mth=(c[c.length-1]/c[0]-1)*100;
-    return{label:FAC_LBLS[sym],val:+(mth-spyMth).toFixed(2)};
+    return{label:FAC_LBLS[sym],val:+((c[c.length-1]/c[0]-1)*100-spyMth).toFixed(2)};
   });
 }
 
@@ -771,7 +718,9 @@ function renderFac(data) {
 
 // ── 7. Sectors ────────────────────────────────────────
 const SEC_SYMS=['RSPG','RSPN','RSPU','RSPH','RSPR','RSPM','RSPS','RSPC','RSPD','RSPT','RSPF'];
-const SEC_NAMES={RSPG:'Energy',RSPN:'Industrials',RSPU:'Utilities',RSPH:'Health Care',RSPR:'Real Estate',RSPM:'Materials',RSPS:'Cons Stpl',RSPC:'Comm Svcs',RSPD:'Cons Disc',RSPT:'Technology',RSPF:'Financials'};
+const SEC_NAMES={RSPG:'Energy',RSPN:'Industrials',RSPU:'Utilities',RSPH:'Health Care',
+  RSPR:'Real Estate',RSPM:'Materials',RSPS:'Cons Stpl',RSPC:'Comm Svcs',
+  RSPD:'Cons Disc',RSPT:'Technology',RSPF:'Financials'};
 
 async function loadSectors(spyDay,spyWk,spyMth) {
   const data=await getCandles(SEC_SYMS,'6mo');
@@ -800,67 +749,41 @@ function renderSectors(data) {
   const sorted=Object.entries(data).sort((a,b)=>b[1].rs-a[1].rs);
   sorted.forEach(([sym,s])=>{
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><div class="rsc ${rsClass(s.rs)}">${s.rs}</div></td><td class="tck">${sym}</td><td class="tname">${s.name}</td><td class="nc">${pct(s.day,1)}</td><td class="nc">${pct(s.wk,1)}</td><td class="nc">${pct(s.mth,1)}</td><td class="nc">${pct(s.rs_day)}</td><td class="nc">${pct(s.rs_wk)}</td><td class="nc">${pct(s.rs_mth)}</td><td class="nc"><span class="${s.high52<-3?'dn':s.high52<0?'':'up'}">${s.high52.toFixed(1)}%</span></td>`;
+    tr.innerHTML=`<td><div class="rsc ${rsClass(s.rs)}">${s.rs}</div></td><td class="tck">${sym}</td>
+      <td class="tname">${s.name}</td><td class="nc">${pct(s.day,1)}</td>
+      <td class="nc">${pct(s.wk,1)}</td><td class="nc">${pct(s.mth,1)}</td>
+      <td class="nc">${pct(s.rs_day)}</td><td class="nc">${pct(s.rs_wk)}</td>
+      <td class="nc">${pct(s.rs_mth)}</td>
+      <td class="nc"><span class="${s.high52<-3?'dn':s.high52<0?'':'up'}">${s.high52.toFixed(1)}%</span></td>`;
     tb.appendChild(tr);
   });
   const topD=[...sorted].slice(0,3);
   const topW=[...sorted].sort((a,b)=>b[1].wk-a[1].wk).slice(0,3);
-  const card=(sym,s,val,cls)=>`<div class="rsi"><div class="rsb ${rsGB(s.rs)}">RS:${s.rs}</div><div class="ri"><div class="tn2">${sym}</div><div class="sc">${s.name}</div></div><div class="rr"><div class="rp">$${s.price}</div><div class="rc ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div></div>`;
-  rsEl.innerHTML='<div class="slbl">Daily</div>'+topD.map(([sym,s])=>card(sym,s,s.day,s.day>=0?'up':'dn')).join('')+'<div class="slbl">Weekly</div>'+topW.map(([sym,s])=>card(sym,s,s.wk,s.wk>=0?'up':'dn')).join('');
+  const card=(sym,s,val,cls)=>`<div class="rsi">
+    <div class="rsb ${rsGB(s.rs)}">RS:${s.rs}</div>
+    <div class="ri"><div class="tn2">${sym}</div><div class="sc">${s.name}</div></div>
+    <div class="rr"><div class="rp">$${s.price}</div>
+    <div class="rc ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div></div>`;
+  rsEl.innerHTML='<div class="slbl">Daily</div>'+
+    topD.map(([sym,s])=>card(sym,s,s.day,s.day>=0?'up':'dn')).join('')+
+    '<div class="slbl">Weekly</div>'+
+    topW.map(([sym,s])=>card(sym,s,s.wk,s.wk>=0?'up':'dn')).join('');
 }
 
-// ── 8. Screeners (Finnhub quotes, batched) ────────────
-const SCREENERS={
-  emaEl:  ['WSC','AESI','NCLH','LRCX','ASO','VFC','FFIV','CAVA','STNE','BWXT','CAKE','REZI','FLEX','BVN','APH','CALX','MGM','RUN','SMCI'],
-  hcEl:   ['CIEN','LITE','AAOI','SNDK','WDC','LRCX','TER','AMAT','AU','BVN','SSRM','BORR','RIG','COHR','ATI','CENX','GLW'],
-  m97El:  ['HLF','FSLY','ZIM','CLMT','CGNX','KTOS','IRDM','RELY','SMCI','NVDA','ARM','PLTR'],
-  g4El:   ['RELY','HLF','SSRM','SMCI','AAOI','LITE','PWR','XP','CDE','NGD','PAAS','SA','AGI','RIOT','CENX','CALX'],
-  vgEl:   ['RELY','HLF','SSRM','KRMN','KTOS','XP','CENX','FLR','EBAY','DASH','AKAM'],
-  epsEl:  ['CIEN','LITE','MU','WDC','TER','APH','VRT','FN','CRDO','EQT','CALX','NET','NVDA'],
-};
-
-async function loadAllScreeners() {
-  // Collect all unique tickers
-  const allTickers=[...new Set(Object.values(SCREENERS).flat())];
-  const data=await getQuotes(allTickers);
-  // Render each screener
-  Object.entries(SCREENERS).forEach(([elId,tickers])=>{
-    const sorted=tickers.map(t=>{
-      const q=data[t];
-      const chg=q&&q.pc>0?(q.c-q.pc)/q.pc*100:0;
-      return{ticker:t,change_pct:+chg.toFixed(2)};
-    }).sort((a,b)=>b.change_pct-a.change_pct);
-    const el=document.getElementById(elId); el.innerHTML='';
-    sorted.forEach(item=>{
-      const s=document.createElement('span');
-      s.className='tag'+(item.change_pct>=4?' thl':item.change_pct>=1?' tyw':'');
-      s.innerHTML=`${item.ticker}<span class="tip">${item.change_pct>=0?'+':''}${item.change_pct.toFixed(2)}%</span>`;
-      el.appendChild(s);
-    });
-  });
-}
-
-// ══════════════════════════════════════════════════════
-//  MAIN REFRESH
-// ══════════════════════════════════════════════════════
+// ── Main Refresh ──────────────────────────────────────
 async function refreshAll() {
   setStatus('loading','Loading…');
   document.getElementById('errBanner').classList.remove('show');
   try {
-    // Batch 1: indices + SPY performance (parallel)
     const [idxData, perfData] = await Promise.all([loadIndices(), loadPerf()]);
-    const vixPrice = idxData?.vixPrice || idxData?.['VIX']?.c || null;
-    renderPerf(perfData, vixPrice);
+    renderPerf(perfData, idxData.vix);
 
     const spyMth=perfData?.spyMthPct||0;
     const spyDay=perfData?.spyDayPct||0;
     const spyWk =perfData?.spyWkPct ||0;
 
-    // Batch 2: all candle-based data + screeners in parallel
     const [trend,pt,yields,sectors,factors] = await Promise.all([
-      loadTrend(),
-      loadPT(),
-      loadYields(),
+      loadTrend(), loadPT(), loadYields(),
       loadSectors(spyDay,spyWk,spyMth),
       loadFactors(spyMth),
     ]);
@@ -869,11 +792,7 @@ async function refreshAll() {
     renderFac(factors);
     renderSectors(sectors);
 
-    // Batch 3: market conditions breadth + screeners (parallel)
-    await Promise.all([
-      perfData?.closes ? loadMarketConditions(perfData.closes) : Promise.resolve(),
-      loadAllScreeners(),
-    ]);
+    if (perfData?.closes) await loadMarketConditions(perfData.closes);
 
     setStatus('live','Live · 5 min');
     document.getElementById('lastUpd').textContent =
