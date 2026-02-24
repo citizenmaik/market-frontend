@@ -867,14 +867,36 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
     <div class="pnl">
       <div class="ph"><h3>Market Conditions</h3></div>
       <div class="mc">
-        <div class="mc-row">
+
+        <!-- Status Badge + Score -->
+        <div class="mc-row" style="margin-bottom:12px;">
           <div class="mc-badge neg" id="mcBadge">—</div>
-          <div class="mc-score" id="mcScore" style="font-family:var(--mono);font-size:13px;color:var(--muted);">0/4</div>
+          <div id="mcScoreGauge" style="display:flex;align-items:center;gap:8px;">
+            <div style="font-family:var(--mono);font-size:11px;color:var(--muted);">SCORE</div>
+            <div id="mcScore" style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text);">—</div>
+          </div>
         </div>
-        <div id="mcChecks" style="display:flex;flex-direction:column;gap:5px;margin-top:10px;"></div>
+
+        <!-- Score Bar -->
+        <div style="margin-bottom:12px;">
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;position:relative;">
+            <div style="position:absolute;left:50%;top:0;width:1px;height:100%;background:var(--border);"></div>
+            <div id="mcBar" style="height:100%;width:50%;background:var(--muted);border-radius:3px;transition:width .4s,background .4s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px;">
+            <span>-100</span><span>BEARISH</span><span>0</span><span>BULLISH</span><span>+100</span>
+          </div>
+        </div>
+
+        <!-- 5 Komponenten -->
+        <div id="mcChecks" style="display:flex;flex-direction:column;gap:5px;"></div>
+
+        <!-- Separator -->
         <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
+          <!-- Marktbedingungen Detail Grid -->
           <div id="mcBreadth" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"></div>
         </div>
+
       </div>
     </div>
 
@@ -1155,8 +1177,11 @@ function renderPerf(p) {
 async function loadMarketConditions(spyCloses) {
   const badge  = document.getElementById('mcBadge');
   const score  = document.getElementById('mcScore');
+  const bar    = document.getElementById('mcBar');
   const checks = document.getElementById('mcChecks');
   const breadth= document.getElementById('mcBreadth');
+
+  // ── Breadth data vom Proxy ────────────────────────
   let moVal=null, siVal=null, p50Val=null, p200Val=null, hlVal=null;
   try {
     const bRes  = await fetch(`${API}?type=breadth`);
@@ -1166,199 +1191,175 @@ async function loadMarketConditions(spyCloses) {
     hlVal  = bData.nyhl;
     p50Val = bData.pct50;
     p200Val= bData.pct200;
-  } catch(e) { console.error('Breadth error:', e); }
-  const c=spyCloses, price=c[c.length-1];
-  const e21=emaCalc(c.slice(-100),21), s50=sma(c,50), s200=sma(c,200);
-  const conds = [
-    {label:'SPY > 21 EMA', pass:price>e21, val:`${((price/e21-1)*100).toFixed(2)}%`},
-    {label:'SPY > 50 SMA', pass:price>s50, val:`${((price/s50-1)*100).toFixed(2)}%`},
-    {label:'McClellan Summ. > 0', pass:siVal!=null&&siVal>0, val:siVal!=null?siVal.toFixed(0):'—'},
-    {label:'% > 50 SMA > 60%', pass:p50Val!=null&&p50Val>60, val:p50Val!=null?p50Val.toFixed(1)+'%':'—'},
-  ];
-  const passCount=conds.filter(c=>c.pass).length;
-  const reqPass=conds[0].pass&&conds[1].pass;
-  let status,cls;
-  if(reqPass&&passCount>=3){status='UPTREND';cls='pos';}
-  else if(passCount<=1){status='DOWNTREND';cls='neg';}
-  else{status='MIXED';cls='neu';}
-  badge.textContent=status; badge.className=`mc-badge ${cls}`;
-  if(score) score.textContent=`${passCount}/4`;
-  if(checks) checks.innerHTML=conds.map(c=>`
-    <div class="mc-check">
-      <span class="lbl">${c.label}</span>
-      <span class="val" style="display:flex;align-items:center;gap:5px;">
-        <span style="font-size:12px;color:var(--muted)">${c.val}</span>
-        <span class="${c.pass?'ty':'tn'}">${c.pass?'✓':'✗'}</span>
-      </span>
-    </div>`).join('');
-  if(breadth) {
-    const bItems=[
-      {label:'McC. Osc.',   val:moVal,fmt:v=>v.toFixed(0),cls:v=>v>0?'up':'dn'},
-      {label:'McC. Sum.',   val:siVal,fmt:v=>v.toFixed(0),cls:v=>v>0?'up':'dn'},
-      {label:'%>50 SMA',  val:p50Val,fmt:v=>v.toFixed(1)+'%',cls:v=>v>60?'up':v>40?'':'dn'},
-      {label:'%>200 SMA', val:p200Val,fmt:v=>v.toFixed(1)+'%',cls:v=>v>60?'up':v>40?'':'dn'},
-      {label:'New Highs',  val:hlVal,fmt:v=>(v>0?'+':'')+v.toFixed(0),cls:v=>v>0?'up':'dn'},
-      {label:'SPY/200 SMA',val:(price/s200-1)*100,fmt:v=>(v>0?'+':'')+v.toFixed(2)+'%',cls:v=>v>0?'up':'dn'},
-    ];
-    breadth.style.gridTemplateColumns='1fr 1fr 1fr';
-  breadth.innerHTML=bItems.map(b=>{
-      const has=b.val!=null&&!isNaN(b.val);
-      return `<div class="mc-bitem"><span class="bl">${b.label}</span><span class="bv ${has?b.cls(b.val):''}">${has?b.fmt(b.val):'—'}</span></div>`;
-    }).join('');
+  } catch(e) { console.error('Breadth:', e); }
+
+  // ── SPY Berechnungen ──────────────────────────────
+  const c      = spyCloses;
+  const price  = c[c.length-1];
+  const prev   = c[c.length-2];
+  const c8ago  = c[c.length-9]  || c[0];
+  const e8     = emaCalc(c.slice(-40),  8);
+  const e21    = emaCalc(c.slice(-100), 21);
+  const s50    = sma(c, 50);
+  const s200   = sma(c, 200);
+
+  // RSI (14)
+  const calcRSI = (closes, n=14) => {
+    let gains=0, losses=0;
+    for(let i=closes.length-n; i<closes.length; i++){
+      const d = closes[i]-closes[i-1];
+      if(d>0) gains+=d; else losses+=Math.abs(d);
+    }
+    const rs = (gains/n) / (losses/n + 1e-10);
+    return 100 - 100/(1+rs);
+  };
+  const rsi = calcRSI(c, 14);
+
+  // Momentum (8-bar)
+  const momentum = (price - c8ago) / c8ago * 100;
+
+  // Volatility (ATR10 vs ATR SMA)
+  const atr10 = (() => {
+    let sum=0;
+    for(let i=c.length-10;i<c.length;i++){
+      sum += Math.abs(c[i]-(c[i-1]||c[i]));
+    }
+    return sum/10;
+  })();
+  const atrAvg = (() => {
+    let sum=0;
+    for(let i=c.length-22;i<c.length-10;i++){
+      sum += Math.abs(c[i]-(c[i-1]||c[i]));
+    }
+    return sum/12;
+  })();
+  const atrRatio = atrAvg > 0 ? atr10/atrAvg : 1;
+  const volStatus = atrRatio > 1.4 ? 'HIGH' : atrRatio > 1.1 ? 'MODERATE' : atrRatio < 0.7 ? 'LOW' : 'NORMAL';
+
+  // MA Alignment
+  const maAlignBull = e8 > e21 && e21 > s50 && price > e21;
+  const maAlignBear = e8 < e21 && e21 < s50 && price < e21;
+  const maStrength  = ((e8 - s50) / s50 * 100).toFixed(2);
+
+  // ── SCORE BERECHNUNG (Pine Script Logik) ──────────
+  let trendScore = 0;
+
+  // RSI Score (weight 25)
+  const rsiW = 25;
+  const rsiScore = rsi > 75 ? rsiW : rsi > 65 ? rsiW*0.72 : rsi > 55 ? rsiW*0.48 : rsi > 50 ? rsiW*0.24
+    : rsi < 25 ? -rsiW : rsi < 35 ? -rsiW*0.72 : rsi < 45 ? -rsiW*0.48 : -rsiW*0.24;
+  trendScore += rsiScore * 1.1;
+
+  // MA Score (weight 35)
+  const maW = 35;
+  const alignBonus = Math.abs(parseFloat(maStrength)) > 5 ? maW*0.167 : 0;
+  const maScore = maAlignBull ? maW + alignBonus : maAlignBear ? -(maW + alignBonus)
+    : price > s50 && e8 > e21 ? maW*0.6 : price < s50 && e8 < e21 ? -maW*0.6
+    : price > s50 ? maW*0.333 : -maW*0.333;
+  trendScore += maScore;
+
+  // Volatility Score (weight 20)
+  const volW = 20;
+  const momDir = momentum > 0 ? 1 : -1;
+  const hasMom = Math.abs(momentum) > 1.5;
+  const volScore = atrRatio > 1.4 && hasMom ? volW * momDir
+    : atrRatio > 1.1 && hasMom ? volW*0.6*momDir
+    : atrRatio > 1.4 ? volW*0.4*momDir
+    : atrRatio < 0.7 ? -volW*0.25 : 0;
+  trendScore += volScore;
+
+  // McClellan Breadth Score (weight 12, replaces volume)
+  const breadthW = 12;
+  let breadthScore = 0;
+  if (moVal != null) {
+    breadthScore = moVal > 60 ? breadthW : moVal > 20 ? breadthW*0.6
+      : moVal > 0 ? breadthW*0.25 : moVal < -60 ? -breadthW
+      : moVal < -20 ? -breadthW*0.6 : -breadthW*0.25;
+  } else if (p50Val != null) {
+    breadthScore = p50Val > 70 ? breadthW : p50Val > 55 ? breadthW*0.5 : p50Val < 30 ? -breadthW : p50Val < 45 ? -breadthW*0.5 : 0;
   }
-}
+  trendScore += breadthScore;
 
-// ── 4. Trend Status ───────────────────────────────────
-const TREND_LABELS=[['ema9','9 EMA'],['ema21','21 EMA'],['ema50','50 EMA'],['ema200','200 EMA'],['d3ema21','3D>21 EMA'],['w52h','52W High']];
+  // Net Highs Score (weight 8)
+  const nhW = 8;
+  let nhScore = 0;
+  if (hlVal != null) {
+    nhScore = hlVal > 50 ? nhW : hlVal > 20 ? nhW*0.625 : hlVal > 0 ? nhW*0.25
+      : hlVal < -50 ? -nhW : hlVal < -20 ? -nhW*0.625 : -nhW*0.25;
+  }
+  trendScore += nhScore;
 
-async function loadTrend() {
-  const syms=['SPY','RSP','QQQ','QQQE'];
-  const data=await getCandles(syms,'1y');
-  const result={};
-  syms.forEach(sym=>{
-    const d=data[sym]; if(!d||!d.c) return;
-    const c=clean(d.c); if(c.length<50) return;
-    const price=c[c.length-1];
-    const e9=emaCalc(c.slice(-50),9), e21=emaCalc(c.slice(-100),21);
-    const e50=emaCalc(c.slice(-200),50), e200=emaCalc(c,200);
-    const h52=Math.max(...c.slice(-252));
-    result[sym]={
-      ema9:(price-e9)/e9*100, ema21:(price-e21)/e21*100,
-      ema50:(price-e50)/e50*100, ema200:(price-e200)/e200*100,
-      d3ema21:c.slice(-3).every(v=>v>emaCalc(c.slice(-100),21)),
-      w52h:(price-h52)/h52*100,
-    };
-  });
-  return result;
-}
+  // Clamp -100 bis +100
+  trendScore = Math.max(-100, Math.min(100, trendScore));
+  const trendRound = Math.round(trendScore * 10) / 10;
 
-function renderTrend(data) {
-  const tb=document.getElementById('trendTbl'); tb.innerHTML='';
-  if(!data) return;
-  TREND_LABELS.forEach(([key,label])=>{
-    const tr=document.createElement('tr');
-    let cells=`<td>${label}</td>`;
-    ['SPY','RSP','QQQ','QQQE'].forEach(t=>{
-      const v=data[t]?data[t][key]:null;
-      if(v==null){cells+=`<td>—</td>`;return;}
-      if(typeof v==='boolean') cells+=`<td class="${v?'ty':'tn'}">${v?'Yes':'No'}</td>`;
-      else cells+=`<td class="${v>=0?'up':'dn'}">${v>=0?'+':''}${v.toFixed(2)}%</td>`;
-    });
-    tr.innerHTML=cells; tb.appendChild(tr);
-  });
-}
+  // ── Zone ─────────────────────────────────────────
+  const zone = trendScore >= 30 ? 'BULLISH' : trendScore <= -30 ? 'BEARISH' : 'NEUTRAL';
+  const zoneCls = trendScore >= 30 ? 'pos' : trendScore <= -30 ? 'neg' : 'neu';
+  const zoneColor = trendScore >= 30 ? 'var(--green)' : trendScore <= -30 ? 'var(--red)' : 'var(--yellow)';
 
-// ── 5. Power Trend ────────────────────────────────────
-async function loadPT() {
-  try {
-    const data=await getCandles(['QQQ'],'1y');
-    const c=clean(data['QQQ']?.c||[]);
-    if(c.length<50) return null;
-    const avg3=(c[c.length-1]+c[c.length-2]+c[c.length-3])/3;
-    const s20=sma(c,20),s50=sma(c,50),s200=sma(c,200);
-    return {sma3d20:avg3>s20,sma3d50:avg3>s50,sma3d200:avg3>s200,sma20_50:s20>s50,sma20_200:s20>s200,sma50_200:s50>s200};
-  } catch(e){return null;}
-}
+  badge.textContent = zone;
+  badge.className = `mc-badge ${zoneCls}`;
+  score.textContent = (trendScore >= 0 ? '+' : '') + trendRound;
+  score.style.color = zoneColor;
 
-async function loadYields() {
-  try {
-    const data=await getCandles(['^TNX','^IRX'],'5d');
-    const getLast=sym=>{const c=clean(data[sym]?.c||[]);return c.length?c[c.length-1]:null;};
-    return {y10:getLast('^TNX'), y2:getLast('^IRX')};
-  } catch(e){return {};}
-}
+  // Score Bar (0% = -100, 50% = 0, 100% = +100)
+  if (bar) {
+    const barPct = Math.round(50 + trendScore / 2);
+    const barColor = trendScore >= 30 ? 'var(--green)' : trendScore <= -30 ? 'var(--red)' : 'var(--yellow)';
+    // Bar startet bei 50% (Mitte = 0), geht links oder rechts
+    if (trendScore >= 0) {
+      bar.style.left = '50%';
+      bar.style.width = (trendScore / 2) + '%';
+      bar.style.background = barColor;
+      bar.style.borderRadius = '0 3px 3px 0';
+    } else {
+      bar.style.left = (50 + trendScore / 2) + '%';
+      bar.style.width = Math.abs(trendScore / 2) + '%';
+      bar.style.background = barColor;
+      bar.style.borderRadius = '3px 0 0 3px';
+    }
+    bar.style.position = 'absolute';
+  }
 
-function renderPT(data,yields) {
-  const el=document.getElementById('ptEl'); el.innerHTML='';
-  [['sma3d20','3D > 20 SMA'],['sma3d50','3D > 50 SMA'],['sma3d200','3D > 200 SMA'],
-   ['sma20_50','20 > 50 SMA'],['sma20_200','20 > 200 SMA'],['sma50_200','50 > 200 SMA']].forEach(([k,l])=>{
-    const d=document.createElement('div'); d.className='ptr';
-    const v=data?data[k]:null;
-    d.innerHTML=`<span class="lbl">${l}</span><span class="val ${v==null?'vnum':v?'vyes':'vno'}">${v==null?'—':v?'Yes':'No'}</span>`;
-    el.appendChild(d);
-  });
-  [['y10','US 10Y Yield'],['y2','US 02Y Yield']].forEach(([k,l])=>{
-    const d=document.createElement('div'); d.className='ptr';
-    const v=yields?yields[k]:null;
-    d.innerHTML=`<span class="lbl">${l}</span><span class="val vnum">${v!=null?v.toFixed(2):'—'}</span>`;
-    el.appendChild(d);
-  });
-}
+  // ── Komponenten-Zeilen (Pine Script Gewichte) ────
+  const comps = [
+    { label: 'MA Alignment',   weight: 35, score: maScore,     detail: maAlignBull ? 'Bull' : maAlignBear ? 'Bear' : 'Mixed', val: maStrength+'%' },
+    { label: 'RSI (14)',        weight: 25, score: rsiScore,    detail: rsi.toFixed(1), val: '' },
+    { label: 'Volatility/Mom', weight: 20, score: volScore,     detail: volStatus, val: momentum.toFixed(2)+'%' },
+    { label: 'Breadth',        weight: 12, score: breadthScore, detail: moVal != null ? 'McC. Osc.' : '%>50SMA', val: moVal != null ? moVal.toFixed(0) : p50Val != null ? p50Val.toFixed(1)+'%' : '—' },
+    { label: 'Net Highs/Lows', weight:  8, score: nhScore,     detail: '', val: hlVal != null ? (hlVal>0?'+':'')+hlVal.toFixed(0) : '—' },
+  ];
 
-// ── 6. Factors ────────────────────────────────────────
-const FAC_SYMS=['IVW','IVE','HDV','OEF','IJH','IJR','MTUM','IPO'];
-const FAC_LBLS={IVW:'Growth',IVE:'Value',HDV:'High Dividend',OEF:'Large-Cap',IJH:'Mid-Cap',IJR:'Small-Cap',MTUM:'Momentum',IPO:'IPOs'};
+  checks.innerHTML = comps.map(c => {
+    const pct = Math.round(Math.abs(c.score) / (c.weight * 1.2) * 100);
+    const col  = c.score > 0.5 ? 'var(--green)' : c.score < -0.5 ? 'var(--red)' : 'var(--muted)';
+    const bar  = `<div style="height:3px;background:var(--surface2);border-radius:2px;margin-top:3px;">
+      <div style="height:100%;width:${Math.min(100,pct)}%;background:${col};border-radius:2px;"></div></div>`;
+    return `<div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:4px 0;">
+      <div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--muted);">${c.label} <span style="font-size:9px;opacity:.6">${c.weight}%</span></div>
+        ${bar}
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;">${c.detail}</div>
+      <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:${col};text-align:right;min-width:40px;">${c.score >= 0 ? '+' : ''}${c.score.toFixed(1)}</div>
+    </div>`;
+  }).join('');
 
-async function loadFactors(spyMth) {
-  const data=await getCandles(FAC_SYMS,'1mo');
-  return FAC_SYMS.map(sym=>{
-    const c=clean(data[sym]?.c||[]);
-    if(c.length<2) return{label:FAC_LBLS[sym],val:0};
-    return{label:FAC_LBLS[sym],val:+((c[c.length-1]/c[0]-1)*100-spyMth).toFixed(2)};
-  });
-}
-
-function renderFac(data) {
-  const el=document.getElementById('facEl'); el.innerHTML='';
-  data.forEach(r=>{
-    const d=document.createElement('div'); d.className='fr';
-    d.innerHTML=`<span class="lbl">${r.label}</span><span class="val ${r.val>=0?'up':'dn'}">${r.val>=0?'+':''}${r.val.toFixed(2)}%</span>`;
-    el.appendChild(d);
-  });
-}
-
-// ── 7. Sectors ────────────────────────────────────────
-const SEC_SYMS=['RSPG','RSPN','RSPU','RSPH','RSPR','RSPM','RSPS','RSPC','RSPD','RSPT','RSPF'];
-const SEC_NAMES={RSPG:'Energy',RSPN:'Industrials',RSPU:'Utilities',RSPH:'Health Care',
-  RSPR:'Real Estate',RSPM:'Materials',RSPS:'Cons Stpl',RSPC:'Comm Svcs',
-  RSPD:'Cons Disc',RSPT:'Technology',RSPF:'Financials'};
-
-async function loadSectors(spyDay,spyWk,spyMth) {
-  const data=await getCandles(SEC_SYMS,'6mo');
-  const result={};
-  SEC_SYMS.forEach(sym=>{
-    const c=clean(data[sym]?.c||[]); if(c.length<5) return;
-    const price=c[c.length-1];
-    const day=(price/c[c.length-2]-1)*100;
-    const wk=c.length>6?(price/c[c.length-6]-1)*100:0;
-    const mth=c.length>22?(price/c[c.length-22]-1)*100:0;
-    const h52=Math.max(...c.slice(-252));
-    const rs=Math.min(100,Math.max(0,Math.round(50+(mth-spyMth)*3)));
-    result[sym]={name:SEC_NAMES[sym],price:price.toFixed(2),
-      day:+day.toFixed(2),wk:+wk.toFixed(2),mth:+mth.toFixed(2),
-      rs_day:+(day-spyDay).toFixed(2),rs_wk:+(wk-spyWk).toFixed(2),rs_mth:+(mth-spyMth).toFixed(2),
-      high52:+((price/h52-1)*100).toFixed(2),rs};
-  });
-  return result;
-}
-
-function rsGB(rs){return rs>=80?'r100':rs>=60?'r65':'r50';}
-
-function renderSectors(data) {
-  const tb=document.getElementById('secTbl'); tb.innerHTML='';
-  const rsEl=document.getElementById('rsEl'); rsEl.innerHTML='';
-  const sorted=Object.entries(data).sort((a,b)=>b[1].rs-a[1].rs);
-  sorted.forEach(([sym,s])=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td><div class="rsc ${rsClass(s.rs)}">${s.rs}</div></td><td class="tck">${sym}</td>
-      <td class="tname">${s.name}</td><td class="nc">${pct(s.day,1)}</td>
-      <td class="nc">${pct(s.wk,1)}</td><td class="nc">${pct(s.mth,1)}</td>
-      <td class="nc">${pct(s.rs_day)}</td><td class="nc">${pct(s.rs_wk)}</td>
-      <td class="nc">${pct(s.rs_mth)}</td>
-      <td class="nc"><span class="${s.high52<-3?'dn':s.high52<0?'':'up'}">${s.high52.toFixed(1)}%</span></td>`;
-    tb.appendChild(tr);
-  });
-  const topD=[...sorted].slice(0,3);
-  const topW=[...sorted].sort((a,b)=>b[1].wk-a[1].wk).slice(0,3);
-  const card=(sym,s,val,cls)=>`<div class="rsi">
-    <div class="rsb ${rsGB(s.rs)}">RS:${s.rs}</div>
-    <div class="ri"><div class="tn2">${sym}</div><div class="sc">${s.name}</div></div>
-    <div class="rr"><div class="rp">$${s.price}</div>
-    <div class="rc ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div></div>`;
-  rsEl.innerHTML='<div class="slbl">Daily</div>'+
-    topD.map(([sym,s])=>card(sym,s,s.day,s.day>=0?'up':'dn')).join('')+
-    '<div class="slbl">Weekly</div>'+
-    topW.map(([sym,s])=>card(sym,s,s.wk,s.wk>=0?'up':'dn')).join('');
+  // ── Detail-Kacheln ────────────────────────────────
+  const bItems = [
+    { label: 'RSI(14)',      val: rsi.toFixed(1),       cls: rsi>55?'up':rsi<45?'dn':'' },
+    { label: 'Momentum',     val: (momentum>0?'+':'')+momentum.toFixed(2)+'%', cls: momentum>0?'up':'dn' },
+    { label: 'Volatility',   val: volStatus,             cls: atrRatio>1.4?'dn':atrRatio<0.7?'':'up' },
+    { label: 'MA Strength',  val: (parseFloat(maStrength)>0?'+':'')+maStrength+'%', cls: parseFloat(maStrength)>0?'up':'dn' },
+    { label: 'McC. Osc.',    val: moVal!=null?moVal.toFixed(0):'—', cls: moVal!=null?moVal>0?'up':'dn':'' },
+    { label: 'SPY/200 SMA',  val: ((price/s200-1)*100>0?'+':'')+((price/s200-1)*100).toFixed(2)+'%', cls: price>s200?'up':'dn' },
+  ];
+  breadth.style.gridTemplateColumns = '1fr 1fr 1fr';
+  breadth.innerHTML = bItems.map(b =>
+    `<div class="mc-bitem"><div class="bl">${b.label}</div>
+     <div class="bv ${b.cls}">${b.val}</div></div>`
+  ).join('');
 }
 
 // ── Main Refresh ──────────────────────────────────────
