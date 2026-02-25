@@ -6,7 +6,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { type, symbols, range, fhkey } = req.query;
+  const { type, symbols, range } = req.query;
+  const fhkey = process.env.FINNHUB_KEY || req.query.fhkey || '';
 
   // ── EMA helper ──────────────────────────────────────
   function ema(arr, n) {
