@@ -1135,7 +1135,7 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
   </div>
 </div>
 
-<!-- ── Main App ── -->
+<!-- v1772004392 Main App -->
 <div id="app" style="display:none">
 
   <div class="hdr">
@@ -1461,12 +1461,15 @@ function renderMCPanel(ids, data) {
     else{bar.style.left=(50+trendScore/2)+'%';bar.style.width=Math.abs(trendScore/2)+'%';bar.style.borderRadius='3px 0 0 3px';}
     bar.style.background=zoneColor;
   }
+  const _mom = (typeof momentum==='number'&&!isNaN(momentum)) ? momentum : 0;
+  const _vs  = volStatus || 'N/A';
+  const _rsi = (typeof rsi==='number'&&!isNaN(rsi)) ? rsi : 50;
   const comps=[
-    {label:'MA Alignment',weight:35,score:maScore,detail:maAlignBull?'Bull':maAlignBear?'Bear':'Mixed',val:maStr+'%'},
-    {label:'RSI (14)',     weight:25,score:rsiScore,detail:rsi.toFixed(1),val:''},
-    {label:'Vol/Momentum', weight:20,score:volScore,detail:volStatus,val:momentum.toFixed(2)+'%'},
-    {label:'Breadth',      weight:12,score:brdScore,detail:moVal!=null?'McC.Osc':'%>50SMA',val:moVal!=null?moVal.toFixed(0):p50Val!=null?p50Val.toFixed(1)+'%':'—'},
-    {label:'Net Hi/Lo',    weight:8, score:nhScore, detail:'',val:hlVal!=null?(hlVal>0?'+':'')+hlVal.toFixed(0):'—'},
+    {label:'MA Alignment', weight:35, score:maScore||0,  detail:maAlignBull?'Bull':maAlignBear?'Bear':'Mixed', val:maStr+'%'},
+    {label:'RSI (14)',     weight:25, score:rsiScore||0, detail:_rsi.toFixed(1), val:''},
+    {label:'Vol/Momentum', weight:20, score:volScore||0, detail:_vs, val:(_mom>=0?'+':'')+_mom.toFixed(2)+'%'},
+    {label:'Breadth',      weight:12, score:brdScore||0, detail:moVal!=null?'McC.Osc':'%>50SMA', val:moVal!=null?moVal.toFixed(0):p50Val!=null?p50Val.toFixed(1)+'%':'—'},
+    {label:'Net Hi/Lo',   weight:8,  score:nhScore||0,  detail:'', val:hlVal!=null?(hlVal>0?'+':'')+hlVal.toFixed(0):'—'},
   ];
   document.getElementById(checksId).innerHTML=comps.map(comp=>{
     const pct2=Math.min(100,Math.round(Math.abs(comp.score)/(comp.weight*1.2)*100));
@@ -1484,12 +1487,12 @@ function renderMCPanel(ids, data) {
   const spy200pct=((price/s200-1)*100);
   document.getElementById(breadthId).style.gridTemplateColumns='1fr 1fr 1fr';
   document.getElementById(breadthId).innerHTML=[
-    {label:'RSI(14)',    val:rsi.toFixed(1),                               cls:rsi>55?'up':rsi<45?'dn':''},
-    {label:'Momentum',   val:(momentum>0?'+':'')+momentum.toFixed(2)+'%', cls:momentum>0?'up':'dn'},
-    {label:'Volatility', val:volStatus,                                    cls:atrRatio>1.4?'dn':atrRatio<0.7?'':'up'},
+    {label:'RSI(14)',    val:_rsi.toFixed(1),                              cls:_rsi>55?'up':_rsi<45?'dn':''},
+    {label:'Momentum',   val:(_mom>=0?'+':'')+_mom.toFixed(2)+'%',        cls:_mom>0?'up':_mom<0?'dn':''},
+    {label:'Volatility', val:_vs,                                          cls:atrRatio>1.4?'dn':atrRatio<0.7?'':'up'},
     {label:'MA Strength',val:(parseFloat(maStr)>0?'+':'')+maStr+'%',      cls:parseFloat(maStr)>0?'up':'dn'},
-    {label:'McC.Osc.',   val:moVal!=null?moVal.toFixed(0):'—',            cls:moVal!=null?moVal>0?'up':'dn':''},
-    {label:'/200 SMA',   val:(spy200pct>0?'+':'')+spy200pct.toFixed(2)+'%',cls:price>s200?'up':'dn'},
+    {label:'McC.Osc.',   val:moVal!=null?moVal.toFixed(0):'—',            cls:moVal!=null?(moVal>0?'up':'dn'):''},
+    {label:'/200 SMA',   val:(spy200pct>=0?'+':'')+spy200pct.toFixed(2)+'%',cls:price>s200?'up':'dn'},
   ].map(b=>`<div class="mc-bitem"><div class="bl">${b.label}</div><div class="bv ${b.cls}">${b.val}</div></div>`).join('');
 }
 
@@ -1721,7 +1724,16 @@ async function refreshAll() {
   }
 }
 
-function init() { refreshAll(); setInterval(refreshAll, REFRESH); }
+function init() {
+  // v1772004392 — force cache clear on version mismatch
+  const _V = 'v1772004392';
+  if (sessionStorage.getItem('dv') !== _V) {
+    sessionStorage.setItem('dv', _V);
+    if (performance.navigation?.type !== 1) { location.reload(true); return; }
+  }
+  refreshAll();
+  setInterval(refreshAll, REFRESH);
+}
 </script>
 </body>
 </html>
