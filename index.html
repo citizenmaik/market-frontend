@@ -19,6 +19,7 @@
    CSS Variables — Dark & Light Theme
 ══════════════════════════════════════════════════════ */
 :root {
+  --green-bright:#00ff9d;
   --green:#00d084; --red:#ff4466; --yellow:#f5c842; --blue:#4d9fff; --accent:#7c6af7;
   --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
   --radius:8px; --gap:10px;
@@ -31,6 +32,7 @@
 [data-theme="light"] {
   --bg:#f0f2f5; --surface:#ffffff; --surface2:#f7f8fa; --border:#e2e6ed;
   --text:#1a1d24; --muted:#8a94a6; --th-btn:#e8ecf2;
+  --green-bright:#00ff9d;
   --green:#00a864; --red:#d63050; --yellow:#c8971a; --blue:#2b7fd4; --accent:#5c4fd6;
 }
 
@@ -126,7 +128,7 @@ body {
 
 /* ══ PANELS ════════════════════════════════════════════ */
 .pnl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:visible;transition:var(--transition);}
-.ph{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.ph{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
 .ph::before{content:'';display:block;width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0;}
 .ph h3{font-family:var(--mono);font-size:12px;letter-spacing:.11em;text-transform:uppercase;font-weight:500;}
 
@@ -174,7 +176,7 @@ body {
 }
 
 /* ══ MARKET CONDITIONS ═════════════════════════════════ */
-.mc{padding:11px 13px;}
+.mc{padding:14px 16px;}
 .mc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .mc-badge{font-family:var(--mono);font-size:13px;font-weight:600;padding:4px 12px;border-radius:4px;}
 .mc-badge.neg{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3);}
@@ -194,7 +196,7 @@ body {
 .bp{background:rgba(0,208,132,.15);color:var(--green);}
 .bn{background:rgba(255,68,102,.12);color:var(--red);}
 .bu{background:rgba(90,96,112,.18);color:var(--muted);}
-.tlo{display:grid;grid-template-columns:repeat(6,1fr);padding:10px 12px;gap:4px;border-top:1px solid var(--border);}
+.tlo{display:grid;grid-template-columns:repeat(6,1fr);padding:10px 16px;gap:4px;border-top:1px solid var(--border);}
 .tlo-c{text-align:center;}
 .tlo-c .lbl{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px;text-align:center;}
 .tlo-c .val{font-family:var(--mono);font-size:12px;margin-bottom:3px;text-align:center;}
@@ -209,7 +211,7 @@ body {
 .ty{color:var(--green);font-weight:600;} .tn{color:var(--red);font-weight:600;}
 
 /* ══ POWER TREND / FACTORS ════════════════════════════ */
-.ptb,.fb{padding:12px 14px;}
+.ptb,.fb{padding:14px 16px;}
 .ptr,.fr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(125,130,145,.1);}
 .ptr:last-child,.fr:last-child{border-bottom:none;}
 .ptr .lbl,.fr .lbl{font-family:var(--mono);font-size:12px;color:var(--muted);}
@@ -218,7 +220,7 @@ body {
 
 /* ══ RS GAINERS ════════════════════════════════════════ */
 .rss{padding:10px;}
-.rsi{display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:5px;transition:background .15s;cursor:pointer;}
+.rsi{display:flex;align-items:center;gap:8px;padding:7px 16px;border-radius:5px;transition:background .15s;cursor:pointer;}
 .rsi:hover{background:var(--surface2);}
 .rsb{font-family:var(--mono);font-size:12px;font-weight:600;padding:3px 6px;border-radius:3px;min-width:50px;text-align:center;flex-shrink:0;}
 .r100{background:rgba(0,208,132,.15);color:var(--green);border:1px solid rgba(0,208,132,.3);}
@@ -230,7 +232,7 @@ body {
 .rr{text-align:right;}
 .rr .rp{font-family:var(--mono);font-size:12px;font-weight:500;}
 .rr .rc{font-family:var(--mono);font-size:13px;font-weight:600;}
-.slbl{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 4px 4px;}
+.slbl{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;}
 
 /* ══ SECTOR TABLE ══════════════════════════════════════ */
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -272,6 +274,8 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 .mc-bitem{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 6px;}
 .mc-bitem .bl{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:2px;white-space:nowrap;}
 .mc-bitem .bv{font-family:var(--mono);font-size:12px;font-weight:600;}
+.mc-bitem .bv.up{color:#00ff9d;}
+.mc-bitem .bv.dn{color:var(--red);}
 
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
 @media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -303,6 +307,7 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
    CSS Variables — Dark & Light Theme
 ══════════════════════════════════════════════════════ */
 :root {
+  --green-bright:#00ff9d;
   --green:#00d084; --red:#ff4466; --yellow:#f5c842; --blue:#4d9fff; --accent:#7c6af7;
   --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
   --radius:8px; --gap:10px;
@@ -315,6 +320,7 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 [data-theme="light"] {
   --bg:#f0f2f5; --surface:#ffffff; --surface2:#f7f8fa; --border:#e2e6ed;
   --text:#1a1d24; --muted:#8a94a6; --th-btn:#e8ecf2;
+  --green-bright:#00ff9d;
   --green:#00a864; --red:#d63050; --yellow:#c8971a; --blue:#2b7fd4; --accent:#5c4fd6;
 }
 
@@ -410,7 +416,7 @@ body {
 
 /* ══ PANELS ════════════════════════════════════════════ */
 .pnl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:visible;transition:var(--transition);}
-.ph{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.ph{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
 .ph::before{content:'';display:block;width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0;}
 .ph h3{font-family:var(--mono);font-size:12px;letter-spacing:.11em;text-transform:uppercase;font-weight:500;}
 
@@ -458,7 +464,7 @@ body {
 }
 
 /* ══ MARKET CONDITIONS ═════════════════════════════════ */
-.mc{padding:11px 13px;}
+.mc{padding:14px 16px;}
 .mc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .mc-badge{font-family:var(--mono);font-size:13px;font-weight:600;padding:4px 12px;border-radius:4px;}
 .mc-badge.neg{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3);}
@@ -478,7 +484,7 @@ body {
 .bp{background:rgba(0,208,132,.15);color:var(--green);}
 .bn{background:rgba(255,68,102,.12);color:var(--red);}
 .bu{background:rgba(90,96,112,.18);color:var(--muted);}
-.tlo{display:grid;grid-template-columns:repeat(6,1fr);padding:10px 12px;gap:4px;border-top:1px solid var(--border);}
+.tlo{display:grid;grid-template-columns:repeat(6,1fr);padding:10px 16px;gap:4px;border-top:1px solid var(--border);}
 .tlo-c{text-align:center;}
 .tlo-c .lbl{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px;text-align:center;}
 .tlo-c .val{font-family:var(--mono);font-size:12px;margin-bottom:3px;text-align:center;}
@@ -493,7 +499,7 @@ body {
 .ty{color:var(--green);font-weight:600;} .tn{color:var(--red);font-weight:600;}
 
 /* ══ POWER TREND / FACTORS ════════════════════════════ */
-.ptb,.fb{padding:12px 14px;}
+.ptb,.fb{padding:14px 16px;}
 .ptr,.fr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(125,130,145,.1);}
 .ptr:last-child,.fr:last-child{border-bottom:none;}
 .ptr .lbl,.fr .lbl{font-family:var(--mono);font-size:12px;color:var(--muted);}
@@ -502,7 +508,7 @@ body {
 
 /* ══ RS GAINERS ════════════════════════════════════════ */
 .rss{padding:10px;}
-.rsi{display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:5px;transition:background .15s;cursor:pointer;}
+.rsi{display:flex;align-items:center;gap:8px;padding:7px 16px;border-radius:5px;transition:background .15s;cursor:pointer;}
 .rsi:hover{background:var(--surface2);}
 .rsb{font-family:var(--mono);font-size:12px;font-weight:600;padding:3px 6px;border-radius:3px;min-width:50px;text-align:center;flex-shrink:0;}
 .r100{background:rgba(0,208,132,.15);color:var(--green);border:1px solid rgba(0,208,132,.3);}
@@ -514,7 +520,7 @@ body {
 .rr{text-align:right;}
 .rr .rp{font-family:var(--mono);font-size:12px;font-weight:500;}
 .rr .rc{font-family:var(--mono);font-size:13px;font-weight:600;}
-.slbl{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 4px 4px;}
+.slbl{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;}
 
 /* ══ SECTOR TABLE ══════════════════════════════════════ */
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -556,6 +562,8 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 .mc-bitem{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 6px;}
 .mc-bitem .bl{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:2px;white-space:nowrap;}
 .mc-bitem .bv{font-family:var(--mono);font-size:12px;font-weight:600;}
+.mc-bitem .bv.up{color:#00ff9d;}
+.mc-bitem .bv.dn{color:var(--red);}
 
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
 @media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -586,6 +594,7 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
    CSS Variables — Dark & Light Theme
 ══════════════════════════════════════════════════════ */
 :root {
+  --green-bright:#00ff9d;
   --green:#00d084; --red:#ff4466; --yellow:#f5c842; --blue:#4d9fff; --accent:#7c6af7;
   --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
   --radius:8px; --gap:10px;
@@ -598,6 +607,7 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 [data-theme="light"] {
   --bg:#f0f2f5; --surface:#ffffff; --surface2:#f7f8fa; --border:#e2e6ed;
   --text:#1a1d24; --muted:#8a94a6; --th-btn:#e8ecf2;
+  --green-bright:#00ff9d;
   --green:#00a864; --red:#d63050; --yellow:#c8971a; --blue:#2b7fd4; --accent:#5c4fd6;
 }
 
@@ -693,7 +703,7 @@ body {
 
 /* ══ PANELS ════════════════════════════════════════════ */
 .pnl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:visible;transition:var(--transition);}
-.ph{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.ph{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
 .ph::before{content:'';display:block;width:3px;height:12px;background:var(--accent);border-radius:2px;flex-shrink:0;}
 .ph h3{font-family:var(--mono);font-size:12px;letter-spacing:.11em;text-transform:uppercase;font-weight:500;}
 
@@ -741,7 +751,7 @@ body {
 }
 
 /* ══ MARKET CONDITIONS ═════════════════════════════════ */
-.mc{padding:11px 13px;}
+.mc{padding:14px 16px;}
 .mc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .mc-badge{font-family:var(--mono);font-size:13px;font-weight:600;padding:4px 12px;border-radius:4px;}
 .mc-badge.neg{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3);}
@@ -761,7 +771,7 @@ body {
 .bp{background:rgba(0,208,132,.15);color:var(--green);}
 .bn{background:rgba(255,68,102,.12);color:var(--red);}
 .bu{background:rgba(90,96,112,.18);color:var(--muted);}
-.tlo{display:grid;grid-template-columns:repeat(6,1fr);padding:10px 12px;gap:4px;border-top:1px solid var(--border);}
+.tlo{display:grid;grid-template-columns:repeat(6,1fr);padding:10px 16px;gap:4px;border-top:1px solid var(--border);}
 .tlo-c{text-align:center;}
 .tlo-c .lbl{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px;text-align:center;}
 .tlo-c .val{font-family:var(--mono);font-size:12px;margin-bottom:3px;text-align:center;}
@@ -776,7 +786,7 @@ body {
 .ty{color:var(--green);font-weight:600;} .tn{color:var(--red);font-weight:600;}
 
 /* ══ POWER TREND / FACTORS ════════════════════════════ */
-.ptb,.fb{padding:12px 14px;}
+.ptb,.fb{padding:14px 16px;}
 .ptr,.fr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(125,130,145,.1);}
 .ptr:last-child,.fr:last-child{border-bottom:none;}
 .ptr .lbl,.fr .lbl{font-family:var(--mono);font-size:12px;color:var(--muted);}
@@ -785,7 +795,7 @@ body {
 
 /* ══ RS GAINERS ════════════════════════════════════════ */
 .rss{padding:10px;}
-.rsi{display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:5px;transition:background .15s;cursor:pointer;}
+.rsi{display:flex;align-items:center;gap:8px;padding:7px 16px;border-radius:5px;transition:background .15s;cursor:pointer;}
 .rsi:hover{background:var(--surface2);}
 .rsb{font-family:var(--mono);font-size:12px;font-weight:600;padding:3px 6px;border-radius:3px;min-width:50px;text-align:center;flex-shrink:0;}
 .r100{background:rgba(0,208,132,.15);color:var(--green);border:1px solid rgba(0,208,132,.3);}
@@ -797,7 +807,7 @@ body {
 .rr{text-align:right;}
 .rr .rp{font-family:var(--mono);font-size:12px;font-weight:500;}
 .rr .rc{font-family:var(--mono);font-size:13px;font-weight:600;}
-.slbl{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 4px 4px;}
+.slbl{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;}
 
 /* ══ SECTOR TABLE ══════════════════════════════════════ */
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -839,6 +849,8 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 .mc-bitem{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 6px;}
 .mc-bitem .bl{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:2px;white-space:nowrap;}
 .mc-bitem .bv{font-family:var(--mono);font-size:12px;font-weight:600;}
+.mc-bitem .bv.up{color:#00ff9d;}
+.mc-bitem .bv.dn{color:var(--red);}
 
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
 @media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -1400,8 +1412,8 @@ document.getElementById('dtEl').textContent =
   new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
 
 // ── 1. Index Cards ────────────────────────────────────
-const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','IWM','BINANCE:BTCUSDT'];
-const IDX_META = {SPY:'S&P 500',RSP:'S&P 500 EQ WT',QQQ:'NASDAQ 100',QQQE:'NASDAQ 100 EQ WT',IWM:'RUSSELL 2000','BINANCE:BTCUSDT':'BITCOIN'};
+const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','IWM','BINANCE:BTCUSDT','GLD'];
+const IDX_META = {SPY:'S&P 500',RSP:'S&P 500 EQ WT',QQQ:'NASDAQ 100',QQQE:'NASDAQ 100 EQ WT',IWM:'RUSSELL 2000','BINANCE:BTCUSDT':'BITCOIN',GLD:'GOLD ETF'};
 
 async function loadIndices() {
   const [quotesData, vixRes] = await Promise.all([
@@ -1487,8 +1499,13 @@ function renderMCPanel(ids, data) {
     {label:'Net Hi/Lo',   weight:8,  score:nhScore||0,  detail:'', val:hlVal!=null?(hlVal>0?'+':'')+hlVal.toFixed(0):'—'},
   ];
   document.getElementById(checksId).innerHTML=comps.map(comp=>{
-    const pct2=Math.min(100,Math.round(Math.abs(comp.score)/(comp.weight*1.2)*100));
-    const col2=comp.score>2?'var(--green)':comp.score<-2?'var(--red)':comp.score>0.1?'rgba(0,208,132,.5)':comp.score<-0.1?'rgba(255,68,102,.5)':'var(--muted)';
+    // Balkenbreite: Score-basiert, aber min 15% wenn Wert vorhanden
+    const rawPct=Math.abs(comp.score)/(comp.weight*1.2)*100;
+    // Für Vol/Momentum: Momentum-% direkt als Skalierung nutzen (×10 Faktor)
+    const momPct = comp.label==='Vol/Momentum' && comp.val ?
+      Math.min(100, Math.abs(parseFloat(comp.val))*10) : rawPct;
+    const pct2=Math.min(100,Math.round(Math.max(rawPct, momPct)));
+    const col2=comp.score>2?'#00ff9d':comp.score<-2?'var(--red)':comp.score>0.1?'rgba(0,208,132,.5)':comp.score<-0.1?'rgba(255,68,102,.5)':'var(--muted)';
     return `<div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px;padding:3px 0;">
       <div>
         <div style="font-family:var(--mono);font-size:9px;color:var(--muted);">${comp.label} <span style="font-size:7px;opacity:.6">${comp.weight}%</span></div>
