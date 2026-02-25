@@ -264,6 +264,10 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 .rsec{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .rrs{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 
+.mc-bitem{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 6px;}
+.mc-bitem .bl{font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:1px;white-space:nowrap;}
+.mc-bitem .bv{font-family:var(--mono);font-size:10px;font-weight:600;}
+
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
 @media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -539,6 +543,10 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 .rsec{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .rrs{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 
+.mc-bitem{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 6px;}
+.mc-bitem .bl{font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:1px;white-space:nowrap;}
+.mc-bitem .bv{font-family:var(--mono);font-size:10px;font-weight:600;}
+
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
 @media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -812,6 +820,10 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 
 .rsec{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .rrs{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+
+.mc-bitem{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 6px;}
+.mc-bitem .bl{font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:1px;white-space:nowrap;}
+.mc-bitem .bv{font-family:var(--mono);font-size:10px;font-weight:600;}
 
 /* ══ MOBILE RESPONSIVE ═════════════════════════════════ */
 @media(max-width:1400px){}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -1400,7 +1412,9 @@ async function loadIndices() {
 // ── 2. Market Conditions (Pine Score) ────────────────
 // Generische Funktion für SPY, RSP, IWM, QQQE
 async function calcMCScore(closes, breadthData) {
-  const c=closes, price=c[c.length-1], c8ago=c[c.length-9]||c[0];
+  const c=closes;
+  if (!c || c.length < 50) return null;
+  const price=c[c.length-1], c8ago=c[c.length-9]||c[0];
   const e8=emaCalc(c.slice(-40),8), e21=emaCalc(c.slice(-100),21);
   const s50=sma(c,50), s200=sma(c,200);
   const calcRSI=(arr,n=14)=>{let g=0,l=0;for(let i=arr.length-n;i<arr.length;i++){const d=arr[i]-arr[i-1];d>0?g+=d:l+=Math.abs(d);}return 100-100/(1+(g/n)/(l/n+1e-10));};
@@ -1491,7 +1505,7 @@ async function loadAllMarketConditions(candleData, breadthData) {
     const c=clean(candleData[syms[i]]?.c||[]);
     if(c.length<50) continue;
     const scores=await calcMCScore(c, breadthData);
-    renderMCPanel(idList[i], scores);
+    if(scores) renderMCPanel(idList[i], scores);
   }
 }
 
@@ -1669,6 +1683,7 @@ async function refreshAll() {
     ]);
 
     const breadthData = {moVal:breadthRaw.nymo??null, p50Val:breadthRaw.pct50??null, hlVal:breadthRaw.nyhl??null};
+    console.log('BreadthData:', breadthData, 'raw:', breadthRaw);
 
     // SPY perf for RS calculations
     const spyC=clean(candleData['SPY']?.c||[]);
