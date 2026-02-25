@@ -1143,13 +1143,85 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
   <div class="idx" id="idxRow"></div>
 
   <!-- ── Zeile 1: 3× Market Conditions ── -->
-  <div class="r1">
+    <div class="r1">
 
-    <d
+    <div class="pnl">
+      <div class="ph"><h3>Market Conditions QQQE</h3></div>
+      <div class="mc">
+        <div class="mc-row" style="margin-bottom:10px;">
+          <div class="mc-badge neg" id="mcBadge3">—</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted);">SCORE</div>
+            <div id="mcScore3" style="font-family:var(--mono);font-size:17px;font-weight:700;color:var(--text);">—</div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;position:relative;">
+            <div style="position:absolute;left:50%;top:0;width:1px;height:100%;background:var(--border);"></div>
+            <div id="mcBar3" style="height:100%;position:absolute;background:var(--muted);border-radius:3px;transition:width .4s,background .4s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px;">
+            <span>-100</span><span>BEARISH</span><span>0</span><span>BULLISH</span><span>+100</span>
+          </div>
+        </div>
+        <div id="mcChecks3" style="display:flex;flex-direction:column;gap:4px;"></div>
+        <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;">
+          <div id="mcBreadth3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;"></div>
+        </div>
+      </div>
+    </div>
 
-    <d
+    <div class="pnl">
+      <div class="ph"><h3>Market Conditions RSP</h3></div>
+      <div class="mc">
+        <div class="mc-row" style="margin-bottom:10px;">
+          <div class="mc-badge neg" id="mcBadge">—</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted);">SCORE</div>
+            <div id="mcScore" style="font-family:var(--mono);font-size:17px;font-weight:700;color:var(--text);">—</div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;position:relative;">
+            <div style="position:absolute;left:50%;top:0;width:1px;height:100%;background:var(--border);"></div>
+            <div id="mcBar" style="height:100%;position:absolute;background:var(--muted);border-radius:3px;transition:width .4s,background .4s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px;">
+            <span>-100</span><span>BEARISH</span><span>0</span><span>BULLISH</span><span>+100</span>
+          </div>
+        </div>
+        <div id="mcChecks" style="display:flex;flex-direction:column;gap:4px;"></div>
+        <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;">
+          <div id="mcBreadth" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;"></div>
+        </div>
+      </div>
+    </div>
 
-    <d
+    <div class="pnl">
+      <div class="ph"><h3>Market Conditions IWM</h3></div>
+      <div class="mc">
+        <div class="mc-row" style="margin-bottom:10px;">
+          <div class="mc-badge neg" id="mcBadge2">—</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted);">SCORE</div>
+            <div id="mcScore2" style="font-family:var(--mono);font-size:17px;font-weight:700;color:var(--text);">—</div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;position:relative;">
+            <div style="position:absolute;left:50%;top:0;width:1px;height:100%;background:var(--border);"></div>
+            <div id="mcBar2" style="height:100%;position:absolute;background:var(--muted);border-radius:3px;transition:width .4s,background .4s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px;">
+            <span>-100</span><span>BEARISH</span><span>0</span><span>BULLISH</span><span>+100</span>
+          </div>
+        </div>
+        <div id="mcChecks2" style="display:flex;flex-direction:column;gap:4px;"></div>
+        <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;">
+          <div id="mcBreadth2" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;"></div>
+        </div>
+      </div>
+    </div>
 
   </div>
 
@@ -1408,11 +1480,12 @@ function renderMCPanel(ids, data) {
 }
 
 async function loadAllMarketConditions(candleData, breadthData) {
-  const syms=['RSP','IWM','QQQE'];
+  // Order matches HTML: QQQE=badge3, RSP=badge, IWM=badge2
+  const syms=['QQQE','RSP','IWM'];
   const idList=[
+    {badgeId:'mcBadge3',scoreId:'mcScore3',barId:'mcBar3',checksId:'mcChecks3',breadthId:'mcBreadth3'},
     {badgeId:'mcBadge', scoreId:'mcScore', barId:'mcBar', checksId:'mcChecks', breadthId:'mcBreadth'},
     {badgeId:'mcBadge2',scoreId:'mcScore2',barId:'mcBar2',checksId:'mcChecks2',breadthId:'mcBreadth2'},
-    {badgeId:'mcBadge3',scoreId:'mcScore3',barId:'mcBar3',checksId:'mcChecks3',breadthId:'mcBreadth3'},
   ];
   for(let i=0;i<syms.length;i++){
     const c=clean(candleData[syms[i]]?.c||[]);
