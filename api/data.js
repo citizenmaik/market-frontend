@@ -91,12 +91,13 @@ export default async function handler(req, res) {
     if (type === 'breadth') {
       // Fetch NYSE Advance, Decline, New Highs, New Lows
       // ^ANYA = Advances, ^ANYD = Declines, ^BPNYA = Bullish % (bonus)
-      const [advData, decData, hlData, nya50Data, nya200Data] = await Promise.allSettled([
-        yhFetch('^ANYA',   '6mo'),  // NYSE Advances
-        yhFetch('^ANYD',   '6mo'),  // NYSE Declines
-        yhFetch('^NYHL',   '6mo'),  // Net New Highs
-        yhFetch('^NYA50R', '3mo'),  // % above 50 SMA (direct if available)
-        yhFetch('^NYA200R','3mo'),  // % above 200 SMA (direct if available)
+      // Fetch McClellan directly + breadth indicators
+      const [nymoData, nasiData, nyhlData, nya50Data, nya200Data] = await Promise.allSettled([
+        yhFetch('^NYMO',   '5d'),   // McClellan Oscillator (direct)
+        yhFetch('^NASI',   '5d'),   // McClellan Summation (direct)
+        yhFetch('^NYHL',   '5d'),   // Net New Highs
+        yhFetch('^NYA50R', '3mo'),  // % above 50 SMA
+        yhFetch('^NYA200R','3mo'),  // % above 200 SMA
       ]);
 
       const getClean = result => {
@@ -104,41 +105,24 @@ export default async function handler(req, res) {
         return result.value.c.filter(v => v != null && !isNaN(v));
       };
 
-      const advArr  = getClean(advData);
-      const decArr  = getClean(decData);
-      const hlArr   = getClean(hlData);
+      const nymoArr  = getClean(nymoData);
+      const nasiArr  = getClean(nasiData);
+      const hlArr    = getClean(nyhlData);
       const nya50Arr = getClean(nya50Data);
       const nya200Arr= getClean(nya200Data);
 
       let nymo = null, nasi = null, nyhl = null, pct50 = null, pct200 = null;
 
-      // Calculate McClellan from Advance/Decline if we got the data
-      if (advArr.length > 39 && decArr.length > 39) {
-        const len = Math.min(advArr.length, decArr.length);
-        // Align to same length (take from end)
-        const adv = advArr.slice(-len);
-        const dec = decArr.slice(-len);
-        const netAdv = adv.map((a, i) => a - dec[i]);
+      // McClellan Oscillator — direct from Yahoo ^NYMO
+      if (nymoArr.length > 0) nymo = +nymoArr[nymoArr.length - 1].toFixed(2);
 
-        // McClellan Oscillator = EMA(19) - EMA(39) of net advances
-        const ema19 = ema(netAdv, 19);
-        const ema39 = ema(netAdv, 39);
-        const oscillator = ema19.map((v, i) => v - ema39[i]);
-
-        nymo = +oscillator[oscillator.length - 1].toFixed(2);
-
-        // McClellan Summation = cumulative sum of oscillator (starting from -1000 as conventional base)
-        let sum = 0;
-        const summation = oscillator.map(v => { sum += v; return sum; });
-        nasi = +summation[summation.length - 1].toFixed(0);
-      }
+      // McClellan Summation — direct from Yahoo ^NASI
+      if (nasiArr.length > 0) nasi = +nasiArr[nasiArr.length - 1].toFixed(0);
 
       // Net New Highs
-      if (hlArr.length > 0) {
-        nyhl = +hlArr[hlArr.length - 1].toFixed(0);
-      }
+      if (hlArr.length > 0) nyhl = +hlArr[hlArr.length - 1].toFixed(0);
 
-      // % above SMA — use direct Yahoo data if available, else fallback
+      // % above SMA — direct Yahoo data
       if (nya50Arr.length > 0)  pct50  = +nya50Arr[nya50Arr.length - 1].toFixed(1);
       if (nya200Arr.length > 0) pct200 = +nya200Arr[nya200Arr.length - 1].toFixed(1);
 
