@@ -1391,7 +1391,7 @@ function renderMCPanel(ids, data) {
         <div style="height:2px;background:var(--surface2);border-radius:2px;margin-top:2px;">
           <div style="height:100%;width:${pct2}%;background:${col2};border-radius:2px;"></div></div>
       </div>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right;white-space:nowrap;">${comp.detail}</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right;white-space:nowrap;">${comp.detail}${comp.val?' '+comp.val:''}</div>
       <div style="font-family:var(--mono);font-size:10px;font-weight:600;color:${col2};text-align:right;min-width:32px;">${comp.score>=0?'+':''}${comp.score.toFixed(1)}</div>
     </div>`;
   }).join('');
@@ -1595,7 +1595,7 @@ async function refreshAll() {
       fetch(`${API}?type=breadth`).then(r=>r.json()).catch(()=>({}))
     ]);
 
-    const breadthData = {moVal:breadthRaw.nymo||null, p50Val:breadthRaw.pct50||null, hlVal:breadthRaw.nyhl||null};
+    const breadthData = {moVal:breadthRaw.nymo??null, p50Val:breadthRaw.pct50??null, hlVal:breadthRaw.nyhl??null};
 
     // SPY perf for RS calculations
     const spyC=clean(candleData['SPY']?.c||[]);
