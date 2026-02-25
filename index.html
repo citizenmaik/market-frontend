@@ -100,7 +100,7 @@ body {
 
 /* ══ LAYOUT ════════════════════════════════════════════ */
 /* Zeile 1: Market Conditions | Performance | Trend (full width) */
-.r1{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 /* Zeile 2: Power Trend | Factors | RS Gainers (full width) */
 .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -112,7 +112,7 @@ body {
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 }
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1200px){.r1{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r1b{grid-template-columns:1fr 1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
   .r1 .pnl:nth-child(3){grid-column:1/-1;}
   .rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
@@ -125,7 +125,7 @@ body {
 }
 @media(max-width:768px){
   .idx{display:grid;grid-template-columns:repeat(8,1fr);gap:var(--gap);margin-bottom:var(--gap);}
-  .r1{grid-template-columns:1fr!important;}
+  .r1{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
   .rtd,.rsec,.rrs{display:block;}
   .r1b{grid-template-columns:1fr 1fr!important;}
 }
@@ -246,7 +246,7 @@ td{padding:9px 12px;white-space:nowrap;vertical-align:middle;}
 }.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
-@media(max-width:1200px){.r1{grid-template-columns:1fr;}.r1b{grid-template-columns:1fr 1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
+@media(max-width:1200px){.r1{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}.r1b{grid-template-columns:1fr 1fr;}}.r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}.r1 .pnl:nth-child(3){grid-column:1/-1;}.rtd{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .r1b{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}}
 }
