@@ -409,6 +409,30 @@ if (new URLSearchParams(location.search).get('key')) {
   localStorage.setItem('fh_key', new URLSearchParams(location.search).get('key'));
   history.replaceState({}, '', location.pathname); // Key aus URL entfernen
 }
+// ── Helpers ──────────────────────────────────────────
+function clean(arr) { return (arr||[]).filter(v=>v!=null&&!isNaN(v)); }
+function sma(arr,n)  { const s=arr.slice(-n); return s.length?s.reduce((a,b)=>a+b,0)/s.length:0; }
+function emaCalc(arr,n){ if(!arr||!arr.length)return 0; const k=2/(n+1);let e=arr[0];for(let i=1;i<arr.length;i++)e=arr[i]*k+e*(1-k);return e;}
+function setStatus(state,text) {
+  const pill=document.getElementById('pill');
+  const dot =document.getElementById('pillDot');
+  const txt =document.getElementById('pillTxt');
+  if(pill) pill.className=`pill ${state}`;
+  if(dot)  dot.className=`dot${state==='live'?' pulse':''}`;
+  if(txt)  txt.textContent=text;
+}
+function pct(v,d=2) {
+  if(v==null||isNaN(v)) return '—';
+  return `<span class="${v>=0?'up':'dn'}">${v>=0?'+':''}${v.toFixed(d)}%</span>`;
+}
+function bdg(v) {
+  if(v==null) return '<span class="bdg bu">—</span>';
+  return v>0?'<span class="bdg bp">Positive</span>':v<0?'<span class="bdg bn">Negative</span>':'<span class="bdg bu">Neutral</span>';
+}
+function rsClass(rs){ return rs>=80?'rh':rs>=60?'rm':rs>=40?'rl':'rvl'; }
+function rsGB(rs)   { return rs>=80?'r100':rs>=60?'r65':'r50'; }
+
+
 
 // Kill SW
 if ('serviceWorker' in navigator) {
