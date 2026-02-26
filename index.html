@@ -478,6 +478,25 @@ async function getCandles(symbols, range='1y') {
   return out;
 }
 
+
+// ── Constants ─────────────────────────────────────────
+const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','IWM','BINANCE:BTCUSDT','GLD'];
+const IDX_META = {SPY:'S&P 500',RSP:'S&P 500 EQ WT',QQQ:'NASDAQ 100',QQQE:'NASDAQ 100 EQ WT',IWM:'RUSSELL 2000','BINANCE:BTCUSDT':'BITCOIN',GLD:'GOLD ETF'};
+
+const SEC_SYMS  = ['RSPG','RSPN','RSPU','RSPH','RSPR','RSPM','RSPS','RSPC','RSPD','RSPT','RSPF'];
+const SEC_NAMES = {RSPG:'Energy',RSPN:'Industrials',RSPU:'Utilities',RSPH:'Health Care',
+  RSPR:'Real Estate',RSPM:'Materials',RSPS:'Cons Stpl',RSPC:'Comm Svcs',RSPD:'Cons Disc',RSPT:'Technology',RSPF:'Financials'};
+
+const IND_SYMS  = ['IEO','IEZ','XME','WOOD','XAR','ROAD','XHB','CARZ','PBJ','XPH','IHI','IHF','KBE','KIE','IAI','SOXX','IGV','XNTK','SOCL','IYZ','IDU','XLRE'];
+const IND_NAMES = {IEO:'Oil & Gas E&P',IEZ:'Oil Equipment',XME:'Metals & Mining',WOOD:'Paper & Forest',
+  XAR:'Aerospace & Def',ROAD:'Transportation',XHB:'Homebuilders',CARZ:'Auto & Parts',PBJ:'Food & Beverage',
+  XPH:'Pharma',IHI:'Medical Devices',IHF:'Managed Care',KBE:'Banks',KIE:'Insurance',IAI:'Brokers',
+  SOXX:'Semiconductors',IGV:'Software',XNTK:'Networking/Equip',SOCL:'Social Media',IYZ:'Telecom',
+  IDU:'Electric Utilities',XLRE:'Real Estate'};
+
+const FAC_SYMS = ['IVW','IVE','HDV','OEF','IJH','IJR','MTUM','IPO'];
+const FAC_LBLS = {IVW:'Growth',IVE:'Value',HDV:'High Dividend',OEF:'Large-Cap',IJH:'Mid-Cap',IJR:'Small-Cap',MTUM:'Momentum',IPO:'IPOs'};
+
 async function loadIndices() {
   const [quotesData, vixRes] = await Promise.all([
     getQuotes(IDX_SYMS),
@@ -671,8 +690,6 @@ function renderPT(data,yields) {
 }
 
 // ── 5. Factors ────────────────────────────────────────
-const FAC_SYMS=['IVW','IVE','HDV','OEF','IJH','IJR','MTUM','IPO'];
-const FAC_LBLS={IVW:'Growth',IVE:'Value',HDV:'High Dividend',OEF:'Large-Cap',IJH:'Mid-Cap',IJR:'Small-Cap',MTUM:'Momentum',IPO:'IPOs'};
 
 async function loadFactors(candleData, spyMth) {
   return FAC_SYMS.map(sym=>{
@@ -692,13 +709,8 @@ function renderFac(data) {
 }
 
 // ── 6. Sectors ────────────────────────────────────────
-const SEC_SYMS=['RSPG','RSPN','RSPU','RSPH','RSPR','RSPM','RSPS','RSPC','RSPD','RSPT','RSPF'];
-const SEC_NAMES={RSPG:'Energy',RSPN:'Industrials',RSPU:'Utilities',RSPH:'Health Care',
-  RSPR:'Real Estate',RSPM:'Materials',RSPS:'Cons Stpl',RSPC:'Comm Svcs',RSPD:'Cons Disc',RSPT:'Technology',RSPF:'Financials'};
 
 // ── 7. Industry Groups ────────────────────────────────
-const IND_SYMS=['IEO', 'IEZ', 'XME', 'WOOD', 'XAR', 'ROAD', 'XHB', 'CARZ', 'PBJ', 'XPH', 'IHI', 'IHF', 'KBE', 'KIE', 'IAI', 'SOXX', 'IGV', 'XNTK', 'SOCL', 'IYZ', 'IDU', 'XLRE'];
-const IND_NAMES={'IEO': 'Oil & Gas E&P', 'IEZ': 'Oil Equipment', 'XME': 'Metals & Mining', 'WOOD': 'Paper & Forest', 'XAR': 'Aerospace & Def', 'ROAD': 'Transportation', 'XHB': 'Homebuilders', 'CARZ': 'Auto & Parts', 'PBJ': 'Food & Beverage', 'XPH': 'Pharma', 'IHI': 'Medical Devices', 'IHF': 'Managed Care', 'KBE': 'Banks', 'KIE': 'Insurance', 'IAI': 'Brokers', 'SOXX': 'Semiconductors', 'IGV': 'Software', 'XNTK': 'Networking/Equip', 'SOCL': 'Social Media', 'IYZ': 'Telecom', 'IDU': 'Electric Utilities', 'XLRE': 'Real Estate'};
 
 function calcSectorData(sym, c, spyDay, spyWk, spyMth, nameMap) {
   if(c.length<5) return null;
