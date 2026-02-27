@@ -258,6 +258,40 @@ body {
   <div class="err" id="errBanner">⚠ API nicht erreichbar — statische Fallback-Daten</div>
   <div class="idx" id="idxRow"></div>
 
+  <!-- ── Overall Market Indicator ── -->
+  <div style="margin-bottom:var(--gap);">
+    <div class="pnl">
+      <div class="ph"><h3>Overall Market Indicator</h3></div>
+      <div style="display:grid;grid-template-columns:220px 1fr;align-items:stretch;">
+        <!-- Gauge -->
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;border-right:1px solid var(--border);">
+          <svg width="170" height="95" viewBox="0 0 170 95">
+            <path d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--surface2)" stroke-width="14" stroke-linecap="round"/>
+            <path id="gaugeArc" d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--muted)" stroke-width="14" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="220" style="transition:stroke-dashoffset .8s ease,stroke .8s ease;"/>
+            <text id="gaugeVal" x="85" y="78" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="22" font-weight="700" fill="var(--muted)">—</text>
+          </svg>
+          <div style="display:flex;justify-content:space-between;width:170px;font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:-4px;">
+            <span>BEARISH</span><span>NEUTRAL</span><span>BULLISH</span>
+          </div>
+          <div id="gaugeLbl" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);margin-top:10px;letter-spacing:.12em;">—</div>
+        </div>
+        <!-- Tabelle -->
+        <div>
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border);">
+                <th style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 16px;text-align:left;font-weight:500;letter-spacing:.08em;">KOMPONENTE</th>
+                <th style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 16px;text-align:right;font-weight:500;letter-spacing:.08em;">SCORE</th>
+                <th style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 16px;text-align:right;font-weight:500;letter-spacing:.08em;">GEWICHT</th>
+              </tr>
+            </thead>
+            <tbody id="overallTbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Zeile 1: 3× Market Conditions ── -->
     <div class="r1">
 
