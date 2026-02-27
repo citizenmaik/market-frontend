@@ -232,6 +232,16 @@ body {
   #rsEl, #rsIndEl { grid-template-columns: 1fr !important; }
   .rss { border-right:none; border-bottom:1px solid var(--border); }
 }
+
+/* ── Overall Indicator responsive ── */
+.omi-wrap { display:grid; grid-template-columns: 220px 1fr; align-items:stretch; }
+.omi-gauge { display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:20px 16px; border-right:1px solid var(--border); }
+.omi-table { overflow-x:hidden; }
+@media (max-width: 600px) {
+  .omi-wrap { grid-template-columns: 1fr; }
+  .omi-gauge { border-right:none; border-bottom:1px solid var(--border); padding:16px; }
+}
 </style>
 </head>
 
@@ -262,9 +272,9 @@ body {
   <div style="margin-bottom:var(--gap);">
     <div class="pnl">
       <div class="ph"><h3>Overall Market Indicator</h3></div>
-      <div style="display:grid;grid-template-columns:min(220px,35%) 1fr;align-items:stretch;">
+      <div class="omi-wrap">
         <!-- Gauge -->
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;border-right:1px solid var(--border);">
+        <div class="omi-gauge">
           <svg width="170" height="95" viewBox="0 0 170 95">
             <path d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--surface2)" stroke-width="14" stroke-linecap="round"/>
             <path id="gaugeArc" d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--muted)" stroke-width="14" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="220" style="transition:stroke-dashoffset .8s ease,stroke .8s ease;"/>
@@ -276,7 +286,7 @@ body {
           <div id="gaugeLbl" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);margin-top:10px;letter-spacing:.12em;">—</div>
         </div>
         <!-- Tabelle -->
-        <div>
+        <div class="omi-table">
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="border-bottom:1px solid var(--border);">
