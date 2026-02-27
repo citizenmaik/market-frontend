@@ -497,6 +497,95 @@ const IND_NAMES = {SMH:'Semiconductors',FAN:'Wind Energy',LIT:'Lithium & Battery
 const FAC_SYMS = ['IVW','IVE','HDV','OEF','IJH','IJR','MTUM','IPO'];
 const FAC_LBLS = {IVW:'Growth',IVE:'Value',HDV:'High Dividend',OEF:'Large-Cap',IJH:'Mid-Cap',IJR:'Small-Cap',MTUM:'Momentum',IPO:'IPOs'};
 
+
+
+
+// ── Overall Market Indicator ─────────────────────────
+function calcOverall(secData, indData, trendData, vix, mcScores) {
+  // 1. Sektor-Breadth (30%) — max ±30
+  const secs = Object.values(secData);
+  const n_sec = secs.length;
+  const pct_sec_50 = secs.filter(s=>s.above50).length / n_sec;
+  const pct_sec_rs = secs.filter(s=>s.rs>=60).length / n_sec;
+  const score_sec  = (pct_sec_50*2-1)*15 + (pct_sec_rs*2-1)*15;
+
+  // 2. Industry-Breadth (30%) — max ±30
+  const inds = Object.values(indData);
+  const n_ind = inds.length;
+  const pct_ind_50 = inds.filter(i=>i.above50).length / n_ind;
+  const pct_ind_rs = inds.filter(i=>i.rs>=60).length / n_ind;
+  const score_ind  = (pct_ind_50*2-1)*15 + (pct_ind_rs*2-1)*15;
+
+  // 3. Trend Status (25%) — max ±25
+  const syms = ['SPY','RSP','QQQ','QQQE','IWM'];
+  const keys = ['ema9','ema21','ema50','ema200','d3ema21','w52h'];
+  let pos=0, total=0;
+  syms.forEach(sym => {
+    keys.forEach(k => {
+      const v = trendData[sym]?.[k];
+      if (v==null) return;
+      total++;
+      if (typeof v==='boolean' ? v : v>=0) pos++;
+    });
+  });
+  const score_trend = total>0 ? (pos/total*2-1)*25 : 0;
+
+  // 4. VIX (5%) — max ±5
+  const score_vix = vix==null?0 : vix<15?5 : vix<18?2.5 : vix<22?0 : vix<28?-2.5 : -5;
+
+  // 5. MC-Scores (10%) — max ±10
+  const avg_mc = mcScores.length ? mcScores.reduce((a,b)=>a+b,0)/mcScores.length : 0;
+  const score_mc = (avg_mc/100)*10;
+
+  const gesamt = Math.max(-100, Math.min(100, score_sec+score_ind+score_trend+score_vix+score_mc));
+  return {
+    gesamt,
+    rows: [
+      {lbl:`Sektor-Breadth`,          score:score_sec,   weight:'30%', detail:`${Math.round(pct_sec_50*100)}% >50SMA, ${Math.round(pct_sec_rs*100)}% RS≥60`},
+      {lbl:`Industry-Breadth`,        score:score_ind,   weight:'30%', detail:`${Math.round(pct_ind_50*100)}% >50SMA, ${Math.round(pct_ind_rs*100)}% RS≥60`},
+      {lbl:`Trend Status`,            score:score_trend, weight:'25%', detail:`${pos}/${total} positiv`},
+      {lbl:`VIX ${vix!=null?'('+vix.toFixed(2)+')':''}`, score:score_vix, weight:'5%', detail:''},
+      {lbl:`MC-Scores Ø`,             score:score_mc,    weight:'10%', detail:`Ø ${avg_mc.toFixed(1)}`},
+    ]
+  };
+}
+
+function renderOverall(result, vix) {
+  const {gesamt, rows} = result;
+  const zone  = gesamt>=60?'STRONGLY BULLISH':gesamt>=30?'BULLISH':gesamt<=-60?'STRONGLY BEARISH':gesamt<=-30?'BEARISH':'NEUTRAL';
+  const color = gesamt>=30?'var(--green)':gesamt<=-30?'var(--red)':'var(--yellow)';
+
+  // Gauge: semicircle 204px arc, map -100..+100 → offset 204..0
+  const pct    = (gesamt+100)/200;
+  const offset = 204 - pct*204;
+  const arc = document.getElementById('gaugeArc');
+  const val = document.getElementById('gaugeVal');
+  const lbl = document.getElementById('gaugeLbl');
+  if(arc){ arc.style.strokeDashoffset=offset; arc.style.stroke=color; }
+  if(val){ val.textContent=(gesamt>=0?'+':'')+gesamt.toFixed(1); val.setAttribute('fill',color); }
+  if(lbl){ lbl.textContent=zone; lbl.style.color=color; }
+
+  // Table
+  const tb = document.getElementById('overallTbl');
+  if(!tb) return;
+  tb.innerHTML = rows.map(r => {
+    const c = r.score>0?'var(--green)':r.score<0?'var(--red)':'var(--muted)';
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="font-family:var(--mono);font-size:12px;padding:9px 16px;color:var(--text);">
+        ${r.lbl}
+        ${r.detail?`<span style="font-size:10px;color:var(--muted);margin-left:6px;">${r.detail}</span>`:''}
+      </td>
+      <td style="font-family:var(--mono);font-size:13px;font-weight:600;padding:9px 16px;text-align:right;color:${c};">${r.score>=0?'+':''}${r.score.toFixed(1)}</td>
+      <td style="font-family:var(--mono);font-size:12px;padding:9px 16px;text-align:right;color:var(--muted);">${r.weight}</td>
+    </tr>`;
+  }).join('') +
+  `<tr style="border-top:2px solid var(--border);">
+    <td style="font-family:var(--mono);font-size:13px;font-weight:700;padding:10px 16px;color:var(--text);">GESAMT</td>
+    <td style="font-family:var(--mono);font-size:15px;font-weight:700;padding:10px 16px;text-align:right;color:${color};">${gesamt>=0?'+':''}${gesamt.toFixed(1)}</td>
+    <td style="font-family:var(--mono);font-size:12px;font-weight:700;padding:10px 16px;text-align:right;color:${color};">${zone}</td>
+  </tr>`;
+}
+
 async function loadIndices() {
   const [quotesData, vixRes] = await Promise.all([
     getQuotes(IDX_SYMS),
@@ -611,18 +700,25 @@ function renderMCPanel(ids, data) {
 
 
 async function loadAllMarketConditions(candleData, breadthData) {
-  // Order matches HTML: QQQE=badge3, RSP=badge, IWM=badge2
   const syms=['QQQE','RSP','IWM'];
   const idList=[
     {badgeId:'mcBadge3',scoreId:'mcScore3',barId:'mcBar3',checksId:'mcChecks3',breadthId:'mcBreadth3'},
     {badgeId:'mcBadge', scoreId:'mcScore', barId:'mcBar', checksId:'mcChecks', breadthId:'mcBreadth'},
     {badgeId:'mcBadge2',scoreId:'mcScore2',barId:'mcBar2',checksId:'mcChecks2',breadthId:'mcBreadth2'},
   ];
+  const allScores = [];
   for(let i=0;i<syms.length;i++){
     const c=clean(candleData[syms[i]]?.c||[]);
     if(c.length<50) continue;
     const scores=await calcMCScore(c, breadthData);
-    if(scores) renderMCPanel(idList[i], scores);
+    if(scores) {
+      renderMCPanel(idList[i], scores);
+      allScores.push(scores.trendScore);
+    }
+  }
+  if (allScores.length) {
+    const ovResult = calcOverall(window._secArr||{}, window._indArr||{}, window._trendData||{}, window._vix||null, allScores);
+    renderOverall(ovResult);
   }
 }
 
@@ -720,10 +816,11 @@ function calcSectorData(sym, c, spyDay, spyWk, spyMth, nameMap) {
   const mth=c.length>22?(price/c[c.length-22]-1)*100:0;
   const h52=Math.max(...c.slice(-252));
   const rs=Math.min(100,Math.max(0,Math.round(50+(mth-spyMth)*3)));
+  const s50c=sma(c,50);
   return{name:nameMap[sym]||sym,price:price.toFixed(2),
     day:+day.toFixed(2),wk:+wk.toFixed(2),mth:+mth.toFixed(2),
     rs_day:+(day-spyDay).toFixed(2),rs_wk:+(wk-spyWk).toFixed(2),rs_mth:+(mth-spyMth).toFixed(2),
-    high52:+((price/h52-1)*100).toFixed(2),rs};
+    high52:+((price/h52-1)*100).toFixed(2),rs,above50:price>s50c};
 }
 
 async function loadSectors(candleData, spyDay, spyWk, spyMth) {
@@ -813,6 +910,11 @@ async function refreshAll() {
     ]);
 
     renderTrend(trend);
+    // Overall Market Indicator
+    const secArr = Object.fromEntries(Object.entries(sectors).map(([k,v])=>([k,{rs:v.rs,above50:v.above50}])));
+    const indArr = Object.fromEntries(Object.entries(industries).map(([k,v])=>([k,{rs:v.rs,above50:v.above50}])));
+    const vixVal = idxData.vix ?? null;
+    window._secArr=secArr; window._indArr=indArr; window._trendData=trend; window._vix=vixVal;
     renderPT(pt, yields);
     renderFac(factors);
     const secSorted = renderTable('secTbl', sectors);
