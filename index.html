@@ -364,6 +364,45 @@ body {
     </div>
   </div>
 
+
+  <!-- ── Zeile 4: Sector Leaders ── -->
+  <div class="rsec">
+    <div class="pnl">
+      <div class="ph"><h3>Sector Leaders</h3></div>
+      <div class="tw"><table>
+        <thead><tr><th>RS</th><th>Ticker</th><th>Name</th><th>Day%</th><th>Wk%</th><th>Mth%</th><th>RS Day%</th><th>RS Wk%</th><th>RS Mth%</th><th>52W Hi</th></tr></thead>
+        <tbody id="secTbl"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ── Zeile 5: RS Gainers Sector ── -->
+  <div class="rrs">
+    <div class="pnl">
+      <div class="ph"><h3>RS Gainers — Sector</h3></div>
+      <div id="rsEl"></div>
+    </div>
+  </div>
+
+  <!-- ── Zeile 6: Industry Leaders ── -->
+  <div class="rsec">
+    <div class="pnl">
+      <div class="ph"><h3>Industry Leaders</h3></div>
+      <div class="tw"><table>
+        <thead><tr><th>RS</th><th>Ticker</th><th>Name</th><th>Day%</th><th>Wk%</th><th>Mth%</th><th>RS Day%</th><th>RS Wk%</th><th>RS Mth%</th><th>52W Hi</th></tr></thead>
+        <tbody id="indTbl"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ── Zeile 7: RS Gainers Industry ── -->
+  <div class="rrs">
+    <div class="pnl">
+      <div class="ph"><h3>RS Gainers — Industry</h3></div>
+      <div id="rsIndEl"></div>
+    </div>
+  </div>
+
 </div><!-- /#app -->
 
 <script>
@@ -745,7 +784,7 @@ async function refreshAll() {
   document.getElementById('errBanner').classList.remove('show');
   try {
     // All symbols to fetch
-    const mainSyms = ['SPY','RSP','QQQ','QQQE','IWM',...SEC_SYMS,...FAC_SYMS,'^TNX','^IRX'];
+    const mainSyms = ['SPY','RSP','QQQ','QQQE','IWM',...SEC_SYMS,...IND_SYMS,...FAC_SYMS,'^TNX','^IRX'];
 
     const [idxData, candleData, breadthRaw] = await Promise.all([
       loadIndices(),
@@ -764,10 +803,12 @@ async function refreshAll() {
     const spyMth=spyC.length>22?(spyPrice/spyC[spyC.length-22]-1)*100:0;
 
     // Run all in parallel
-    const [trend, pt, yields, factors] = await Promise.all([
+    const [trend, pt, yields, sectors, industries, factors] = await Promise.all([
       loadTrend(candleData),
       loadPT(candleData),
       loadYields(),
+      loadSectors(candleData, spyDay, spyWk, spyMth),
+      loadIndustries(candleData, spyDay, spyWk, spyMth),
       loadFactors(candleData, spyMth),
     ]);
 
