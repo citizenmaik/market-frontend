@@ -262,7 +262,7 @@ body {
   <div style="margin-bottom:var(--gap);">
     <div class="pnl">
       <div class="ph"><h3>Overall Market Indicator</h3></div>
-      <div style="display:grid;grid-template-columns:220px 1fr;align-items:stretch;">
+      <div style="display:grid;grid-template-columns:min(220px,35%) 1fr;align-items:stretch;">
         <!-- Gauge -->
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;border-right:1px solid var(--border);">
           <svg width="170" height="95" viewBox="0 0 170 95">
@@ -280,9 +280,9 @@ body {
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="border-bottom:1px solid var(--border);">
-                <th style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 16px;text-align:left;font-weight:500;letter-spacing:.08em;">KOMPONENTE</th>
-                <th style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 16px;text-align:right;font-weight:500;letter-spacing:.08em;">SCORE</th>
-                <th style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 16px;text-align:right;font-weight:500;letter-spacing:.08em;">GEWICHT</th>
+                <th style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:8px 12px;text-align:left;font-weight:500;letter-spacing:.08em;">KOMPONENTE</th>
+                <th style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:8px 12px;text-align:right;font-weight:500;letter-spacing:.08em;">SCORE</th>
+                <th style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:8px 12px;text-align:right;font-weight:500;letter-spacing:.08em;">%</th>
               </tr>
             </thead>
             <tbody id="overallTbl"></tbody>
@@ -605,18 +605,18 @@ function renderOverall(result, vix) {
   tb.innerHTML = rows.map(r => {
     const c = r.score>0?'var(--green)':r.score<0?'var(--red)':'var(--muted)';
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="font-family:var(--mono);font-size:12px;padding:9px 16px;color:var(--text);">
+      <td style="font-family:var(--mono);font-size:11px;padding:7px 12px;color:var(--text);">
         ${r.lbl}
-        ${r.detail?`<span style="font-size:10px;color:var(--muted);margin-left:6px;">${r.detail}</span>`:''}
+        ${r.detail?`<br><span style="font-size:9px;color:var(--muted);">${r.detail}</span>`:''}
       </td>
-      <td style="font-family:var(--mono);font-size:13px;font-weight:600;padding:9px 16px;text-align:right;color:${c};">${r.score>=0?'+':''}${r.score.toFixed(1)}</td>
-      <td style="font-family:var(--mono);font-size:12px;padding:9px 16px;text-align:right;color:var(--muted);">${r.weight}</td>
+      <td style="font-family:var(--mono);font-size:12px;font-weight:600;padding:7px 12px;text-align:right;color:${c};">${r.score>=0?'+':''}${r.score.toFixed(1)}</td>
+      <td style="font-family:var(--mono);font-size:11px;padding:7px 12px;text-align:right;color:var(--muted);white-space:nowrap;">${r.weight}</td>
     </tr>`;
   }).join('') +
   `<tr style="border-top:2px solid var(--border);">
     <td style="font-family:var(--mono);font-size:13px;font-weight:700;padding:10px 16px;color:var(--text);">GESAMT</td>
     <td style="font-family:var(--mono);font-size:15px;font-weight:700;padding:10px 16px;text-align:right;color:${color};">${gesamt>=0?'+':''}${gesamt.toFixed(1)}</td>
-    <td style="font-family:var(--mono);font-size:12px;font-weight:700;padding:10px 16px;text-align:right;color:${color};">${zone}</td>
+    <td style="font-family:var(--mono);font-size:11px;font-weight:700;padding:8px 12px;text-align:right;color:${color};white-space:nowrap;">${zone}</td>
   </tr>`;
 }
 
