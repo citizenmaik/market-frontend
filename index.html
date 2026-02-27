@@ -346,7 +346,7 @@ body {
     <div class="pnl">
       <div class="ph"><h3>Trend Status</h3></div>
       <div class="ts-wrap"><table class="ts">
-        <thead><tr><th>Signal</th><th>SPY</th><th>RSP</th><th>QQQ</th><th>QQQE</th></tr></thead>
+        <thead><tr><th>Signal</th><th>SPY</th><th>RSP</th><th>QQQ</th><th>QQQE</th><th>IWM</th></tr></thead>
         <tbody id="trendTbl"></tbody>
       </table></div>
     </div>
@@ -630,7 +630,7 @@ async function loadAllMarketConditions(candleData, breadthData) {
 const TREND_LABELS=[['ema9','9 EMA'],['ema21','21 EMA'],['ema50','50 EMA'],['ema200','200 EMA'],['d3ema21','3D>21 EMA'],['w52h','52W High']];
 
 async function loadTrend(candleData) {
-  const syms=['SPY','RSP','QQQ','QQQE'];
+  const syms=['SPY','RSP','QQQ','QQQE','IWM'];
   const result={};
   syms.forEach(sym=>{
     const c=clean(candleData[sym]?.c||[]); if(c.length<50) return;
@@ -648,7 +648,7 @@ function renderTrend(data) {
   if(!data) return;
   TREND_LABELS.forEach(([key,label])=>{
     const tr2=document.createElement('tr'); let cells=`<td>${label}</td>`;
-    ['SPY','RSP','QQQ','QQQE'].forEach(t=>{
+    ['SPY','RSP','QQQ','QQQE','IWM'].forEach(t=>{
       const v=data[t]?.[key];
       if(v==null){cells+='<td>—</td>';return;}
       if(typeof v==='boolean') cells+=`<td class="${v?'ty':'tn'}">${v?'Yes':'No'}</td>`;
