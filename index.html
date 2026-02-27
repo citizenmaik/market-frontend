@@ -815,6 +815,10 @@ async function refreshAll() {
     renderTrend(trend);
     renderPT(pt, yields);
     renderFac(factors);
+    const secSorted = renderTable('secTbl', sectors);
+    const indSorted = renderTable('indTbl', industries);
+    renderRSGainers('rsEl',    secSorted);
+    renderRSGainers('rsIndEl', indSorted);
 
     await loadAllMarketConditions(candleData, breadthData);
 
