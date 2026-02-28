@@ -452,7 +452,7 @@ body {
 <script>
 const REFRESH = 5 * 60 * 1000;
 const API     = '/api/data';
-let FKEY = new URLSearchParams(location.search).get('key') || localStorage.getItem('fh_key') || '';
+var FKEY = new URLSearchParams(location.search).get('key') || localStorage.getItem('fh_key') || '';
 if (new URLSearchParams(location.search).get('key')) {
   localStorage.setItem('fh_key', new URLSearchParams(location.search).get('key'));
   history.replaceState({}, '', location.pathname); // Key aus URL entfernen
@@ -633,7 +633,7 @@ function renderOverall(result, vix) {
 async function loadIndices() {
   const [quotesData, vixRes] = await Promise.all([
     getQuotes(IDX_SYMS),
-    fetch(`${API}?type=vix`).then(r=>r.json()).catch(()=>({}))
+    fetch(`${API}?type=vix&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({}))
   ]);
   const row = document.getElementById('idxRow'); row.innerHTML='';
   IDX_SYMS.forEach((sym,i) => {
@@ -923,6 +923,12 @@ function renderRSGainers(elId, sortedData) {
 async function refreshAll() {
   setStatus('loading','Loading…');
   document.getElementById('errBanner').classList.remove('show');
+  if (!FKEY) {
+    setStatus('error','Kein API Key');
+    document.getElementById('errBanner').textContent = '⚠️ Kein API Key. URL aufrufen: ' + location.origin + '/?key=DEIN_KEY';
+    document.getElementById('errBanner').classList.add('show');
+    return;
+  }
   try {
     // All symbols to fetch
     const mainSyms = ['SPY','RSP','QQQ','QQQE','IWM',...SEC_SYMS,...IND_SYMS,...FAC_SYMS,'^TNX','^IRX'];
@@ -930,7 +936,7 @@ async function refreshAll() {
     const [idxData, candleData, breadthRaw] = await Promise.all([
       loadIndices(),
       getCandles(mainSyms, '6mo'),
-      fetch(`${API}?type=breadth`).then(r=>r.json()).catch(()=>({}))
+      fetch(`${API}?type=breadth&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({}))
     ]);
 
     const breadthData = {moVal:breadthRaw.nymo??null, p50Val:breadthRaw.pct50??null, hlVal:breadthRaw.nyhl??null};
