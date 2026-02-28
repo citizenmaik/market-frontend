@@ -303,7 +303,7 @@ body {
   </div>
 
   <!-- ── Zeile 1: 3× Market Conditions ── -->
-    <div class="r1">
+    <div class="r1" style="display:none;">
 
     <div class="pnl">
       <div class="ph"><h3>Market Conditions QQQE</h3></div>
@@ -515,7 +515,7 @@ async function getCandles(symbols, range='1y') {
     const batch = symbols.slice(i, i + CHUNK);
     const enc = batch.map(s => s.replace(/\^/g,'__'));
     try {
-      const res = await fetch(`${API}?type=candles&symbols=${enc.join(',')}&range=${range}`);
+      const res = await fetch(`${API}?type=candles&symbols=${enc.join(',')}&range=${range}&fhkey=${FKEY}`);
       if (!res.ok) continue;
       const txt = await res.text();
       if (!txt) continue;
@@ -979,12 +979,6 @@ async function refreshAll() {
 }
 
 function init() {
-  // v1772004392 — force cache clear on version mismatch
-  const _V = 'v1772004392';
-  if (sessionStorage.getItem('dv') !== _V) {
-    sessionStorage.setItem('dv', _V);
-    if (performance.navigation?.type !== 1) { location.reload(true); return; }
-  }
   refreshAll();
   setInterval(refreshAll, REFRESH);
 }
