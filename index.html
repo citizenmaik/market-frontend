@@ -452,7 +452,7 @@ body {
 <script>
 const REFRESH = 5 * 60 * 1000;
 const API     = '/api/data';
-var FKEY = new URLSearchParams(location.search).get('key') || localStorage.getItem('fh_key') || '';
+var FKEY = new URLSearchParams(location.search).get('key') || localStorage.getItem('fh_key') || 'd6f1101r01qvn4o1e6bgd6f1101r01qvn4o1e6c0';
 if (new URLSearchParams(location.search).get('key')) {
   localStorage.setItem('fh_key', new URLSearchParams(location.search).get('key'));
   history.replaceState({}, '', location.pathname); // Key aus URL entfernen
@@ -923,12 +923,7 @@ function renderRSGainers(elId, sortedData) {
 async function refreshAll() {
   setStatus('loading','Loading…');
   document.getElementById('errBanner').classList.remove('show');
-  if (!FKEY) {
-    setStatus('error','Kein API Key');
-    document.getElementById('errBanner').textContent = '⚠️ Kein API Key. URL aufrufen: ' + location.origin + '/?key=DEIN_KEY';
-    document.getElementById('errBanner').classList.add('show');
-    return;
-  }
+
   try {
     // All symbols to fetch
     const mainSyms = ['SPY','RSP','QQQ','QQQE','IWM',...SEC_SYMS,...IND_SYMS,...FAC_SYMS,'^TNX','^IRX'];
