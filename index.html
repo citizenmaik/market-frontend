@@ -867,35 +867,24 @@ function calcSectorData(sym, c, spyDay, spyWk, spyMth, nameMap) {
     high52:+((price/h52-1)*100).toFixed(2),rs,above50:price>s50c};
 }
 
-async function loadSectors(candleData, spyDay, spyWk, spyMth, spyMth3=0, spyMth6=0, spyMth12=0) {
+async function loadSectors(candleData, spyDay, spyWk, spyMth) {
   const result={};
   SEC_SYMS.forEach(sym=>{
     const c=clean(candleData[sym]?.c||[]);
-    const d=calcSectorData(sym,c,spyDay,spyWk,spyMth,SEC_NAMES,spyMth3,spyMth6,spyMth12);
+    const d=calcSectorData(sym,c,spyDay,spyWk,spyMth,SEC_NAMES);
     if(d) result[sym]=d;
   });
   return result;
 }
 
-async function loadIndustries(candleData, spyDay, spyWk, spyMth, spyMth3=0, spyMth6=0, spyMth12=0) {
+async function loadIndustries(candleData, spyDay, spyWk, spyMth) {
   const result={};
   IND_SYMS.forEach(sym=>{
     const c=clean(candleData[sym]?.c||[]);
-    const d=calcSectorData(sym,c,spyDay,spyWk,spyMth,IND_NAMES,spyMth3,spyMth6,spyMth12);
+    const d=calcSectorData(sym,c,spyDay,spyWk,spyMth,IND_NAMES);
     if(d) result[sym]=d;
   });
   return result;
-}
-
-
-// Option C: Relativer Rang — rsRaw → RS 1-99
-function rankRS(dataObj) {
-  const entries = Object.entries(dataObj);
-  const n = entries.length;
-  if(n < 2) { entries.forEach(([k])=>{ dataObj[k].rs=50; }); return dataObj; }
-  const sorted = [...entries].sort((a,b)=>a[1].rsRaw-b[1].rsRaw);
-  sorted.forEach(([sym],i)=>{ dataObj[sym].rs = Math.round(1+(i/(n-1))*98); });
-  return dataObj;
 }
 
 function renderTable(tbodyId, data) {
@@ -941,7 +930,7 @@ async function refreshAll() {
 
     const [idxData, candleData, breadthRaw] = await Promise.all([
       loadIndices(),
-      getCandles(mainSyms, '1y'),
+      getCandles(mainSyms, '6mo'),
       fetch(`${API}?type=breadth&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({}))
     ]);
 
@@ -954,17 +943,14 @@ async function refreshAll() {
     const spyDay=spyC.length>1?(spyPrice/spyC[spyC.length-2]-1)*100:0;
     const spyWk=spyC.length>6?(spyPrice/spyC[spyC.length-6]-1)*100:0;
     const spyMth=spyC.length>22?(spyPrice/spyC[spyC.length-22]-1)*100:0;
-    const spyMth3=spyC.length>66?(spyPrice/spyC[spyC.length-66]-1)*100:spyMth;
-    const spyMth6=spyC.length>132?(spyPrice/spyC[spyC.length-132]-1)*100:spyMth;
-    const spyMth12=spyC.length>252?(spyPrice/spyC[spyC.length-252]-1)*100:spyMth;
 
     // Run all in parallel
     const [trend, pt, yields, sectors, industries, factors] = await Promise.all([
       loadTrend(candleData),
       loadPT(candleData),
       loadYields(),
-      loadSectors(candleData, spyDay, spyWk, spyMth, spyMth3, spyMth6, spyMth12),
-      loadIndustries(candleData, spyDay, spyWk, spyMth, spyMth3, spyMth6, spyMth12),
+      loadSectors(candleData, spyDay, spyWk, spyMth),
+      loadIndustries(candleData, spyDay, spyWk, spyMth),
       loadFactors(candleData, spyMth),
     ]);
 
@@ -976,7 +962,6 @@ async function refreshAll() {
     window._secArr=secArr; window._indArr=indArr; window._trendData=trend; window._vix=vixVal;
     renderPT(pt, yields);
     renderFac(factors);
-    rankRS(sectors); rankRS(industries);
     const secSorted = renderTable('secTbl', sectors);
     const indSorted = renderTable('indTbl', industries);
     renderRSGainers('rsEl',    secSorted);
