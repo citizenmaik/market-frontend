@@ -545,51 +545,71 @@ const FAC_LBLS = {IVW:'Growth',IVE:'Value',HDV:'High Dividend',OEF:'Large-Cap',I
 
 
 // ── Overall Market Indicator ─────────────────────────
-function calcOverall(secData, indData, trendData, vix, mcScores) {
-  // 1. Sektor-Breadth (30%) — max ±30
+function calcOverall(secData, indData, trendData, vix, mcScores, candleData) {
+  // 1. Sektor-Breadth (25%) — max ±25
   const secs = Object.values(secData);
   const n_sec = secs.length;
-  const pct_sec_50 = secs.filter(s=>s.above50).length / n_sec;
-  const pct_sec_rs = secs.filter(s=>s.rs>=60).length / n_sec;
-  const score_sec  = (pct_sec_50*2-1)*15 + (pct_sec_rs*2-1)*15;
+  const pct_sec_50 = n_sec ? secs.filter(s=>s.above50).length / n_sec : 0.5;
+  const pct_sec_rs = n_sec ? secs.filter(s=>s.rs>=50).length / n_sec : 0.5;
+  const score_sec  = (pct_sec_50*2-1)*12.5 + (pct_sec_rs*2-1)*12.5;
 
-  // 2. Industry-Breadth (30%) — max ±30
+  // 2. Industry-Breadth (25%) — max ±25
   const inds = Object.values(indData);
   const n_ind = inds.length;
-  const pct_ind_50 = inds.filter(i=>i.above50).length / n_ind;
-  const pct_ind_rs = inds.filter(i=>i.rs>=60).length / n_ind;
-  const score_ind  = (pct_ind_50*2-1)*15 + (pct_ind_rs*2-1)*15;
+  const pct_ind_50 = n_ind ? inds.filter(i=>i.above50).length / n_ind : 0.5;
+  const pct_ind_rs = n_ind ? inds.filter(i=>i.rs>=50).length / n_ind : 0.5;
+  const score_ind  = (pct_ind_50*2-1)*12.5 + (pct_ind_rs*2-1)*12.5;
 
-  // 3. Trend Status (25%) — max ±25
-  const syms = ['SPY','RSP','QQQ','QQQE','IWM'];
-  const keys = ['ema9','ema21','ema50','ema200','d3ema21','w52h'];
+  // 3. Trend Status (20%) — max ±20
+  const tSyms = ['SPY','RSP','QQQ','QQQE','IWM'];
+  const tKeys = ['ema9','ema21','ema50','ema200','d3ema21','w52h'];
   let pos=0, total=0;
-  syms.forEach(sym => {
-    keys.forEach(k => {
+  tSyms.forEach(sym => {
+    tKeys.forEach(k => {
       const v = trendData[sym]?.[k];
       if (v==null) return;
       total++;
       if (typeof v==='boolean' ? v : v>=0) pos++;
     });
   });
-  const score_trend = total>0 ? (pos/total*2-1)*25 : 0;
+  const score_trend = total>0 ? (pos/total*2-1)*20 : 0;
 
   // 4. VIX (5%) — max ±5
   const score_vix = vix==null?0 : vix<15?5 : vix<18?2.5 : vix<22?0 : vix<28?-2.5 : -5;
 
-  // 5. MC-Scores (10%) — max ±10
+  // 5. MC-Scores (15%) — max ±15
   const avg_mc = mcScores.length ? mcScores.reduce((a,b)=>a+b,0)/mcScores.length : 0;
-  const score_mc = (avg_mc/100)*10;
+  const score_mc = (avg_mc/100)*15;
 
-  const gesamt = Math.max(-100, Math.min(100, score_sec+score_ind+score_trend+score_vix+score_mc));
+  // 6. Momentum (10%) — 8-Tage Performance SPY/RSP/QQQ/QQQE/IWM vs Schnitt
+  //    Reagiert sofort auf Marktbewegungen
+  let score_mom = 0;
+  const momSyms = ['SPY','RSP','QQQ','QQQE','IWM'];
+  const momVals = [];
+  momSyms.forEach(sym => {
+    const c = clean(candleData[sym]?.c||[]);
+    if (c.length >= 9) {
+      const mom8 = (c[c.length-1]/c[c.length-9]-1)*100;
+      momVals.push(mom8);
+    }
+  });
+  if (momVals.length) {
+    const avgMom = momVals.reduce((a,b)=>a+b,0)/momVals.length;
+    // Scale: ±5% avg momentum → ±10 score, capped
+    score_mom = Math.max(-10, Math.min(10, avgMom * 2));
+  }
+
+  const gesamt = Math.max(-100, Math.min(100, score_sec+score_ind+score_trend+score_vix+score_mc+score_mom));
+  const momAvgDisp = momVals.length ? (momVals.reduce((a,b)=>a+b,0)/momVals.length).toFixed(2) : '—';
   return {
     gesamt,
     rows: [
-      {lbl:`Sektor-Breadth`,          score:score_sec,   weight:'30%', detail:`${Math.round(pct_sec_50*100)}% >50SMA, ${Math.round(pct_sec_rs*100)}% RS≥60`},
-      {lbl:`Industry-Breadth`,        score:score_ind,   weight:'30%', detail:`${Math.round(pct_ind_50*100)}% >50SMA, ${Math.round(pct_ind_rs*100)}% RS≥60`},
-      {lbl:`Trend Status`,            score:score_trend, weight:'25%', detail:`${pos}/${total} positiv`},
-      {lbl:`VIX ${vix!=null?'('+vix.toFixed(2)+')':''}`, score:score_vix, weight:'5%', detail:''},
-      {lbl:`MC-Scores Ø`,             score:score_mc,    weight:'10%', detail:`Ø ${avg_mc.toFixed(1)}`},
+      {lbl:'Sektor-Breadth',   score:score_sec,   weight:'25%', detail:`${Math.round(pct_sec_50*100)}% >50SMA, ${Math.round(pct_sec_rs*100)}% RS≥50`},
+      {lbl:'Industry-Breadth', score:score_ind,   weight:'25%', detail:`${Math.round(pct_ind_50*100)}% >50SMA, ${Math.round(pct_ind_rs*100)}% RS≥50`},
+      {lbl:'Trend Status',     score:score_trend, weight:'20%', detail:`${pos}/${total} positiv`},
+      {lbl:`VIX${vix!=null?' ('+vix.toFixed(1)+')':''}`, score:score_vix, weight:'5%',  detail:''},
+      {lbl:'MC-Scores Ø',      score:score_mc,    weight:'15%', detail:`Ø ${avg_mc.toFixed(1)}`},
+      {lbl:'Momentum 8T',      score:score_mom,   weight:'10%', detail:`Ø ${momAvgDisp}%`},
     ]
   };
 }
@@ -761,7 +781,7 @@ async function loadAllMarketConditions(candleData, breadthData) {
     }
   }
   if (allScores.length) {
-    const ovResult = calcOverall(window._secArr||{}, window._indArr||{}, window._trendData||{}, window._vix||null, allScores);
+    const ovResult = calcOverall(window._secArr||{}, window._indArr||{}, window._trendData||{}, window._vix||null, allScores, window._candleData||{});
     renderOverall(ovResult);
   }
 }
@@ -887,6 +907,20 @@ async function loadIndustries(candleData, spyDay, spyWk, spyMth) {
   return result;
 }
 
+
+function rankRS(dataObj) {
+  // Rank all ETFs by rsRaw → RS 1-99
+  const entries = Object.entries(dataObj);
+  const n = entries.length;
+  if (n === 0) return dataObj;
+  // Sort by rsRaw ascending
+  const sorted = [...entries].sort((a,b) => a[1].rsRaw - b[1].rsRaw);
+  sorted.forEach(([sym], i) => {
+    dataObj[sym].rs = Math.round(1 + (i / (n-1)) * 98); // 1..99
+  });
+  return dataObj;
+}
+
 function renderTable(tbodyId, data) {
   const tb=document.getElementById(tbodyId); tb.innerHTML='';
   const sorted=Object.entries(data).sort((a,b)=>b[1].rs-a[1].rs);
@@ -959,9 +993,10 @@ async function refreshAll() {
     const secArr = Object.fromEntries(Object.entries(sectors).map(([k,v])=>([k,{rs:v.rs,above50:v.above50}])));
     const indArr = Object.fromEntries(Object.entries(industries).map(([k,v])=>([k,{rs:v.rs,above50:v.above50}])));
     const vixVal = idxData.vix ?? null;
-    window._secArr=secArr; window._indArr=indArr; window._trendData=trend; window._vix=vixVal;
+    window._secArr=secArr; window._indArr=indArr; window._trendData=trend; window._vix=vixVal; window._candleData=candleData;
     renderPT(pt, yields);
     renderFac(factors);
+    rankRS(sectors); rankRS(industries);
     const secSorted = renderTable('secTbl', sectors);
     const indSorted = renderTable('indTbl', industries);
     renderRSGainers('rsEl',    secSorted);
