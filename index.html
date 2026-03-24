@@ -86,7 +86,8 @@ body {
 .idx{display:grid;grid-template-columns:repeat(8,1fr);gap:var(--gap);margin-bottom:var(--gap);}
 .ic{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
   padding:var(--pad);min-height:90px;display:flex;flex-direction:column;
-  justify-content:space-between;transition:var(--transition),border-color .2s;cursor:pointer;}
+  justify-content:space-between;transition:var(--transition),border-color .2s;cursor:pointer;
+  text-decoration:none;color:inherit;}
 .ic:hover{border-color:var(--accent);}
 .ic .tk{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;margin-bottom:4px;}
 .ic .pr{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:3px;}
@@ -636,19 +637,22 @@ async function loadIndices() {
     fetch(`${API}?type=vix&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({}))
   ]);
   const row = document.getElementById('idxRow'); row.innerHTML='';
+  const YF_MAP = {'BINANCE:BTCUSDT':'BTC-USD','GLD':'GLD','SPY':'SPY','RSP':'RSP','QQQ':'QQQ','QQQE':'QQQE','IWM':'IWM'};
   IDX_SYMS.forEach((sym,i) => {
     const q=quotesData[sym]; const price=q?.c||0, prev=q?.pc||0;
     const chg=prev>0?(price-prev)/prev*100:0;
     const disp=sym==='BINANCE:BTCUSDT'?'BTC':sym;
     const pstr=sym==='BINANCE:BTCUSDT'?'$'+Math.round(price).toLocaleString():'$'+price.toFixed(2);
-    row.innerHTML+=`<div class="ic"><div class="tk">${disp}</div><div class="pr">${pstr}</div>
+    const yfTicker=YF_MAP[sym]||sym;
+    const yfUrl=`https://finance.yahoo.com/quote/${yfTicker}`;
+    row.innerHTML+=`<a class="ic" href="${yfUrl}" target="_blank" rel="noopener noreferrer"><div class="tk">${disp}</div><div class="pr">${pstr}</div>
       <div class="ch ${chg>=0?'up':'dn'}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
-      <div class="nm">${IDX_META[sym]}</div></div>`;
+      <div class="nm">${IDX_META[sym]}</div></a>`;
   });
   const vix=vixRes.vix;
   // Always render VIX box (show — if data unavailable)
-  row.innerHTML+=`<div class="ic"><div class="tk">VIX</div><div class="pr">${vix!=null?vix.toFixed(2):'—'}</div>
-    <div class="ch" style="color:var(--muted)">—</div><div class="nm">VOLATILITY</div></div>`;
+  row.innerHTML+=`<a class="ic" href="https://finance.yahoo.com/quote/%5EVIX" target="_blank" rel="noopener noreferrer"><div class="tk">VIX</div><div class="pr">${vix!=null?vix.toFixed(2):'—'}</div>
+    <div class="ch" style="color:var(--muted)">—</div><div class="nm">VOLATILITY</div></a>`;
   return {quotes:quotesData, vix};
 }
 
@@ -897,7 +901,7 @@ function renderTable(tbodyId, data) {
   sorted.forEach(([sym,s])=>{
     const tr2=document.createElement('tr');
     tr2.innerHTML=`<td><div class="rsc ${rsClass(s.rs)}">${s.rs}</div></td>
-      <td class="tck">${sym}</td><td class="tname">${s.name}</td>
+      <td class="tck"><a href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--muted);">${sym}</a></td><td class="tname">${s.name}</td>
       <td class="nc">${pct(s.day,1)}</td><td class="nc">${pct(s.wk,1)}</td><td class="nc">${pct(s.mth,1)}</td>
       <td class="nc">${pct(s.rs_day)}</td><td class="nc">${pct(s.rs_wk)}</td><td class="nc">${pct(s.rs_mth)}</td>
       <td class="nc"><span class="${s.high52<-3?'dn':s.high52<0?'':'up'}">${s.high52.toFixed(1)}%</span></td>`;
@@ -913,7 +917,7 @@ function renderRSGainers(elId, sortedData) {
   const topM=[...sortedData].sort((a,b)=>b[1].mth-a[1].mth).slice(0,3);
   const card=(sym,s,val,cls)=>`<div class="rsi">
     <div class="rsb ${rsGB(s.rs)}">RS:${s.rs}</div>
-    <div class="ri"><div class="tn2">${sym}</div><div class="sc">${s.name}</div></div>
+    <div class="ri"><a class="tn2" href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--muted);cursor:pointer;">${sym}</a><div class="sc">${s.name}</div></div>
     <div class="rr"><div class="rp">$${s.price}</div>
     <div class="rc ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div></div>`;
   el.style.display='grid'; el.style.gridTemplateColumns='1fr 1fr 1fr'; el.style.gap='0';
