@@ -11,26 +11,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-
-<!-- 🔒 PASSWORD PROTECTION -->
-<script>
-(function() {
-  const JOURNAL_PASSWORD = 'trading2026';
-  
-  if (!sessionStorage.getItem('journalAuth')) {
-    const pw = prompt('🔒 Trading Journal Passwort:');
-    
-    if (pw !== JOURNAL_PASSWORD) {
-      alert('❌ Falsches Passwort!');
-      window.location.href = '/';
-      throw new Error('Auth failed');
-    }
-    
-    sessionStorage.setItem('journalAuth', 'true');
-  }
-})();
-</script>
-
 :root {
   --green:#00d084; --green-bright:#00ff9d;
   --red:#ff4466; --yellow:#f5c842; --blue:#4d9fff; --accent:#7c6af7;
