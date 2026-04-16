@@ -38,6 +38,7 @@ input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
 *{margin:0;padding:0;box-sizing:border-box;}
 html{height:100%;}
 body {
@@ -167,7 +168,6 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
   thead th,tbody td{padding:8px 6px;}
 }
 </style>
-</style>
 </head>
 <body>
 
@@ -204,7 +204,6 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
     <div class="acct-label">Risiko %</div>
     <div class="acct-value" id="riskPercent">0.0%</div>
   </div>
-</div>
 </div>
 
 <!-- Status Bar -->
@@ -383,7 +382,7 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
       </div>
       <div class="stat-row">
         <span class="stat-label">Risiko-Limit</span>
-        <span class="stat-value" id="dashRiskLimit" onclick="editRiskLimit()" style="cursor:pointer;">5.00%</span>
+        <span class="stat-value">5.00%</span>
       </div>
     </div>
   </div>
@@ -688,7 +687,6 @@ async function editTeilverkauf(tradeId, tp) {
   const trade = trades.find(t => t.id === tradeId);
   if (!trade) return;
 
-  // Schritt 1: Exit-Preis abfragen
   const defaultPrice = trade[`tp${tp}Preis`] || trade.livePreis || trade.einstiegspreis;
   const exitPreis = parseFloat(prompt(
     `TP${tp} Exit-Preis für ${trade.ticker}:`,
@@ -696,11 +694,10 @@ async function editTeilverkauf(tradeId, tp) {
   ));
 
   if (!exitPreis || isNaN(exitPreis) || exitPreis <= 0) {
-    alert('Ungültiger Preis!');
+    alert("Ungültiger Preis!");
     return;
   }
 
-  // Schritt 2: Menge abfragen
   const currentMenge = trade[`tp${tp}Menge`] || 0;
   const maxMenge = calcRestmenge(trade);
   
@@ -715,18 +712,17 @@ async function editTeilverkauf(tradeId, tp) {
     return;
   }
 
-  // Schritt 3: Beide Werte speichern
   try {
     const updateData = {};
     updateData[`tp${tp}_preis`] = exitPreis;
     updateData[`tp${tp}_menge`] = exitMenge;
     
-    await supabaseClient.from('trades').update(updateData).eq('id', tradeId);
+    await supabaseClient.from("trades").update(updateData).eq("id", tradeId);
     await loadData();
     
     const updatedTrade = trades.find(t => t.id === tradeId);
     if (calcRestmenge(updatedTrade) === 0) {
-      if (confirm('Vollständig verkauft. In Historie verschieben?')) {
+      if (confirm("Vollständig verkauft. In Historie verschieben?")) {
         await closeTrade(tradeId);
         return;
       }
@@ -735,57 +731,57 @@ async function editTeilverkauf(tradeId, tp) {
     updateUI();
     
   } catch (error) {
-    console.error('Update teilverkauf error:', error);
+    console.error("Update teilverkauf error:", error);
   }
 }
 
 async function editBudget() {
   const newBudget = parseFloat(prompt(
-    'Neues Gesamtbudget ($):',
+    "Neues Gesamtbudget ($):",
     settings.totalBudget
   ));
   
   if (!newBudget || isNaN(newBudget) || newBudget <= 0) {
-    alert('Ungültiger Betrag!');
+    alert("Ungültiger Betrag!");
     return;
   }
   
   try {
-    await supabaseClient.from('users')
+    await supabaseClient.from("users")
       .update({ total_budget: newBudget })
-      .eq('id', USER_ID);
+      .eq("id", USER_ID);
     
     settings.totalBudget = newBudget;
     updateUI();
     
   } catch (error) {
-    console.error('Update budget error:', error);
-    alert('Fehler beim Speichern!');
+    console.error("Update budget error:", error);
+    alert("Fehler beim Speichern!");
   }
 }
 
 async function editRiskLimit() {
   const newLimit = parseFloat(prompt(
-    'Neues Risiko-Limit (%):',
+    "Neues Risiko-Limit (%):",
     settings.riskLimit
   ));
   
   if (!newLimit || isNaN(newLimit) || newLimit <= 0 || newLimit > 100) {
-    alert('Ungültiger Wert! (0-100%)');
+    alert("Ungültiger Wert! (0-100%)");
     return;
   }
   
   try {
-    await supabaseClient.from('users')
+    await supabaseClient.from("users")
       .update({ risk_limit: newLimit })
-      .eq('id', USER_ID);
+      .eq("id", USER_ID);
     
     settings.riskLimit = newLimit;
     updateUI();
     
   } catch (error) {
-    console.error('Update risk limit error:', error);
-    alert('Fehler beim Speichern!');
+    console.error("Update risk limit error:", error);
+    alert("Fehler beim Speichern!");
   }
 }
 
@@ -1008,14 +1004,15 @@ function renderHistorieTable() {
 }
 
 function updateHeaderStats() {
-function updateAccountSummary() {
   const invested = trades.reduce((sum, t) => sum + calcPosGroesse(t), 0);
   const available = settings.totalBudget - invested;
   const unrealized = trades.reduce((sum, t) => sum + calcPL(t), 0);
   const realized = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
+  
+  const wins = closedTrades.filter(t => calcPL(t) > 0).length;
+  const total = closedTrades.length;
   const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
   const riskPercent = (totalRisk / settings.totalBudget) * 100;
-  
   document.getElementById('totalBudget').textContent = formatCurrency(settings.totalBudget);
   document.getElementById('invested').textContent = formatCurrency(invested);
   document.getElementById('available').textContent = formatCurrency(available);
@@ -1071,8 +1068,6 @@ function updateDashboard() {
   
   const riskPctEl = document.getElementById('dashRiskPct');
   riskPctEl.textContent = `${riskPercent.toFixed(2)}%`;
-  
-  document.getElementById("dashRiskLimit").textContent = `${settings.riskLimit.toFixed(2)}%`;
   riskPctEl.className = 'stat-value ' + (riskPercent > settings.riskLimit ? 'neg' : 'pos');
 }
 
