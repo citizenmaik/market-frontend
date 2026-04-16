@@ -65,6 +65,24 @@ body {
   justify-content:center;font-size:15px;transition:all .2s;flex-shrink:0;}
 .th-btn:hover{transform:scale(1.1);}
 
+/* Journal Button */
+.journal-btn {
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 12px;margin-right:8px;
+  background:linear-gradient(135deg, #7c6af7 0%, #6854e6 100%);
+  color:#fff;text-decoration:none;border-radius:6px;
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.05em;text-transform:uppercase;
+  transition:all .3s ease;border:1px solid rgba(124,106,247,.3);
+  white-space:nowrap;flex-shrink:0;
+}
+.journal-btn:hover {
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(124,106,247,.3);
+  background:linear-gradient(135deg, #6854e6 0%, #5c4fd6 100%);
+}
+.journal-btn span { font-size:14px; }
+
 /* Status pill */
 .pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;
   cursor:pointer;font-family:var(--mono);font-size:11px;border:1px solid var(--border);
@@ -257,6 +275,10 @@ body {
     <h1><span class="label">Market </span>Dashboard</h1>
     <div class="hdr-right">
       <span class="last-upd" id="lastUpd"></span>
+      <a href="/journal.html" class="journal-btn">
+        <span>📊</span>
+        Journal
+      </a>
       <div class="pill loading" id="pill" onclick="refreshAll()">
         <span class="dot pulse" id="pillDot"></span>
         <span id="pillTxt">Loading…</span>
