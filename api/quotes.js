@@ -1,0 +1,45 @@
+export default async function handler(req, res) {
+  const { symbols } = req.query;
+  
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  
+  if (!symbols) {
+    return res.status(400).json({ error: 'Missing symbols parameter' });
+  }
+  
+  const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
+  
+  if (!FINNHUB_API_KEY) {
+    console.error('No API Key found!');
+    return res.status(500).json({ error: 'API Key not configured' });
+  }
+  
+  console.log('✅ API Key found, length:', FINNHUB_API_KEY.length);
+  
+  try {
+    const symbolList = symbols.split(',');
+    const quotes = {};
+    
+    await Promise.all(
+      symbolList.map(async (symbol) => {
+        const url = 
+`https://finnhub.io/api/v1/quote?symbol=${symbol.trim()}&token=${FINNHUB_API_KEY}`;
+        console.log('📡 Fetching:', symbol);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        console.log('✅', symbol, 'response:', JSON.stringify(data));
+        quotes[symbol.trim()] = data;
+      })
+    );
+    
+    return res.status(200).json(quotes);
+    
+  } catch (error) {
+    console.error('❌ Finnhub error:', error);
+    return res.status(500).json({ error: 'Failed to fetch quotes' });
+  }
+}
+
