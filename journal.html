@@ -10,6 +10,25 @@
 <!-- ⚡ Supabase Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<!-- 🔒 PASSWORD PROTECTION -->
+<script>
+(function() {
+  const JOURNAL_PASSWORD = 'trading2026'; // ⚠️ ÄNDERE DIES!
+  
+  if (!sessionStorage.getItem('journalAuth')) {
+    const pw = prompt('🔒 Trading Journal Passwort:');
+    
+    if (pw !== JOURNAL_PASSWORD) {
+      alert('❌ Falsches Passwort!');
+      window.location.href = '/';
+      throw new Error('Auth failed');
+    }
+    
+    sessionStorage.setItem('journalAuth', 'true');
+  }
+})();
+</script>
+
 <style>
 :root {
   --green:#00d084; --green-bright:#00ff9d;
@@ -28,6 +47,16 @@
   --green:#00a864; --red:#d63050; --yellow:#c8971a; --blue:#2b7fd4; --accent:#5c4fd6;
 }
 
+/* Remove number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 *{margin:0;padding:0;box-sizing:border-box;}
 html{height:100%;}
 body {
@@ -157,6 +186,7 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
   thead th,tbody td{padding:8px 6px;}
 }
 </style>
+</style>
 </head>
 <body>
 
@@ -171,7 +201,7 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
 <div class="acct-sum">
   <div class="acct-card">
     <div class="acct-label">Gesamtbudget</div>
-    <div class="acct-value" id="totalBudget">$7,500.00</div>
+    <div class="acct-value" id="totalBudget" onclick="editBudget()" style="cursor:pointer;">$7,500.00</div>
   </div>
   <div class="acct-card">
     <div class="acct-label">Investiert</div>
@@ -190,9 +220,10 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
     <div class="acct-value" id="unrealizedPL">$0.00</div>
   </div>
   <div class="acct-card">
-    <div class="acct-label">Win-Rate</div>
-    <div class="acct-value" id="winRate">0%</div>
+    <div class="acct-label">Risiko %</div>
+    <div class="acct-value" id="riskPercent">0.0%</div>
   </div>
+</div>
 </div>
 
 <!-- Status Bar -->
@@ -371,7 +402,7 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
       </div>
       <div class="stat-row">
         <span class="stat-label">Risiko-Limit</span>
-        <span class="stat-value">5.00%</span>
+        <span class="stat-value" id="dashRiskLimit" onclick="editRiskLimit()" style="cursor:pointer;">5.00%</span>
       </div>
     </div>
   </div>
@@ -676,20 +707,38 @@ async function editTeilverkauf(tradeId, tp) {
   const trade = trades.find(t => t.id === tradeId);
   if (!trade) return;
 
-  const currentMenge = trade[`tp${tp}Menge`];
+  // Schritt 1: Exit-Preis abfragen
+  const defaultPrice = trade[`tp${tp}Preis`] || trade.livePreis || trade.einstiegspreis;
+  const exitPreis = parseFloat(prompt(
+    `TP${tp} Exit-Preis für ${trade.ticker}:`,
+    defaultPrice.toFixed(2)
+  ));
+
+  if (!exitPreis || isNaN(exitPreis) || exitPreis <= 0) {
+    alert('Ungültiger Preis!');
+    return;
+  }
+
+  // Schritt 2: Menge abfragen
+  const currentMenge = trade[`tp${tp}Menge`] || 0;
   const maxMenge = calcRestmenge(trade);
   
-  const newMenge = parseInt(prompt(`TP${tp} Teilverkauf (Max: ${maxMenge} Stk):`, currentMenge));
+  const exitMenge = parseInt(prompt(
+    `TP${tp} Exit-Menge (Max: ${maxMenge} Stk):`,
+    currentMenge || Math.floor(trade.kaufmenge / 3)
+  ));
 
-  if (newMenge === null || isNaN(newMenge)) return;
-  if (newMenge < 0 || newMenge > maxMenge + currentMenge) {
+  if (!exitMenge || isNaN(exitMenge)) return;
+  if (exitMenge < 0 || exitMenge > maxMenge + currentMenge) {
     alert(`Ungültig! Max: ${maxMenge + currentMenge} Stk`);
     return;
   }
 
+  // Schritt 3: Beide Werte speichern
   try {
     const updateData = {};
-    updateData[`tp${tp}_menge`] = newMenge;
+    updateData[`tp${tp}_preis`] = exitPreis;
+    updateData[`tp${tp}_menge`] = exitMenge;
     
     await supabaseClient.from('trades').update(updateData).eq('id', tradeId);
     await loadData();
@@ -706,6 +755,56 @@ async function editTeilverkauf(tradeId, tp) {
     
   } catch (error) {
     console.error('Update teilverkauf error:', error);
+  }
+}
+
+async function editBudget() {
+  const newBudget = parseFloat(prompt(
+    'Neues Gesamtbudget ($):',
+    settings.totalBudget
+  ));
+  
+  if (!newBudget || isNaN(newBudget) || newBudget <= 0) {
+    alert('Ungültiger Betrag!');
+    return;
+  }
+  
+  try {
+    await supabaseClient.from('users')
+      .update({ total_budget: newBudget })
+      .eq('id', USER_ID);
+    
+    settings.totalBudget = newBudget;
+    updateUI();
+    
+  } catch (error) {
+    console.error('Update budget error:', error);
+    alert('Fehler beim Speichern!');
+  }
+}
+
+async function editRiskLimit() {
+  const newLimit = parseFloat(prompt(
+    'Neues Risiko-Limit (%):',
+    settings.riskLimit
+  ));
+  
+  if (!newLimit || isNaN(newLimit) || newLimit <= 0 || newLimit > 100) {
+    alert('Ungültiger Wert! (0-100%)');
+    return;
+  }
+  
+  try {
+    await supabaseClient.from('users')
+      .update({ risk_limit: newLimit })
+      .eq('id', USER_ID);
+    
+    settings.riskLimit = newLimit;
+    updateUI();
+    
+  } catch (error) {
+    console.error('Update risk limit error:', error);
+    alert('Fehler beim Speichern!');
   }
 }
 
@@ -928,15 +1027,14 @@ function renderHistorieTable() {
 }
 
 function updateHeaderStats() {
+function updateAccountSummary() {
   const invested = trades.reduce((sum, t) => sum + calcPosGroesse(t), 0);
   const available = settings.totalBudget - invested;
   const unrealized = trades.reduce((sum, t) => sum + calcPL(t), 0);
   const realized = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
+  const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
+  const riskPercent = (totalRisk / settings.totalBudget) * 100;
   
-  const wins = closedTrades.filter(t => calcPL(t) > 0).length;
-  const total = closedTrades.length;
-  const winRate = total > 0 ? (wins / total) * 100 : 0;
-
   document.getElementById('totalBudget').textContent = formatCurrency(settings.totalBudget);
   document.getElementById('invested').textContent = formatCurrency(invested);
   document.getElementById('available').textContent = formatCurrency(available);
@@ -949,7 +1047,9 @@ function updateHeaderStats() {
   unrealizedEl.textContent = formatCurrency(unrealized);
   unrealizedEl.className = 'acct-value ' + (unrealized >= 0 ? 'pos' : 'neg');
   
-  document.getElementById('winRate').textContent = `${winRate.toFixed(1)}% (${wins}/${total})`;
+  const riskPctEl = document.getElementById('riskPercent');
+  riskPctEl.textContent = `${riskPercent.toFixed(1)}%`;
+  riskPctEl.className = 'acct-value ' + (riskPercent > settings.riskLimit ? 'neg' : 'pos');
 }
 
 function updateDashboard() {
@@ -990,6 +1090,8 @@ function updateDashboard() {
   
   const riskPctEl = document.getElementById('dashRiskPct');
   riskPctEl.textContent = `${riskPercent.toFixed(2)}%`;
+  
+  document.getElementById("dashRiskLimit").textContent = `${settings.riskLimit.toFixed(2)}%`;
   riskPctEl.className = 'stat-value ' + (riskPercent > settings.riskLimit ? 'neg' : 'pos');
 }
 
