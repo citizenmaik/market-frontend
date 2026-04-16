@@ -1007,9 +1007,7 @@ async function fetchLivePrices() {
   updateStatus('Lade Live-Preise...', 'loading');
   
   try {
-    const response = await 
-fetch(`const response = await 
-fetch(`/api/quotes?symbols=${tickers}`);/api/data?type=quotes&symbols=${tickers}`);
+    const response = await fetch(`/api/quotes?symbols=${tickers}`);
     if (!response.ok) throw new Error('API nicht erreichbar');
     
     const data = await response.json();
