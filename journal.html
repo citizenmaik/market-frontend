@@ -156,6 +156,17 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
   table{font-size:10px;}
   thead th,tbody td{padding:8px 6px;}
 }
+
+/* Remove number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 </style>
 </head>
 <body>
