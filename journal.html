@@ -28,17 +28,6 @@
   --green:#00a864; --red:#d63050; --yellow:#c8971a; --blue:#2b7fd4; --accent:#5c4fd6;
 }
 
-/* Remove number input spinners */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-input[type="number"] {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-
 *{margin:0;padding:0;box-sizing:border-box;}
 html{height:100%;}
 body {
@@ -182,7 +171,7 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
 <div class="acct-sum">
   <div class="acct-card">
     <div class="acct-label">Gesamtbudget</div>
-    <div class="acct-value" id="totalBudget" onclick="editBudget()" style="cursor:pointer;">$7,500.00</div>
+    <div class="acct-value" id="totalBudget">$7,500.00</div>
   </div>
   <div class="acct-card">
     <div class="acct-label">Investiert</div>
@@ -201,8 +190,8 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
     <div class="acct-value" id="unrealizedPL">$0.00</div>
   </div>
   <div class="acct-card">
-    <div class="acct-label">Risiko %</div>
-    <div class="acct-value" id="riskPercent">0.0%</div>
+    <div class="acct-label">Win-Rate</div>
+    <div class="acct-value" id="winRate">0%</div>
   </div>
 </div>
 
@@ -246,10 +235,6 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
         <input type="number" id="kaufmenge" step="1" placeholder="0">
       </div>
       <div class="fg">
-        <label for="kaufdatum">Kaufdatum</label>
-        <input type="date" id="kaufdatum">
-      </div>
-      <div class="fg">
         <label for="stopLoss">Stop-Loss ($)</label>
         <input type="number" id="stopLoss" step="0.01" placeholder="0.00">
       </div>
@@ -264,6 +249,10 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
       <div class="fg">
         <label for="tp3Preis">TP3 Preis ($)</label>
         <input type="number" id="tp3Preis" step="0.01" placeholder="0.00">
+      </div>
+      <div class="fg">
+        <label for="kaufdatum">Kaufdatum</label>
+        <input type="date" id="kaufdatum">
       </div>
     </div>
     <div class="form-actions">
@@ -448,7 +437,7 @@ async function init() {
   }
   
   // Set default kaufdatum to today
-  document.getElementById("kaufdatum").value = getTodayISO();
+  document.getElementById('kaufdatum').value = getTodayISO();
 }
 
 async function initUser() {
@@ -629,7 +618,7 @@ async function addTrade() {
   const tp1Preis = parseFloat(document.getElementById('tp1Preis').value) || 0;
   const tp2Preis = parseFloat(document.getElementById('tp2Preis').value) || 0;
   const tp3Preis = parseFloat(document.getElementById('tp3Preis').value) || 0;
-  const kaufdatum = document.getElementById("kaufdatum").value || getTodayISO();
+  const kaufdatum = document.getElementById('kaufdatum').value || getTodayISO();
 
   if (!ticker || !einstiegspreis || !kaufmenge) {
     alert('Bitte fülle alle Pflichtfelder aus!');
@@ -642,13 +631,13 @@ async function addTrade() {
       ticker,
       einstiegspreis,
       kaufmenge,
+      kaufdatum,
       stop_loss: stopLoss || null,
       tp1_preis: tp1Preis || null,
       tp2_preis: tp2Preis || null,
       tp3_preis: tp3Preis || null,
       live_preis: einstiegspreis,
       status: 'offen'
-      kaufdatum,
     });
     
     await loadData();
@@ -665,6 +654,7 @@ function resetForm() {
   ['ticker','einstiegspreis','kaufmenge','stopLoss','tp1Preis','tp2Preis','tp3Preis','kaufdatum'].forEach(id => {
     document.getElementById(id).value = '';
   });
+  document.getElementById('kaufdatum').value = getTodayISO();
 }
 
 async function deleteTrade(tradeId) {
@@ -761,60 +751,11 @@ async function editTeilverkauf(tradeId, tp) {
   }
 }
 
-async function editBudget() {
-  const newBudget = parseFloat(prompt(
-    "Neues Gesamtbudget ($):",
-    settings.totalBudget
-  ));
-  
-  if (!newBudget || isNaN(newBudget) || newBudget <= 0) {
-    alert("Ungültiger Betrag!");
-    return;
-  }
-  
-  try {
-    await supabaseClient.from("users")
-      .update({ total_budget: newBudget })
-      .eq("id", USER_ID);
-    
-    settings.totalBudget = newBudget;
-    updateUI();
-    
-  } catch (error) {
-    console.error("Update budget error:", error);
-    alert("Fehler beim Speichern!");
-  }
-}
-
-async function editRiskLimit() {
-  const newLimit = parseFloat(prompt(
-    "Neues Risiko-Limit (%):",
-    settings.riskLimit
-  ));
-  
-  if (!newLimit || isNaN(newLimit) || newLimit <= 0 || newLimit > 100) {
-    alert("Ungültiger Wert! (0-100%)");
-    return;
-  }
-  
-  try {
-    await supabaseClient.from("users")
-      .update({ risk_limit: newLimit })
-      .eq("id", USER_ID);
-    
-    settings.riskLimit = newLimit;
-    updateUI();
-    
-  } catch (error) {
-    console.error("Update risk limit error:", error);
-    alert("Fehler beim Speichern!");
-  }
-}
-
 async function closeTrade(tradeId) {
   const trade = trades.find(t => t.id === tradeId);
   if (!trade) return;
 
+  let exitDatum = getTodayISO();
   const restmenge = calcRestmenge(trade);
   if (restmenge > 0) {
     const ausstiegspreis = parseFloat(prompt(
@@ -823,11 +764,10 @@ async function closeTrade(tradeId) {
     ));
     if (!ausstiegspreis || ausstiegspreis <= 0) return;
     
-    const exitDatum = prompt(
+    exitDatum = prompt(
       `Exit-Datum (YYYY-MM-DD):`,
       getTodayISO()
-    );
-    if (!exitDatum) return;
+    ) || getTodayISO();
     
     if (trade.tp3Menge === 0) {
       trade.tp3Preis = ausstiegspreis;
@@ -847,6 +787,7 @@ async function closeTrade(tradeId) {
       ticker: trade.ticker,
       einstiegspreis: trade.einstiegspreis,
       kaufmenge: trade.kaufmenge,
+      kaufdatum: trade.kaufdatum || null,
       stop_loss: trade.stopLoss || null,
       tp1_preis: trade.tp1Preis || null,
       tp2_preis: trade.tp2Preis || null,
@@ -854,13 +795,12 @@ async function closeTrade(tradeId) {
       tp1_menge: trade.tp1Menge || 0,
       tp2_menge: trade.tp2Menge || 0,
       tp3_menge: trade.tp3Menge || 0,
-      live_preis: trade.livePreis,
-      status: 'geschlossen'
-      kaufdatum: trade.kaufdatum || null,
       tp1_datum: trade.tp1Datum || null,
       tp2_datum: trade.tp2Datum || null,
       tp3_datum: trade.tp3Datum || null,
       exit_datum: exitDatum,
+      live_preis: trade.livePreis,
+      status: 'geschlossen'
     });
     
     await supabaseClient.from('trades').delete().eq('id', tradeId);
@@ -1030,7 +970,11 @@ function renderHistorieTable() {
       <tr>
         <td><span class="badge geschlossen">Geschlossen</span></td>
         <td class="ticker">${t.ticker}</td>
-<td onclick="editClosedDate('${t.id}', 'kaufdatum')" style="cursor:pointer;">${formatDate(t.kaufdatum)}</td>        <td onclick="editClosedDate('${t.id}', 'tp1_datum')" style="cursor:pointer;">${formatDate(t.tp1Datum)}</td>        <td onclick="editClosedDate('${t.id}', 'tp2_datum')" style="cursor:pointer;">${formatDate(t.tp2Datum)}</td>        <td onclick="editClosedDate('${t.id}', 'tp3_datum')" style="cursor:pointer;">${formatDate(t.tp3Datum)}</td>        <td onclick="editClosedDate('${t.id}', 'exit_datum')" style="cursor:pointer;">${formatDate(t.exitDatum)}</td>
+        <td onclick="editClosedDate('${t.id}', 'kaufdatum')" style="cursor:pointer;">${formatDate(t.kaufdatum)}</td>
+        <td onclick="editClosedDate('${t.id}', 'tp1_datum')" style="cursor:pointer;">${formatDate(t.tp1Datum)}</td>
+        <td onclick="editClosedDate('${t.id}', 'tp2_datum')" style="cursor:pointer;">${formatDate(t.tp2Datum)}</td>
+        <td onclick="editClosedDate('${t.id}', 'tp3_datum')" style="cursor:pointer;">${formatDate(t.tp3Datum)}</td>
+        <td onclick="editClosedDate('${t.id}', 'exit_datum')" style="cursor:pointer;">${formatDate(t.exitDatum)}</td>
         <td class="text-right">$${t.einstiegspreis.toFixed(2)}</td>
         <td class="text-right">$${avgExit.toFixed(2)}</td>
         <td class="text-right">${t.kaufmenge}</td>
@@ -1053,8 +997,8 @@ function updateHeaderStats() {
   
   const wins = closedTrades.filter(t => calcPL(t) > 0).length;
   const total = closedTrades.length;
-  const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
-  const riskPercent = (totalRisk / settings.totalBudget) * 100;
+  const winRate = total > 0 ? (wins / total) * 100 : 0;
+
   document.getElementById('totalBudget').textContent = formatCurrency(settings.totalBudget);
   document.getElementById('invested').textContent = formatCurrency(invested);
   document.getElementById('available').textContent = formatCurrency(available);
@@ -1067,9 +1011,7 @@ function updateHeaderStats() {
   unrealizedEl.textContent = formatCurrency(unrealized);
   unrealizedEl.className = 'acct-value ' + (unrealized >= 0 ? 'pos' : 'neg');
   
-  const riskPctEl = document.getElementById('riskPercent');
-  riskPctEl.textContent = `${riskPercent.toFixed(1)}%`;
-  riskPctEl.className = 'acct-value ' + (riskPercent > settings.riskLimit ? 'neg' : 'pos');
+  document.getElementById('winRate').textContent = `${winRate.toFixed(1)}% (${wins}/${total})`;
 }
 
 function updateDashboard() {
@@ -1243,6 +1185,7 @@ function formatCurrency(value) {
     style: 'currency',
     currency: 'USD'
   }).format(value);
+}
 
 function formatDate(dateString) {
   if (!dateString) return "-";
@@ -1272,7 +1215,8 @@ async function editTradeDate(tradeId, field) {
     tp3_datum: "TP3 Datum"
   }[field];
   
-  const currentValue = trade[field.replace("_", "")] || "";
+  const fieldName = field.replace("_", "").replace("datum", "Datum");
+  const currentValue = trade[fieldName] || "";
   const newDate = prompt(
     `${fieldLabel} ändern (YYYY-MM-DD):`,
     currentValue || getTodayISO()
@@ -1304,7 +1248,8 @@ async function editClosedDate(tradeId, field) {
     exit_datum: "Exit Datum"
   }[field];
   
-  const currentValue = trade[field.replace("_", "")] || "";
+  const fieldName = field.replace("_", "").replace("datum", "Datum");
+  const currentValue = trade[fieldName] || "";
   const newDate = prompt(
     `${fieldLabel} ändern (YYYY-MM-DD):`,
     currentValue || getTodayISO()
