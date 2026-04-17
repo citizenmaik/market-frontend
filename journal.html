@@ -201,8 +201,8 @@ input[type="number"] {
     <div class="acct-value" id="unrealizedPL">$0.00</div>
   </div>
   <div class="acct-card">
-    <div class="acct-label">Win-Rate</div>
-    <div class="acct-value" id="winRate">0%</div>
+    <div class="acct-label">Risiko %</div>
+    <div class="acct-value" id="riskPercent">0.0%</div>
   </div>
 </div>
 
@@ -879,9 +879,9 @@ function calcRRR(t) {
 
 function calcStatusDetail(t) {
   const restmenge = calcRestmenge(t);
-  if (restmenge === 0) return '✅ Beendet';
-  if (restmenge < t.kaufmenge) return '💰 Teil-Ausstieg';
-  return '🚀 Läuft';
+  if (restmenge === 0) return 'Beendet';
+  if (restmenge < t.kaufmenge) return 'Teil-Ausstieg';
+  return 'Läuft';
 }
 
 // ══════════════════════════════════════════════════════
@@ -1011,9 +1011,8 @@ function updateHeaderStats() {
   const unrealized = trades.reduce((sum, t) => sum + calcPL(t), 0);
   const realized = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
   
-  const wins = closedTrades.filter(t => calcPL(t) > 0).length;
-  const total = closedTrades.length;
-  const winRate = total > 0 ? (wins / total) * 100 : 0;
+  const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
+  const riskPercent = (totalRisk / settings.totalBudget) * 100;
 
   document.getElementById('totalBudget').textContent = formatCurrency(settings.totalBudget);
   document.getElementById('invested').textContent = formatCurrency(invested);
@@ -1027,7 +1026,9 @@ function updateHeaderStats() {
   unrealizedEl.textContent = formatCurrency(unrealized);
   unrealizedEl.className = 'acct-value ' + (unrealized >= 0 ? 'pos' : 'neg');
   
-  document.getElementById('winRate').textContent = `${winRate.toFixed(1)}% (${wins}/${total})`;
+  const riskEl = document.getElementById('riskPercent');
+  riskEl.textContent = `${riskPercent.toFixed(1)}%`;
+  riskEl.className = 'acct-value ' + (riskPercent > settings.riskLimit ? 'neg' : 'pos');
 }
 
 function updateDashboard() {
