@@ -246,6 +246,10 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
         <input type="number" id="kaufmenge" step="1" placeholder="0">
       </div>
       <div class="fg">
+        <label for="kaufdatum">Kaufdatum</label>
+        <input type="date" id="kaufdatum">
+      </div>
+      <div class="fg">
         <label for="stopLoss">Stop-Loss ($)</label>
         <input type="number" id="stopLoss" step="0.01" placeholder="0.00">
       </div>
@@ -274,6 +278,10 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
         <tr>
           <th>Status</th>
           <th>Ticker</th>
+          <th>Kaufdatum</th>
+          <th>TP1 Datum</th>
+          <th>TP2 Datum</th>
+          <th>TP3 Datum</th>
           <th class="text-right">RRR</th>
           <th class="text-right">Einstieg</th>
           <th class="text-right">Menge</th>
@@ -301,6 +309,11 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
         <tr>
           <th>Status</th>
           <th>Ticker</th>
+          <th>Kaufdatum</th>
+          <th>TP1 Datum</th>
+          <th>TP2 Datum</th>
+          <th>TP3 Datum</th>
+          <th>Exit Datum</th>
           <th class="text-right">Einstieg</th>
           <th class="text-right">Ausstieg</th>
           <th class="text-right">Menge</th>
@@ -433,6 +446,9 @@ async function init() {
     fetchLivePrices();
     startAutoRefresh();
   }
+  
+  // Set default kaufdatum to today
+  document.getElementById("kaufdatum").value = getTodayISO();
 }
 
 async function initUser() {
@@ -613,6 +629,7 @@ async function addTrade() {
   const tp1Preis = parseFloat(document.getElementById('tp1Preis').value) || 0;
   const tp2Preis = parseFloat(document.getElementById('tp2Preis').value) || 0;
   const tp3Preis = parseFloat(document.getElementById('tp3Preis').value) || 0;
+  const kaufdatum = document.getElementById("kaufdatum").value || getTodayISO();
 
   if (!ticker || !einstiegspreis || !kaufmenge) {
     alert('Bitte fülle alle Pflichtfelder aus!');
@@ -631,6 +648,7 @@ async function addTrade() {
       tp3_preis: tp3Preis || null,
       live_preis: einstiegspreis,
       status: 'offen'
+      kaufdatum,
     });
     
     await loadData();
@@ -644,7 +662,7 @@ async function addTrade() {
 }
 
 function resetForm() {
-  ['ticker','einstiegspreis','kaufmenge','stopLoss','tp1Preis','tp2Preis','tp3Preis'].forEach(id => {
+  ['ticker','einstiegspreis','kaufmenge','stopLoss','tp1Preis','tp2Preis','tp3Preis','kaufdatum'].forEach(id => {
     document.getElementById(id).value = '';
   });
 }
@@ -712,10 +730,18 @@ async function editTeilverkauf(tradeId, tp) {
     return;
   }
 
+  const exitDatum = prompt(
+    `TP${tp} Exit-Datum (YYYY-MM-DD):`,
+    getTodayISO()
+  );
+
+  if (!exitDatum) return;
+
   try {
     const updateData = {};
     updateData[`tp${tp}_preis`] = exitPreis;
     updateData[`tp${tp}_menge`] = exitMenge;
+    updateData[`tp${tp}_datum`] = exitDatum;
     
     await supabaseClient.from("trades").update(updateData).eq("id", tradeId);
     await loadData();
@@ -797,6 +823,12 @@ async function closeTrade(tradeId) {
     ));
     if (!ausstiegspreis || ausstiegspreis <= 0) return;
     
+    const exitDatum = prompt(
+      `Exit-Datum (YYYY-MM-DD):`,
+      getTodayISO()
+    );
+    if (!exitDatum) return;
+    
     if (trade.tp3Menge === 0) {
       trade.tp3Preis = ausstiegspreis;
       trade.tp3Menge = restmenge;
@@ -824,6 +856,11 @@ async function closeTrade(tradeId) {
       tp3_menge: trade.tp3Menge || 0,
       live_preis: trade.livePreis,
       status: 'geschlossen'
+      kaufdatum: trade.kaufdatum || null,
+      tp1_datum: trade.tp1Datum || null,
+      tp2_datum: trade.tp2Datum || null,
+      tp3_datum: trade.tp3Datum || null,
+      exit_datum: exitDatum,
     });
     
     await supabaseClient.from('trades').delete().eq('id', tradeId);
@@ -905,7 +942,7 @@ function renderTradesTable() {
   
   if (trades.length === 0) {
     tbody.innerHTML = `
-      <tr><td colspan="14" class="empty">
+      <tr><td colspan="18" class="empty">
         <div class="empty-icon">📊</div>
         <div>Keine offenen Trades. Füge deinen ersten hinzu!</div>
       </td></tr>
@@ -929,6 +966,10 @@ function renderTradesTable() {
       <tr>
         <td><span class="badge offen">Offen</span></td>
         <td class="ticker">${t.ticker}</td>
+        <td onclick="editTradeDate('${t.id}', 'kaufdatum')" style="cursor:pointer;">${formatDate(t.kaufdatum)}</td>
+        <td onclick="editTradeDate('${t.id}', 'tp1_datum')" style="cursor:pointer;">${formatDate(t.tp1Datum)}</td>
+        <td onclick="editTradeDate('${t.id}', 'tp2_datum')" style="cursor:pointer;">${formatDate(t.tp2Datum)}</td>
+        <td onclick="editTradeDate('${t.id}', 'tp3_datum')" style="cursor:pointer;">${formatDate(t.tp3Datum)}</td>
         <td class="text-right">${rrrDisplay}</td>
         <td class="text-right">$${t.einstiegspreis.toFixed(2)}</td>
         <td class="text-right">${t.kaufmenge}</td>
@@ -964,7 +1005,7 @@ function renderHistorieTable() {
   
   if (closedTrades.length === 0) {
     tbody.innerHTML = `
-      <tr><td colspan="9" class="empty">
+      <tr><td colspan="14" class="empty">
         <div class="empty-icon">📚</div>
         <div>Noch keine geschlossenen Trades.</div>
       </td></tr>
@@ -989,6 +1030,7 @@ function renderHistorieTable() {
       <tr>
         <td><span class="badge geschlossen">Geschlossen</span></td>
         <td class="ticker">${t.ticker}</td>
+<td onclick="editClosedDate('${t.id}', 'kaufdatum')" style="cursor:pointer;">${formatDate(t.kaufdatum)}</td>        <td onclick="editClosedDate('${t.id}', 'tp1_datum')" style="cursor:pointer;">${formatDate(t.tp1Datum)}</td>        <td onclick="editClosedDate('${t.id}', 'tp2_datum')" style="cursor:pointer;">${formatDate(t.tp2Datum)}</td>        <td onclick="editClosedDate('${t.id}', 'tp3_datum')" style="cursor:pointer;">${formatDate(t.tp3Datum)}</td>        <td onclick="editClosedDate('${t.id}', 'exit_datum')" style="cursor:pointer;">${formatDate(t.exitDatum)}</td>
         <td class="text-right">$${t.einstiegspreis.toFixed(2)}</td>
         <td class="text-right">$${avgExit.toFixed(2)}</td>
         <td class="text-right">${t.kaufmenge}</td>
@@ -1201,6 +1243,86 @@ function formatCurrency(value) {
     style: 'currency',
     currency: 'USD'
   }).format(value);
+
+function formatDate(dateString) {
+  if (!dateString) return "-";
+  const d = new Date(dateString);
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+
+function getTodayISO() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+
+async function editTradeDate(tradeId, field) {
+  const trade = trades.find(t => t.id === tradeId);
+  if (!trade) return;
+  
+  const fieldLabel = {
+    kaufdatum: "Kaufdatum",
+    tp1_datum: "TP1 Datum",
+    tp2_datum: "TP2 Datum",
+    tp3_datum: "TP3 Datum"
+  }[field];
+  
+  const currentValue = trade[field.replace("_", "")] || "";
+  const newDate = prompt(
+    `${fieldLabel} ändern (YYYY-MM-DD):`,
+    currentValue || getTodayISO()
+  );
+  
+  if (!newDate) return;
+  
+  try {
+    const updateData = {};
+    updateData[field] = newDate;
+    await supabaseClient.from("trades").update(updateData).eq("id", tradeId);
+    await loadData();
+    updateUI();
+  } catch (error) {
+    console.error("Update date error:", error);
+    alert("Fehler beim Speichern!");
+  }
+}
+
+async function editClosedDate(tradeId, field) {
+  const trade = closedTrades.find(t => t.id === tradeId);
+  if (!trade) return;
+  
+  const fieldLabel = {
+    kaufdatum: "Kaufdatum",
+    tp1_datum: "TP1 Datum",
+    tp2_datum: "TP2 Datum",
+    tp3_datum: "TP3 Datum",
+    exit_datum: "Exit Datum"
+  }[field];
+  
+  const currentValue = trade[field.replace("_", "")] || "";
+  const newDate = prompt(
+    `${fieldLabel} ändern (YYYY-MM-DD):`,
+    currentValue || getTodayISO()
+  );
+  
+  if (!newDate) return;
+  
+  try {
+    const updateData = {};
+    updateData[field] = newDate;
+    await supabaseClient.from("closed_trades").update(updateData).eq("id", tradeId);
+    await loadData();
+    updateUI();
+  } catch (error) {
+    console.error("Update closed date error:", error);
+    alert("Fehler beim Speichern!");
+  }
+}
+}
 }
 
 // ══════════════════════════════════════════════════════
