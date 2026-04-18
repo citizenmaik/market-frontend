@@ -1,0 +1,1243 @@
+# Zeile 16: ändere 'trading2026' zu deinem Passwort
+# CTRL+O → Enter → CTRL+X
+
+# 4. Deploy
+git add journal.html
+git commit -m "Fix: Clean version with password protection"
+git push origin main<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0b0e" id="themeColorMeta">
+<title>Trading Journal (Cloud Sync)</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- ⚡ Supabase Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- 🔒 PASSWORD PROTECTION -->
+<script>
+(function() {
+  const JOURNAL_PASSWORD = 'trading2026'; // ⚠️ ÄNDERE DIES!
+  
+  if (!sessionStorage.getItem('journalAuth')) {
+    const pw = prompt('🔒 Trading Journal Passwort:');
+    
+    if (pw !== JOURNAL_PASSWORD) {
+      alert('❌ Falsches Passwort!');
+      window.location.href = '/';
+      throw new Error('Auth failed');
+    }
+    
+    sessionStorage.setItem('journalAuth', 'true');
+  }
+})();
+</script>
+
+<style>
+:root {
+  --green:#00d084; --green-bright:#00ff9d;
+  --red:#ff4466; --yellow:#f5c842; --blue:#4d9fff; --accent:#7c6af7;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  --radius:8px; --gap:12px; --pad:16px;
+  --transition: background .25s, color .25s, border-color .25s;
+}
+[data-theme="dark"] {
+  --bg:#0a0b0e; --surface:#111318; --surface2:#171b22; --border:#1e2330;
+  --text:#e8eaf0; --muted:#5a6070; --th-btn:#1e2535;
+}
+[data-theme="light"] {
+  --bg:#f0f2f5; --surface:#ffffff; --surface2:#f7f8fa; --border:#e2e6ed;
+  --text:#1a1d24; --muted:#8a94a6; --th-btn:#e8ecf2;
+  --green:#00a864; --red:#d63050; --yellow:#c8971a; --blue:#2b7fd4; --accent:#5c4fd6;
+}
+
+/* Remove number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{height:100%;}
+body {
+  background:var(--bg); color:var(--text);
+  font-family:var(--sans); min-height:100vh;
+  padding: max(env(safe-area-inset-top),16px) max(env(safe-area-inset-right),16px)
+           max(env(safe-area-inset-bottom),24px) max(env(safe-area-inset-left),16px);
+  transition:var(--transition);
+}
+
+.hdr {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--border);
+  gap:8px; flex-wrap:wrap;
+}
+.hdr h1{font-family:var(--mono);font-size:12px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.nav-link{font-family:var(--mono);font-size:11px;color:var(--muted);
+  text-decoration:none;padding:6px 12px;border-radius:4px;border:1px solid var(--border);
+  transition:all .2s;}
+.nav-link:hover{color:var(--text);border-color:var(--accent);}
+.th-btn{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
+  background:var(--th-btn);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:15px;transition:all .2s;flex-shrink:0;}
+.th-btn:hover{transform:scale(1.1);}
+
+.acct-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:var(--gap);margin-bottom:var(--gap);}
+.acct-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:var(--pad);transition:var(--transition);}
+.acct-label{font-family:var(--mono);font-size:10px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.acct-value{font-size:20px;font-weight:600;letter-spacing:-.02em;}
+.acct-value.pos{color:var(--green);}
+.acct-value.neg{color:var(--red);}
+
+.tabs{display:flex;gap:4px;margin-bottom:var(--gap);border-bottom:1px solid var(--border);}
+.tab{padding:10px 16px;background:transparent;border:none;color:var(--muted);
+  font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .2s;
+  border-bottom:2px solid transparent;text-transform:uppercase;letter-spacing:.08em;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-content{display:none;}
+.tab-content.active{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:var(--pad);margin-bottom:var(--gap);}
+.form h2{font-family:var(--mono);font-size:12px;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--accent);margin-bottom:16px;}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:12px;margin-bottom:16px;}
+.fg{display:flex;flex-direction:column;}
+.fg label{font-family:var(--mono);font-size:10px;color:var(--muted);
+  margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;}
+.fg input,.fg select{background:var(--surface2);border:1px solid var(--border);
+  border-radius:6px;padding:8px;color:var(--text);font-family:var(--mono);
+  font-size:12px;transition:all .2s;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(124,106,247,.1);}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-family:var(--mono);
+  font-size:11px;cursor:pointer;transition:all .2s;text-transform:uppercase;
+  letter-spacing:.08em;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#6854e6;transform:translateY(-2px);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{border-color:var(--accent);}
+
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow-x:auto;margin-bottom:var(--gap);}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+thead{background:var(--surface2);}
+thead th{padding:10px;text-align:left;font-family:var(--mono);font-size:10px;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.08em;
+  border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);transition:background .2s;}
+tbody tr:hover{background:rgba(124,106,247,.05);}
+tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
+.ticker{font-weight:600;color:var(--accent);font-size:12px;}
+.pos{color:var(--green);font-weight:600;}
+.neg{color:var(--red);font-weight:600;}
+.text-right{text-align:right;}
+.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:9px;
+  text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.badge.offen{background:rgba(77,159,255,.2);color:var(--blue);}
+.badge.geschlossen{background:rgba(0,208,132,.2);color:var(--green);}
+.action-cell{display:flex;gap:4px;}
+.action-btn{padding:4px 8px;border:none;border-radius:4px;font-family:var(--mono);
+  font-size:9px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.action-btn.close{background:rgba(0,208,132,.2);color:var(--green);}
+.action-btn.close:hover{background:var(--green);color:#000;}
+.action-btn.delete{background:rgba(255,68,102,.2);color:var(--red);}
+.action-btn.delete:hover{background:var(--red);color:#fff;}
+.action-btn.edit{background:rgba(124,106,247,.2);color:var(--accent);}
+.action-btn.edit:hover{background:var(--accent);color:#fff;}
+
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:var(--gap);margin-bottom:var(--gap);}
+.dash-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:var(--pad);}
+.dash-card h3{font-family:var(--mono);font-size:10px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;
+  border-bottom:1px solid var(--border);padding-bottom:8px;}
+.stat-row{display:flex;justify-content:space-between;padding:8px 0;
+  border-bottom:1px solid var(--border);}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.stat-value{font-size:13px;font-weight:600;font-family:var(--mono);}
+
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.5;}
+
+.inline-input{width:70px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:4px;padding:4px 6px;color:var(--text);font-size:11px;
+  font-family:var(--mono);}
+.inline-input:focus{outline:none;border-color:var(--accent);}
+
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.dot.pulse{animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+@media (max-width: 768px) {
+  .form-grid{grid-template-columns:1fr;}
+  .acct-sum{grid-template-columns:1fr 1fr;}
+  table{font-size:10px;}
+  thead th,tbody td{padding:8px 6px;}
+}
+</style>
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Trading Journal <span style="font-size:9px;color:var(--green);">☁ Cloud</span></h1>
+  <div class="hdr-right">
+    <a href="index.html" class="nav-link">← Dashboard</a>
+    <button class="th-btn" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
+  </div>
+</div>
+
+<div class="acct-sum">
+  <div class="acct-card">
+    <div class="acct-label">Gesamtbudget</div>
+    <div class="acct-value" id="totalBudget" onclick="editBudget()" style="cursor:pointer;">$7,500.00</div>
+  </div>
+  <div class="acct-card">
+    <div class="acct-label">Investiert</div>
+    <div class="acct-value" id="invested">$0.00</div>
+  </div>
+  <div class="acct-card">
+    <div class="acct-label">Verfügbar</div>
+    <div class="acct-value" id="available">$7,500.00</div>
+  </div>
+  <div class="acct-card">
+    <div class="acct-label">Realisiert P/L</div>
+    <div class="acct-value" id="realizedPL">$0.00</div>
+  </div>
+  <div class="acct-card">
+    <div class="acct-label">Unrealisiert P/L</div>
+    <div class="acct-value" id="unrealizedPL">$0.00</div>
+  </div>
+  <div class="acct-card">
+    <div class="acct-label">Risiko %</div>
+    <div class="acct-value" id="riskPercent">0.0%</div>
+  </div>
+</div>
+</div>
+
+<!-- Status Bar -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--gap);padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="dot pulse" id="statusDot" style="background:var(--yellow);"></span>
+    <span style="font-family:var(--mono);font-size:11px;color:var(--muted);" id="statusText">Verbinde...</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);" id="lastSync">—</span>
+    <button class="btn btn-secondary" style="padding:4px 10px;font-size:10px;" onclick="fetchLivePrices()">Refresh</button>
+    <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--muted);cursor:pointer;">
+      <input type="checkbox" id="autoRefresh" checked style="cursor:pointer;">
+      Auto (30s)
+    </label>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="trades">Trades</button>
+  <button class="tab" data-tab="historie">Historie</button>
+  <button class="tab" data-tab="dashboard">Dashboard</button>
+</div>
+
+<!-- Trades Tab -->
+<div class="tab-content active" id="trades-content">
+  <div class="form">
+    <h2>Neuer Trade</h2>
+    <div class="form-grid">
+      <div class="fg">
+        <label for="ticker">Ticker *</label>
+        <input type="text" id="ticker" placeholder="AAPL">
+      </div>
+      <div class="fg">
+        <label for="einstiegspreis">Einstiegspreis ($) *</label>
+        <input type="number" id="einstiegspreis" step="0.01" placeholder="0.00">
+      </div>
+      <div class="fg">
+        <label for="kaufmenge">Kaufmenge (Stk) *</label>
+        <input type="number" id="kaufmenge" step="1" placeholder="0">
+      </div>
+      <div class="fg">
+        <label for="stopLoss">Stop-Loss ($)</label>
+        <input type="number" id="stopLoss" step="0.01" placeholder="0.00">
+      </div>
+      <div class="fg">
+        <label for="tp1Preis">TP1 Preis ($)</label>
+        <input type="number" id="tp1Preis" step="0.01" placeholder="0.00">
+      </div>
+      <div class="fg">
+        <label for="tp2Preis">TP2 Preis ($)</label>
+        <input type="number" id="tp2Preis" step="0.01" placeholder="0.00">
+      </div>
+      <div class="fg">
+        <label for="tp3Preis">TP3 Preis ($)</label>
+        <input type="number" id="tp3Preis" step="0.01" placeholder="0.00">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+      <button class="btn btn-primary" onclick="addTrade()">Trade Hinzufügen</button>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Ticker</th>
+          <th class="text-right">RRR</th>
+          <th class="text-right">Einstieg</th>
+          <th class="text-right">Menge</th>
+          <th class="text-right">Pos. Größe</th>
+          <th class="text-right">Stop-Loss</th>
+          <th class="text-right">Risiko</th>
+          <th class="text-right">Live-Preis</th>
+          <th>Status Detail</th>
+          <th class="text-right">Rest (Stk)</th>
+          <th class="text-right">P/L ($)</th>
+          <th class="text-right">P/L (%)</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody id="tradesTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Historie Tab -->
+<div class="tab-content" id="historie-content">
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Ticker</th>
+          <th class="text-right">Einstieg</th>
+          <th class="text-right">Ausstieg</th>
+          <th class="text-right">Menge</th>
+          <th class="text-right">P/L ($)</th>
+          <th class="text-right">P/L (%)</th>
+          <th class="text-right">RRR</th>
+          <th>Aktionen</th>
+        </tr>
+      </thead>
+      <tbody id="historieTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Dashboard Tab -->
+<div class="tab-content" id="dashboard-content">
+  <div class="dash-grid">
+    <div class="dash-card">
+      <h3>Konto-Übersicht</h3>
+      <div class="stat-row">
+        <span class="stat-label">Gesamtbudget</span>
+        <span class="stat-value" id="dashBudget">$7,500.00</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Investiert</span>
+        <span class="stat-value" id="dashInvested">$0.00</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Verfügbar</span>
+        <span class="stat-value" id="dashAvailable">$7,500.00</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Realisiert P/L</span>
+        <span class="stat-value" id="dashRealized">$0.00</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Unrealisiert P/L</span>
+        <span class="stat-value" id="dashUnrealized">$0.00</span>
+      </div>
+    </div>
+
+    <div class="dash-card">
+      <h3>Performance</h3>
+      <div class="stat-row">
+        <span class="stat-label">Win-Rate</span>
+        <span class="stat-value" id="dashWinRate">0%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Trades Gesamt</span>
+        <span class="stat-value" id="dashTotalTrades">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Gewinner</span>
+        <span class="stat-value pos" id="dashWins">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Verlierer</span>
+        <span class="stat-value neg" id="dashLosses">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Ø Gewinn</span>
+        <span class="stat-value" id="dashAvgWin">$0.00</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Ø Verlust</span>
+        <span class="stat-value" id="dashAvgLoss">$0.00</span>
+      </div>
+    </div>
+
+    <div class="dash-card">
+      <h3>Risiko</h3>
+      <div class="stat-row">
+        <span class="stat-label">Aktuelles Risiko</span>
+        <span class="stat-value" id="dashRisk">$0.00</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Risiko %</span>
+        <span class="stat-value" id="dashRiskPct">0.00%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Risiko-Limit</span>
+        <span class="stat-value" id="dashRiskLimit" onclick="editRiskLimit()" style="cursor:pointer;">5.00%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// ⚠️ SUPABASE CONFIG - TRAGE DEINE WERTE EIN!
+// ══════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://yegssavuylahtizdesod.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllZ3NzYXZ1eWxhaHRpemRlc29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjc0NzgsImV4cCI6MjA5MTg0MzQ3OH0.jXanfAievByv7VD_I9hKmznhbkhTRDbr-WUcDITSGMQ';
+
+// Supabase Client initialisieren
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let USER_ID = null;
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let trades = [];
+let closedTrades = [];
+let settings = { totalBudget: 7500, riskLimit: 5.0 };
+let priceRefreshInterval = null;
+let lastPriceFetch = null;
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+async function init() {
+  updateStatus('Verbinde mit Supabase...', 'loading');
+  
+  await initUser();
+  
+  if (USER_ID) {
+    await checkMigration();
+    await loadData();
+    updateStatus('✓ Verbunden', 'success');
+  } else {
+    updateStatus('⚠ Konfiguration fehlt', 'error');
+    alert('⚠️ Bitte Supabase-Keys in Zeile 470-471 eintragen!\n\nÖffne die Datei im Code-Editor und füge ein:\n- SUPABASE_URL\n- SUPABASE_ANON_KEY');
+  }
+  
+  updateUI();
+  setupEventListeners();
+  updateThemeIcon();
+  
+  if (USER_ID) {
+    fetchLivePrices();
+    startAutoRefresh();
+  }
+}
+
+async function initUser() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('users')
+      .select('*')
+      .eq('email', 'default@tradingjournal.local')
+      .single();
+    
+    if (error) throw error;
+    
+    if (data) {
+      USER_ID = data.id;
+      settings.totalBudget = parseFloat(data.total_budget);
+      settings.riskLimit = parseFloat(data.risk_limit);
+    }
+  } catch (error) {
+    console.error('User init error:', error);
+  }
+}
+
+async function checkMigration() {
+  const localTrades = localStorage.getItem('trades');
+  const localClosed = localStorage.getItem('closedTrades');
+  
+  if (!(localTrades || localClosed)) return;
+  
+  const confirmed = confirm(
+    'LocalStorage-Daten gefunden!\n\n' +
+    'Sollen deine lokalen Trades zu Supabase migriert werden?\n\n' +
+    '✅ Ja = Cloud-Upload + lokal löschen\n' +
+    '❌ Nein = Lokal behalten'
+  );
+  
+  if (confirmed) await migrateFromLocalStorage();
+}
+
+async function migrateFromLocalStorage() {
+  try {
+    updateStatus('Migration läuft...', 'loading');
+    
+    const localTrades = JSON.parse(localStorage.getItem('trades') || '[]');
+    const localClosed = JSON.parse(localStorage.getItem('closedTrades') || '[]');
+    
+    let migrated = 0;
+    
+    for (const trade of localTrades) {
+      await supabaseClient.from('trades').insert({
+        user_id: USER_ID,
+        ticker: trade.ticker,
+        einstiegspreis: trade.einstiegspreis,
+        kaufmenge: trade.kaufmenge,
+        stop_loss: trade.stopLoss || null,
+        tp1_preis: trade.tp1Preis || null,
+        tp2_preis: trade.tp2Preis || null,
+        tp3_preis: trade.tp3Preis || null,
+        tp1_menge: trade.tp1Menge || 0,
+        tp2_menge: trade.tp2Menge || 0,
+        tp3_menge: trade.tp3Menge || 0,
+        live_preis: trade.livePreis || trade.einstiegspreis,
+        status: 'offen'
+      });
+      migrated++;
+    }
+    
+    for (const trade of localClosed) {
+      await supabaseClient.from('closed_trades').insert({
+        user_id: USER_ID,
+        ticker: trade.ticker,
+        einstiegspreis: trade.einstiegspreis,
+        kaufmenge: trade.kaufmenge,
+        stop_loss: trade.stopLoss || null,
+        tp1_preis: trade.tp1Preis || null,
+        tp2_preis: trade.tp2Preis || null,
+        tp3_preis: trade.tp3Preis || null,
+        tp1_menge: trade.tp1Menge || 0,
+        tp2_menge: trade.tp2Menge || 0,
+        tp3_menge: trade.tp3Menge || 0,
+        live_preis: trade.livePreis || trade.einstiegspreis,
+        status: 'geschlossen'
+      });
+      migrated++;
+    }
+    
+    localStorage.removeItem('trades');
+    localStorage.removeItem('closedTrades');
+    
+    alert(`✅ Migration erfolgreich!\n\n${migrated} Trades hochgeladen.`);
+    
+  } catch (error) {
+    console.error('Migration error:', error);
+    alert('⚠️ Migration fehlgeschlagen.');
+  }
+}
+
+function setupEventListeners() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+  
+  document.getElementById('autoRefresh').addEventListener('change', (e) => {
+    if (e.target.checked) startAutoRefresh();
+    else stopAutoRefresh();
+  });
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  
+  document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+  document.getElementById(`${tabName}-content`).classList.add('active');
+
+  if (tabName === 'dashboard') updateDashboard();
+}
+
+// ══════════════════════════════════════════════════════
+// SUPABASE DATA
+// ══════════════════════════════════════════════════════
+async function loadData() {
+  if (!USER_ID) return;
+  
+  try {
+    const { data: tradesData } = await supabaseClient
+      .from('trades')
+      .select('*')
+      .eq('user_id', USER_ID)
+      .order('created_at', { ascending: false });
+    
+    const { data: closedData } = await supabaseClient
+      .from('closed_trades')
+      .select('*')
+      .eq('user_id', USER_ID)
+      .order('closed_at', { ascending: false });
+    
+    trades = (tradesData || []).map(dbToTrade);
+    closedTrades = (closedData || []).map(dbToTrade);
+    
+    updateLastSync();
+    
+  } catch (error) {
+    console.error('Load error:', error);
+  }
+}
+
+function dbToTrade(t) {
+  return {
+    id: t.id,
+    ticker: t.ticker,
+    einstiegspreis: parseFloat(t.einstiegspreis),
+    kaufmenge: parseInt(t.kaufmenge),
+    stopLoss: t.stop_loss ? parseFloat(t.stop_loss) : 0,
+    tp1Preis: t.tp1_preis ? parseFloat(t.tp1_preis) : 0,
+    tp2Preis: t.tp2_preis ? parseFloat(t.tp2_preis) : 0,
+    tp3Preis: t.tp3_preis ? parseFloat(t.tp3_preis) : 0,
+    tp1Menge: parseInt(t.tp1_menge || 0),
+    tp2Menge: parseInt(t.tp2_menge || 0),
+    tp3Menge: parseInt(t.tp3_menge || 0),
+    livePreis: parseFloat(t.live_preis || t.einstiegspreis),
+    status: t.status
+  };
+}
+
+// ══════════════════════════════════════════════════════
+// TRADE MANAGEMENT
+// ══════════════════════════════════════════════════════
+async function addTrade() {
+  if (!USER_ID) {
+    alert('⚠️ Supabase nicht konfiguriert! Bitte Keys eintragen.');
+    return;
+  }
+
+  const ticker = document.getElementById('ticker').value.toUpperCase().trim();
+  const einstiegspreis = parseFloat(document.getElementById('einstiegspreis').value);
+  const kaufmenge = parseInt(document.getElementById('kaufmenge').value);
+  const stopLoss = parseFloat(document.getElementById('stopLoss').value) || 0;
+  const tp1Preis = parseFloat(document.getElementById('tp1Preis').value) || 0;
+  const tp2Preis = parseFloat(document.getElementById('tp2Preis').value) || 0;
+  const tp3Preis = parseFloat(document.getElementById('tp3Preis').value) || 0;
+
+  if (!ticker || !einstiegspreis || !kaufmenge) {
+    alert('Bitte fülle alle Pflichtfelder aus!');
+    return;
+  }
+
+  try {
+    await supabaseClient.from('trades').insert({
+      user_id: USER_ID,
+      ticker,
+      einstiegspreis,
+      kaufmenge,
+      stop_loss: stopLoss || null,
+      tp1_preis: tp1Preis || null,
+      tp2_preis: tp2Preis || null,
+      tp3_preis: tp3Preis || null,
+      live_preis: einstiegspreis,
+      status: 'offen'
+    });
+    
+    await loadData();
+    updateUI();
+    resetForm();
+    
+  } catch (error) {
+    console.error('Add trade error:', error);
+    alert('Fehler beim Hinzufügen!');
+  }
+}
+
+function resetForm() {
+  ['ticker','einstiegspreis','kaufmenge','stopLoss','tp1Preis','tp2Preis','tp3Preis'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+async function deleteTrade(tradeId) {
+  if (!confirm('Trade löschen?')) return;
+  
+  try {
+    await supabaseClient.from('trades').delete().eq('id', tradeId);
+    await loadData();
+    updateUI();
+  } catch (error) {
+    console.error('Delete error:', error);
+  }
+}
+
+async function deleteClosedTrade(tradeId) {
+  if (!confirm('Trade aus Historie löschen?')) return;
+  
+  try {
+    await supabaseClient.from('closed_trades').delete().eq('id', tradeId);
+    await loadData();
+    updateUI();
+  } catch (error) {
+    console.error('Delete error:', error);
+  }
+}
+
+async function updateLivePreis(tradeId, newPreis) {
+  try {
+    await supabaseClient.from('trades').update({ live_preis: newPreis }).eq('id', tradeId);
+    await loadData();
+    updateUI();
+  } catch (error) {
+    console.error('Update price error:', error);
+  }
+}
+
+async function editTeilverkauf(tradeId, tp) {
+  const trade = trades.find(t => t.id === tradeId);
+  if (!trade) return;
+
+  // Schritt 1: Exit-Preis abfragen
+  const defaultPrice = trade[`tp${tp}Preis`] || trade.livePreis || trade.einstiegspreis;
+  const exitPreis = parseFloat(prompt(
+    `TP${tp} Exit-Preis für ${trade.ticker}:`,
+    defaultPrice.toFixed(2)
+  ));
+
+  if (!exitPreis || isNaN(exitPreis) || exitPreis <= 0) {
+    alert('Ungültiger Preis!');
+    return;
+  }
+
+  // Schritt 2: Menge abfragen
+  const currentMenge = trade[`tp${tp}Menge`] || 0;
+  const maxMenge = calcRestmenge(trade);
+  
+  const exitMenge = parseInt(prompt(
+    `TP${tp} Exit-Menge (Max: ${maxMenge} Stk):`,
+    currentMenge || Math.floor(trade.kaufmenge / 3)
+  ));
+
+  if (!exitMenge || isNaN(exitMenge)) return;
+  if (exitMenge < 0 || exitMenge > maxMenge + currentMenge) {
+    alert(`Ungültig! Max: ${maxMenge + currentMenge} Stk`);
+    return;
+  }
+
+  // Schritt 3: Beide Werte speichern
+  try {
+    const updateData = {};
+    updateData[`tp${tp}_preis`] = exitPreis;
+    updateData[`tp${tp}_menge`] = exitMenge;
+    
+    await supabaseClient.from('trades').update(updateData).eq('id', tradeId);
+    await loadData();
+    
+    const updatedTrade = trades.find(t => t.id === tradeId);
+    if (calcRestmenge(updatedTrade) === 0) {
+      if (confirm('Vollständig verkauft. In Historie verschieben?')) {
+        await closeTrade(tradeId);
+        return;
+      }
+    }
+    
+    updateUI();
+    
+  } catch (error) {
+    console.error('Update teilverkauf error:', error);
+  }
+}
+
+async function editBudget() {
+  const newBudget = parseFloat(prompt(
+    'Neues Gesamtbudget ($):',
+    settings.totalBudget
+  ));
+  
+  if (!newBudget || isNaN(newBudget) || newBudget <= 0) {
+    alert('Ungültiger Betrag!');
+    return;
+  }
+  
+  try {
+    await supabaseClient.from('users')
+      .update({ total_budget: newBudget })
+      .eq('id', USER_ID);
+    
+    settings.totalBudget = newBudget;
+    updateUI();
+    
+  } catch (error) {
+    console.error('Update budget error:', error);
+    alert('Fehler beim Speichern!');
+  }
+}
+
+async function editRiskLimit() {
+  const newLimit = parseFloat(prompt(
+    'Neues Risiko-Limit (%):',
+    settings.riskLimit
+  ));
+  
+  if (!newLimit || isNaN(newLimit) || newLimit <= 0 || newLimit > 100) {
+    alert('Ungültiger Wert! (0-100%)');
+    return;
+  }
+  
+  try {
+    await supabaseClient.from('users')
+      .update({ risk_limit: newLimit })
+      .eq('id', USER_ID);
+    
+    settings.riskLimit = newLimit;
+    updateUI();
+    
+  } catch (error) {
+    console.error('Update risk limit error:', error);
+    alert('Fehler beim Speichern!');
+  }
+}
+
+async function closeTrade(tradeId) {
+  const trade = trades.find(t => t.id === tradeId);
+  if (!trade) return;
+
+  const restmenge = calcRestmenge(trade);
+  if (restmenge > 0) {
+    const ausstiegspreis = parseFloat(prompt(
+      `Ausstiegspreis für ${restmenge} Stk ${trade.ticker}:`,
+      trade.livePreis
+    ));
+    if (!ausstiegspreis || ausstiegspreis <= 0) return;
+    
+    if (trade.tp3Menge === 0) {
+      trade.tp3Preis = ausstiegspreis;
+      trade.tp3Menge = restmenge;
+    } else if (trade.tp2Menge === 0) {
+      trade.tp2Preis = ausstiegspreis;
+      trade.tp2Menge = restmenge;
+    } else if (trade.tp1Menge === 0) {
+      trade.tp1Preis = ausstiegspreis;
+      trade.tp1Menge = restmenge;
+    }
+  }
+
+  try {
+    await supabaseClient.from('closed_trades').insert({
+      user_id: USER_ID,
+      ticker: trade.ticker,
+      einstiegspreis: trade.einstiegspreis,
+      kaufmenge: trade.kaufmenge,
+      stop_loss: trade.stopLoss || null,
+      tp1_preis: trade.tp1Preis || null,
+      tp2_preis: trade.tp2Preis || null,
+      tp3_preis: trade.tp3Preis || null,
+      tp1_menge: trade.tp1Menge || 0,
+      tp2_menge: trade.tp2Menge || 0,
+      tp3_menge: trade.tp3Menge || 0,
+      live_preis: trade.livePreis,
+      status: 'geschlossen'
+    });
+    
+    await supabaseClient.from('trades').delete().eq('id', tradeId);
+    await loadData();
+    updateUI();
+    
+  } catch (error) {
+    console.error('Close trade error:', error);
+    alert('Fehler beim Schließen!');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// CALCULATIONS
+// ══════════════════════════════════════════════════════
+function calcRestmenge(t) {
+  return t.kaufmenge - t.tp1Menge - t.tp2Menge - t.tp3Menge;
+}
+
+function calcPosGroesse(t) {
+  return t.einstiegspreis * calcRestmenge(t);
+}
+
+function calcRisiko(t) {
+  if (!t.stopLoss || t.stopLoss === 0) return 0;
+  return Math.abs(t.einstiegspreis - t.stopLoss) * calcRestmenge(t);
+}
+
+function calcPL(t) {
+  const tp1Value = t.tp1Menge * t.tp1Preis;
+  const tp2Value = t.tp2Menge * t.tp2Preis;
+  const tp3Value = t.tp3Menge * t.tp3Preis;
+  const restValue = calcRestmenge(t) * t.livePreis;
+  const totalValue = tp1Value + tp2Value + tp3Value + restValue;
+  const initialValue = t.kaufmenge * t.einstiegspreis;
+  return totalValue - initialValue;
+}
+
+function calcPLPercent(t) {
+  const pl = calcPL(t);
+  const initialValue = t.kaufmenge * t.einstiegspreis;
+  return initialValue > 0 ? (pl / initialValue) * 100 : 0;
+}
+
+function calcRRR(t) {
+  if (!t.stopLoss || t.stopLoss === 0) return 'N/A';
+  if (t.einstiegspreis === t.stopLoss) return 'FREE';
+  
+  const tp1Value = t.tp1Preis * t.tp1Menge;
+  const tp2Value = t.tp2Preis * t.tp2Menge;
+  const tp3Value = t.tp3Preis * t.tp3Menge;
+  const restValue = t.livePreis * calcRestmenge(t);
+  
+  const avgExit = (tp1Value + tp2Value + tp3Value + restValue) / t.kaufmenge;
+  const reward = avgExit - t.einstiegspreis;
+  const risk = t.einstiegspreis - t.stopLoss;
+  
+  return risk !== 0 ? (reward / risk) : 0;
+}
+
+function calcStatusDetail(t) {
+  const restmenge = calcRestmenge(t);
+  if (restmenge === 0) return '✅ Beendet';
+  if (restmenge < t.kaufmenge) return '💰 Teil-Ausstieg';
+  return '🚀 Läuft';
+}
+
+// ══════════════════════════════════════════════════════
+// UI RENDERING
+// ══════════════════════════════════════════════════════
+function updateUI() {
+  renderTradesTable();
+  renderHistorieTable();
+  updateHeaderStats();
+}
+
+function renderTradesTable() {
+  const tbody = document.getElementById('tradesTable');
+  
+  if (trades.length === 0) {
+    tbody.innerHTML = `
+      <tr><td colspan="14" class="empty">
+        <div class="empty-icon">📊</div>
+        <div>Keine offenen Trades. Füge deinen ersten hinzu!</div>
+      </td></tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = trades.map(t => {
+    const posGroesse = calcPosGroesse(t);
+    const risiko = calcRisiko(t);
+    const pl = calcPL(t);
+    const plPercent = calcPLPercent(t);
+    const rrr = calcRRR(t);
+    const restmenge = calcRestmenge(t);
+    const statusDetail = calcStatusDetail(t);
+    
+    const plClass = pl >= 0 ? 'pos' : 'neg';
+    const rrrDisplay = typeof rrr === 'number' ? rrr.toFixed(2) + ' R' : rrr;
+
+    return `
+      <tr>
+        <td><span class="badge offen">Offen</span></td>
+        <td class="ticker">${t.ticker}</td>
+        <td class="text-right">${rrrDisplay}</td>
+        <td class="text-right">$${t.einstiegspreis.toFixed(2)}</td>
+        <td class="text-right">${t.kaufmenge}</td>
+        <td class="text-right">$${posGroesse.toFixed(2)}</td>
+        <td class="text-right">${t.stopLoss > 0 ? '$' + t.stopLoss.toFixed(2) : '-'}</td>
+        <td class="text-right">${risiko > 0 ? '$' + risiko.toFixed(2) : '-'}</td>
+        <td class="text-right">
+          <input type="number" step="0.01" value="${t.livePreis.toFixed(2)}" 
+                 class="inline-input"
+                 onchange="updateLivePreis('${t.id}', parseFloat(this.value))"
+                 onfocus="this.select()">
+        </td>
+        <td>${statusDetail}</td>
+        <td class="text-right">${restmenge}</td>
+        <td class="text-right ${plClass}">$${pl.toFixed(2)}</td>
+        <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
+        <td>
+          <div class="action-cell">
+            <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 1)">TP1</button>
+            <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 2)">TP2</button>
+            <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 3)">TP3</button>
+            <button class="action-btn close" onclick="closeTrade('${t.id}')">Close</button>
+            <button class="action-btn delete" onclick="deleteTrade('${t.id}')">×</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderHistorieTable() {
+  const tbody = document.getElementById('historieTable');
+  
+  if (closedTrades.length === 0) {
+    tbody.innerHTML = `
+      <tr><td colspan="9" class="empty">
+        <div class="empty-icon">📚</div>
+        <div>Noch keine geschlossenen Trades.</div>
+      </td></tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = closedTrades.map(t => {
+    const pl = calcPL(t);
+    const plPercent = calcPLPercent(t);
+    const rrr = calcRRR(t);
+    const plClass = pl >= 0 ? 'pos' : 'neg';
+    const rrrDisplay = typeof rrr === 'number' ? rrr.toFixed(2) + ' R' : rrr;
+    
+    const tp1Value = t.tp1Preis * t.tp1Menge;
+    const tp2Value = t.tp2Preis * t.tp2Menge;
+    const tp3Value = t.tp3Preis * t.tp3Menge;
+    const totalValue = tp1Value + tp2Value + tp3Value;
+    const avgExit = totalValue / t.kaufmenge;
+
+    return `
+      <tr>
+        <td><span class="badge geschlossen">Geschlossen</span></td>
+        <td class="ticker">${t.ticker}</td>
+        <td class="text-right">$${t.einstiegspreis.toFixed(2)}</td>
+        <td class="text-right">$${avgExit.toFixed(2)}</td>
+        <td class="text-right">${t.kaufmenge}</td>
+        <td class="text-right ${plClass}">$${pl.toFixed(2)}</td>
+        <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
+        <td class="text-right">${rrrDisplay}</td>
+        <td>
+          <button class="action-btn delete" onclick="deleteClosedTrade('${t.id}')">×</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function updateHeaderStats() {
+function updateAccountSummary() {
+  const invested = trades.reduce((sum, t) => sum + calcPosGroesse(t), 0);
+  const available = settings.totalBudget - invested;
+  const unrealized = trades.reduce((sum, t) => sum + calcPL(t), 0);
+  const realized = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
+  const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
+  const riskPercent = (totalRisk / settings.totalBudget) * 100;
+  
+  document.getElementById('totalBudget').textContent = formatCurrency(settings.totalBudget);
+  document.getElementById('invested').textContent = formatCurrency(invested);
+  document.getElementById('available').textContent = formatCurrency(available);
+  
+  const realizedEl = document.getElementById('realizedPL');
+  realizedEl.textContent = formatCurrency(realized);
+  realizedEl.className = 'acct-value ' + (realized >= 0 ? 'pos' : 'neg');
+  
+  const unrealizedEl = document.getElementById('unrealizedPL');
+  unrealizedEl.textContent = formatCurrency(unrealized);
+  unrealizedEl.className = 'acct-value ' + (unrealized >= 0 ? 'pos' : 'neg');
+  
+  const riskPctEl = document.getElementById('riskPercent');
+  riskPctEl.textContent = `${riskPercent.toFixed(1)}%`;
+  riskPctEl.className = 'acct-value ' + (riskPercent > settings.riskLimit ? 'neg' : 'pos');
+}
+
+function updateDashboard() {
+  const invested = trades.reduce((sum, t) => sum + calcPosGroesse(t), 0);
+  const available = settings.totalBudget - invested;
+  const unrealized = trades.reduce((sum, t) => sum + calcPL(t), 0);
+  const realized = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
+  const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
+  const riskPercent = (totalRisk / settings.totalBudget) * 100;
+
+  const wins = closedTrades.filter(t => calcPL(t) > 0);
+  const losses = closedTrades.filter(t => calcPL(t) < 0);
+  const winRate = closedTrades.length > 0 ? (wins.length / closedTrades.length) * 100 : 0;
+  
+  const avgWin = wins.length > 0 ? wins.reduce((sum, t) => sum + calcPL(t), 0) / wins.length : 0;
+  const avgLoss = losses.length > 0 ? losses.reduce((sum, t) => sum + calcPL(t), 0) / losses.length : 0;
+
+  document.getElementById('dashBudget').textContent = formatCurrency(settings.totalBudget);
+  document.getElementById('dashInvested').textContent = formatCurrency(invested);
+  document.getElementById('dashAvailable').textContent = formatCurrency(available);
+  
+  const dashRealized = document.getElementById('dashRealized');
+  dashRealized.textContent = formatCurrency(realized);
+  dashRealized.className = 'stat-value ' + (realized >= 0 ? 'pos' : 'neg');
+  
+  const dashUnrealized = document.getElementById('dashUnrealized');
+  dashUnrealized.textContent = formatCurrency(unrealized);
+  dashUnrealized.className = 'stat-value ' + (unrealized >= 0 ? 'pos' : 'neg');
+
+  document.getElementById('dashWinRate').textContent = `${winRate.toFixed(1)}%`;
+  document.getElementById('dashTotalTrades').textContent = closedTrades.length;
+  document.getElementById('dashWins').textContent = wins.length;
+  document.getElementById('dashLosses').textContent = losses.length;
+  document.getElementById('dashAvgWin').textContent = formatCurrency(avgWin);
+  document.getElementById('dashAvgLoss').textContent = formatCurrency(avgLoss);
+  
+  document.getElementById('dashRisk').textContent = formatCurrency(totalRisk);
+  
+  const riskPctEl = document.getElementById('dashRiskPct');
+  riskPctEl.textContent = `${riskPercent.toFixed(2)}%`;
+  
+  document.getElementById("dashRiskLimit").textContent = `${settings.riskLimit.toFixed(2)}%`;
+  riskPctEl.className = 'stat-value ' + (riskPercent > settings.riskLimit ? 'neg' : 'pos');
+}
+
+// ══════════════════════════════════════════════════════
+// LIVE PRICES
+// ══════════════════════════════════════════════════════
+async function fetchLivePrices() {
+  if (!USER_ID || trades.length === 0) {
+    updateStatus('Keine offenen Trades', 'idle');
+    return;
+  }
+
+  const tickers = [...new Set(trades.map(t => t.ticker))].join(',');
+  
+  updateStatus('Lade Live-Preise...', 'loading');
+  
+  try {
+    const response = await fetch(`/api/quotes?symbols=${tickers}`);
+    if (!response.ok) throw new Error('API nicht erreichbar');
+    
+    const data = await response.json();
+    let updatedCount = 0;
+    
+    for (const trade of trades) {
+      const quote = data[trade.ticker];
+      if (quote && quote.c && quote.c > 0) {
+        await supabaseClient.from('trades').update({ live_preis: quote.c }).eq('id', trade.id);
+        updatedCount++;
+      }
+    }
+    
+    lastPriceFetch = new Date();
+    
+    if (updatedCount > 0) {
+      await loadData();
+      updateUI();
+      updateStatus(`${updatedCount} Preise aktualisiert`, 'success');
+    } else {
+      updateStatus('Keine Preise verfügbar', 'warning');
+    }
+    
+  } catch (error) {
+    console.error('Price fetch error:', error);
+    updateStatus('API-Fehler (manuelle Eingabe möglich)', 'error');
+  }
+  
+  updateLastSync();
+}
+
+function updateStatus(message, state) {
+  document.getElementById('statusText').textContent = message;
+  const dot = document.getElementById('statusDot');
+  
+  dot.style.background = {
+    'loading': 'var(--yellow)',
+    'success': 'var(--green)',
+    'error': 'var(--red)',
+    'warning': 'var(--yellow)',
+    'idle': 'var(--muted)'
+  }[state] || 'var(--muted)';
+  
+  if (state === 'loading') {
+    dot.classList.add('pulse');
+  } else {
+    dot.classList.remove('pulse');
+  }
+}
+
+function updateLastSync() {
+  const el = document.getElementById('lastSync');
+  if (lastPriceFetch) {
+    const now = new Date();
+    const diff = Math.floor((now - lastPriceFetch) / 1000);
+    
+    if (diff < 60) {
+      el.textContent = `vor ${diff}s`;
+    } else {
+      el.textContent = lastPriceFetch.toLocaleTimeString('de-DE', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    }
+  }
+}
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  priceRefreshInterval = setInterval(() => {
+    if (document.getElementById('autoRefresh').checked) {
+      fetchLivePrices();
+    }
+  }, 30000);
+  setInterval(updateLastSync, 1000);
+}
+
+function stopAutoRefresh() {
+  if (priceRefreshInterval) {
+    clearInterval(priceRefreshInterval);
+    priceRefreshInterval = null;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════════════════
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  updateThemeIcon();
+  
+  const meta = document.getElementById('themeColorMeta');
+  meta.setAttribute('content', next === 'dark' ? '#0a0b0e' : '#f0f2f5');
+}
+
+function updateThemeIcon() {
+  const theme = document.documentElement.getAttribute('data-theme');
+  document.querySelector('.theme-icon').textContent = theme === 'dark' ? '🌙' : '☀️';
+}
+
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(value);
+}
+
+// ══════════════════════════════════════════════════════
+// START
+// ══════════════════════════════════════════════════════
+init();
+</script>
+
+</body>
+</html>
