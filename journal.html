@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0a0b0e" id="themeColorMeta">
 <title>Trading Journal (Cloud Sync)</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzBhMGIwZSIvPgogIDxwYXRoIGQ9Ik0yMCw3MCBMMzUsNTUgTDUwLDYwIEw2NSw0MCBMODAsNDUiIHN0cm9rZT0iIzAwZDA4NCIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8Y2lyY2xlIGN4PSIzNSIgY3k9IjU1IiByPSIzIiBmaWxsPSIjMDBkMDg0Ii8+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI2MCIgcj0iMyIgZmlsbD0iIzAwZDA4NCIvPgogIDxjaXJjbGUgY3g9IjY1IiBjeT0iNDAiIHI9IjMiIGZpbGw9IiMwMGQwODQiLz4KICA8cG9seWxpbmUgcG9pbnRzPSI2NSw0MCA3MCwzNSA3MCw0NSIgZmlsbD0iIzAwZDA4NCIvPgo8L3N2Zz4K">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8IS0tIEdlbmVyYXRvcjogQWRvYmUgSWxsdXN0cmF0b3IgMzAuMy4wLCBTVkcgRXhwb3J0IFBsdWctSW4gLiBTVkcgVmVyc2lvbjogMi4xLjMgQnVpbGQgMTgyKSAgLS0+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5zdDAgewogICAgICAgIGZpbGw6ICM2NGY0MGY7CiAgICAgIH0KCiAgICAgIC5zdDEgewogICAgICAgIGZpbGw6ICMwYTBiMGU7CiAgICAgIH0KICAgIDwvc3R5bGU+CiAgPC9kZWZzPgogIDxyZWN0IGNsYXNzPSJzdDEiIHk9IjAiIHdpZHRoPSIxMDAuNCIgaGVpZ2h0PSIxMDAiLz4KICA8cGF0aCBjbGFzcz0ic3QwIiBkPSJNODMuNCw3Mi4zYy0uMS0uNi0uNC0uOS0uNy0xLjRsLTIuMy00LTIuMy00LTEuMS0yLTMuMS01LjUtMS0xLjctMi0zLjYtLjctMS4yLTUuMi05LjEtLjgtMS41LS45LTEuNWMwLS4xLS4zLS40LS40LS4zbC0uMy40LTEuMiwxLjItLjkuOS0xLjMsMS40LTEuNy0yLjgtMS4zLTIuMy0yLjYtNC42LS44LTEuNC0yLjMtNC0xLTEuNy0uNi0xLS42LTEtLjctMS4yLS4yLS40YzAsMC0uMywwLS40LjJsLTEuNSwyLjYtLjgsMS41LS43LDEuMi0uOCwxLjMtMS4xLDItMyw1LjMtMS40LDIuNC0xLjMsMi4yLS45LDEuNS0xLjQsMi41LTEuMSwyLTEuMywyLjItMS4xLDEuOC0uNSwxcy0uMi41LS4zLjZsLS4zLjUtMSwxLjctMyw1LjMtMSwxLjctLjcsMS4yLTEuNCwyLjQtMS4zLDIuMy0uNywxLjItMS42LDIuOC0uNi45LS40LjgtLjYsMS4xaDY2Wk0yNC43LDY1bDE4LjctMzIuNywzLjYtNi4zYy4xLS4zLjMtLjUuNS0uNXYzMy43czItMi40LDItMi40bDExLjMtMTMuNGMuNy0uOSwxLjMtMS43LDIuMi0yLjV2MjguMmMwLC4yLS4yLjYtLjMuNmgtOC41czAtOC43LDAtOC43bC0uMi0uM2MwLDAtLjIuMi0uMi4zbC00LjYsOGMtLjEuMi0uMy42LS42LjZoLTEwLjhjLS4yLS4yLS4yLS41LS4yLS44di0xMi4yYzAsMC03LjUsMTMtNy41LDEzaC04LjJzMi42LTQuNywyLjYtNC43WiIvPgo8L3N2Zz4=">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <!-- ⚡ Supabase Client -->
@@ -288,6 +288,7 @@ input[type="number"] {
           <th class="text-right">Pos. Größe</th>
           <th class="text-right">Stop-Loss</th>
           <th class="text-right">Risiko</th>
+          <th class="text-right">Risiko %</th>
           <th class="text-right">Live-Preis</th>
           <th>Status Detail</th>
           <th class="text-right">Rest (Stk)</th>
@@ -909,7 +910,7 @@ function renderTradesTable() {
   
   if (trades.length === 0) {
     tbody.innerHTML = `
-      <tr><td colspan="18" class="empty">
+      <tr><td colspan="19" class="empty">
         <div class="empty-icon">📊</div>
         <div>Keine offenen Trades. Füge deinen ersten hinzu!</div>
       </td></tr>
@@ -920,6 +921,7 @@ function renderTradesTable() {
   tbody.innerHTML = trades.map(t => {
     const posGroesse = calcPosGroesse(t);
     const risiko = calcRisiko(t);
+    const risikoPercent = settings.totalBudget > 0 ? (risiko / settings.totalBudget) * 100 : 0;
     const pl = calcPL(t);
     const plPercent = calcPLPercent(t);
     const rrr = calcRRR(t);
@@ -947,6 +949,7 @@ function renderTradesTable() {
                  onfocus="this.select()">
         </td>
         <td class="text-right">${risiko > 0 ? '$' + risiko.toFixed(2) : '-'}</td>
+        <td class="text-right">${risikoPercent > 0 ? risikoPercent.toFixed(2) + '%' : '-'}</td>
         <td class="text-right">
           <input type="number" step="0.01" value="${t.livePreis.toFixed(2)}" 
                  class="inline-input"
