@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0a0b0e" id="themeColorMeta">
 <title>Trading Journal (Cloud Sync)</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzBhMGIwZSIvPgogIDxwYXRoIGQ9Ik0yMCw3MCBMMzUsNTUgTDUwLDYwIEw2NSw0MCBMODAsNDUiIHN0cm9rZT0iIzAwZDA4NCIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8Y2lyY2xlIGN4PSIzNSIgY3k9IjU1IiByPSIzIiBmaWxsPSIjMDBkMDg0Ii8+CiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI2MCIgcj0iMyIgZmlsbD0iIzAwZDA4NCIvPgogIDxjaXJjbGUgY3g9IjY1IiBjeT0iNDAiIHI9IjMiIGZpbGw9IiMwMGQwODQiLz4KICA8cG9seWxpbmUgcG9pbnRzPSI2NSw0MCA3MCwzNSA3MCw0NSIgZmlsbD0iIzAwZDA4NCIvPgo8L3N2Zz4K">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <!-- ⚡ Supabase Client -->
@@ -278,10 +279,9 @@ input[type="number"] {
         <tr>
           <th>Status</th>
           <th>Ticker</th>
+          <th class="text-right">P/L (%)</th>
+          <th class="text-right">P/L ($)</th>
           <th>Kaufdatum</th>
-          <th>TP1 Datum</th>
-          <th>TP2 Datum</th>
-          <th>TP3 Datum</th>
           <th class="text-right">RRR</th>
           <th class="text-right">Einstieg</th>
           <th class="text-right">Menge</th>
@@ -291,8 +291,9 @@ input[type="number"] {
           <th class="text-right">Live-Preis</th>
           <th>Status Detail</th>
           <th class="text-right">Rest (Stk)</th>
-          <th class="text-right">P/L ($)</th>
-          <th class="text-right">P/L (%)</th>
+          <th>TP1 Datum</th>
+          <th>TP2 Datum</th>
+          <th>TP3 Datum</th>
           <th>Aktionen</th>
         </tr>
       </thead>
@@ -707,6 +708,16 @@ async function updateLivePreis(tradeId, newPreis) {
   }
 }
 
+async function updateStopLoss(tradeId, newStopLoss) {
+  try {
+    await supabaseClient.from('trades').update({ stop_loss: newStopLoss || null }).eq('id', tradeId);
+    await loadData();
+    updateUI();
+  } catch (error) {
+    console.error('Update stop loss error:', error);
+  }
+}
+
 async function editTeilverkauf(tradeId, tp) {
   const trade = trades.find(t => t.id === tradeId);
   if (!trade) return;
@@ -922,15 +933,19 @@ function renderTradesTable() {
       <tr>
         <td><span class="badge offen">Offen</span></td>
         <td class="ticker">${t.ticker}</td>
+        <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
+        <td class="text-right ${plClass}">$${pl.toFixed(2)}</td>
         <td onclick="editTradeDate('${t.id}', 'kaufdatum')" style="cursor:pointer;">${formatDate(t.kaufdatum)}</td>
-        <td onclick="editTradeDate('${t.id}', 'tp1_datum')" style="cursor:pointer;">${formatDate(t.tp1Datum)}</td>
-        <td onclick="editTradeDate('${t.id}', 'tp2_datum')" style="cursor:pointer;">${formatDate(t.tp2Datum)}</td>
-        <td onclick="editTradeDate('${t.id}', 'tp3_datum')" style="cursor:pointer;">${formatDate(t.tp3Datum)}</td>
         <td class="text-right">${rrrDisplay}</td>
         <td class="text-right">$${t.einstiegspreis.toFixed(2)}</td>
         <td class="text-right">${t.kaufmenge}</td>
         <td class="text-right">$${posGroesse.toFixed(2)}</td>
-        <td class="text-right">${t.stopLoss > 0 ? '$' + t.stopLoss.toFixed(2) : '-'}</td>
+        <td class="text-right">
+          <input type="number" step="0.01" value="${t.stopLoss > 0 ? t.stopLoss.toFixed(2) : '0.00'}" 
+                 class="inline-input"
+                 onchange="updateStopLoss('${t.id}', parseFloat(this.value))"
+                 onfocus="this.select()">
+        </td>
         <td class="text-right">${risiko > 0 ? '$' + risiko.toFixed(2) : '-'}</td>
         <td class="text-right">
           <input type="number" step="0.01" value="${t.livePreis.toFixed(2)}" 
@@ -940,8 +955,9 @@ function renderTradesTable() {
         </td>
         <td>${statusDetail}</td>
         <td class="text-right">${restmenge}</td>
-        <td class="text-right ${plClass}">$${pl.toFixed(2)}</td>
-        <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
+        <td onclick="editTradeDate('${t.id}', 'tp1_datum')" style="cursor:pointer;">${formatDate(t.tp1Datum)}</td>
+        <td onclick="editTradeDate('${t.id}', 'tp2_datum')" style="cursor:pointer;">${formatDate(t.tp2Datum)}</td>
+        <td onclick="editTradeDate('${t.id}', 'tp3_datum')" style="cursor:pointer;">${formatDate(t.tp3Datum)}</td>
         <td>
           <div class="action-cell">
             <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 1)">TP1</button>
