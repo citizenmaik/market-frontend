@@ -239,10 +239,14 @@ body {
 @media (max-width: 500px) {
   .idx { grid-template-columns: repeat(2,1fr); }
   body { padding: max(env(safe-area-inset-top),20px) 12px max(env(safe-area-inset-bottom),32px); }
-  .hdr { margin-bottom:12px; flex-wrap:nowrap; }
+  .hdr { margin-bottom:12px; flex-wrap:nowrap; gap:4px; }
   .hdr h1 { font-size:10px; }
-  .hdr-right { gap:6px; }
+  .hdr-right { gap:4px; }
+  .last-upd { display:none; }
   .dt { display:none; }
+  .journal-btn { padding:6px 8px; font-size:10px; }
+  .pill { padding:4px 8px; font-size:10px; }
+  .th-btn { width:28px; height:28px; font-size:14px; }
   .ic .pr { font-size:17px; }
   .ic { padding:12px; min-height:80px; }
   .ph, .mc, .ptb, .fb { padding:12px; }
@@ -250,9 +254,6 @@ body {
   .mc-bitem .bl { font-size:9px; }
   #rsEl, #rsIndEl { grid-template-columns: 1fr !important; }
   .rss { border-right:none; border-bottom:1px solid var(--border); }
-}
-@media (max-width: 400px) {
-  .idx { grid-template-columns: 1fr !important; }
 }
 
 /* ── Overall Indicator responsive ── */
