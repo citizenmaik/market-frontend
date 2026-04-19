@@ -191,8 +191,16 @@ input[type="number"] {
     <div class="acct-value" id="invested">$0.00</div>
   </div>
   <div class="acct-card">
+    <div class="acct-label">Investiert %</div>
+    <div class="acct-value" id="investedPercent">0.0%</div>
+  </div>
+  <div class="acct-card">
     <div class="acct-label">Verfügbar</div>
     <div class="acct-value" id="available">$7,500.00</div>
+  </div>
+  <div class="acct-card">
+    <div class="acct-label">Verfügbar %</div>
+    <div class="acct-value" id="availablePercent">100.0%</div>
   </div>
   <div class="acct-card">
     <div class="acct-label">Realisiert P/L</div>
@@ -208,7 +216,7 @@ input[type="number"] {
   </div>
   <div class="acct-card">
     <div class="acct-label">Open Heat %</div>
-    <div class="acct-value" id="openHeatPercent">0.0%</div>
+    <div class="acct-value neg" id="openHeatPercent">-0.0%</div>
   </div>
   <div class="acct-card">
     <div class="acct-label">Delta %</div>
@@ -1040,13 +1048,17 @@ function updateHeaderStats() {
   const realized = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
   
   const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
+  const investedPercent = (invested / settings.totalBudget) * 100;
+  const availablePercent = (available / settings.totalBudget) * 100;
   const openHeatPercent = (totalRisk / settings.totalBudget) * 100;
   const openProfitPercent = (unrealized / settings.totalBudget) * 100;
   const deltaPercent = openProfitPercent - openHeatPercent;
 
   document.getElementById('totalBudget').textContent = formatCurrency(settings.totalBudget);
   document.getElementById('invested').textContent = formatCurrency(invested);
+  document.getElementById('investedPercent').textContent = `${investedPercent.toFixed(1)}%`;
   document.getElementById('available').textContent = formatCurrency(available);
+  document.getElementById('availablePercent').textContent = `${availablePercent.toFixed(1)}%`;
   
   const realizedEl = document.getElementById('realizedPL');
   realizedEl.textContent = formatCurrency(realized);
@@ -1060,9 +1072,10 @@ function updateHeaderStats() {
   openProfitEl.textContent = `${openProfitPercent.toFixed(2)}%`;
   openProfitEl.className = 'acct-value ' + (openProfitPercent >= 0 ? 'pos' : 'neg');
   
+  // Open Heat always negative and red
   const openHeatEl = document.getElementById('openHeatPercent');
-  openHeatEl.textContent = `${openHeatPercent.toFixed(2)}%`;
-  openHeatEl.className = 'acct-value ' + (openHeatPercent > settings.riskLimit ? 'neg' : 'pos');
+  openHeatEl.textContent = `-${openHeatPercent.toFixed(2)}%`;
+  openHeatEl.className = 'acct-value neg';
   
   const deltaEl = document.getElementById('deltaPercent');
   deltaEl.textContent = `${deltaPercent.toFixed(2)}%`;
