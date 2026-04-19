@@ -222,6 +222,26 @@ body {
 .bp{background:rgba(0,208,132,.15);color:var(--green);}
 .bn{background:rgba(255,68,102,.15);color:var(--red);}
 .bu{background:rgba(90,96,112,.15);color:var(--muted);}
+
+/* ══ RESPONSIVE ════════════════════════════════════════ */
+@media (max-width: 1400px) {
+  .idx { grid-template-columns: repeat(4,1fr); }
+  .r1  { grid-template-columns: 1fr 1fr 1fr; }
+}
+@media (max-width: 1100px) {
+  .r1  { grid-template-columns: 1fr 1fr; }
+  .idx { grid-template-columns: repeat(4,1fr); }
+}
+@media (max-width: 768px) {
+  .r1, .r1b { grid-template-columns: 1fr; }
+  .idx { grid-template-columns: repeat(4,1fr); }
+}
+@media (max-width: 500px) {
+  .idx { grid-template-columns: repeat(2,1fr); }
+  body { padding: max(env(safe-area-inset-top),20px) 12px max(env(safe-area-inset-bottom),32px); }
+  .hdr { margin-bottom:12px; flex-wrap:nowrap; }
+  .hdr h1 { font-size:10px; }
+  .hdr-right { gap:6px; }
   .dt { display:none; }
   .ic .pr { font-size:17px; }
   .ic { padding:12px; min-height:80px; }
@@ -230,6 +250,9 @@ body {
   .mc-bitem .bl { font-size:9px; }
   #rsEl, #rsIndEl { grid-template-columns: 1fr !important; }
   .rss { border-right:none; border-bottom:1px solid var(--border); }
+}
+@media (max-width: 400px) {
+  .idx { grid-template-columns: 1fr !important; }
 }
 
 /* ── Overall Indicator responsive ── */
