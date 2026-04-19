@@ -203,8 +203,16 @@ input[type="number"] {
     <div class="acct-value" id="unrealizedPL">$0.00</div>
   </div>
   <div class="acct-card">
-    <div class="acct-label">Risiko %</div>
-    <div class="acct-value" id="riskPercent">0.0%</div>
+    <div class="acct-label">Open Profit %</div>
+    <div class="acct-value" id="openProfitPercent">0.0%</div>
+  </div>
+  <div class="acct-card">
+    <div class="acct-label">Open Heat %</div>
+    <div class="acct-value" id="openHeatPercent">0.0%</div>
+  </div>
+  <div class="acct-card">
+    <div class="acct-label">Delta %</div>
+    <div class="acct-value" id="deltaPercent">0.0%</div>
   </div>
 </div>
 
@@ -1032,7 +1040,9 @@ function updateHeaderStats() {
   const realized = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
   
   const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
-  const riskPercent = (totalRisk / settings.totalBudget) * 100;
+  const openHeatPercent = (totalRisk / settings.totalBudget) * 100;
+  const openProfitPercent = (unrealized / settings.totalBudget) * 100;
+  const deltaPercent = openProfitPercent - openHeatPercent;
 
   document.getElementById('totalBudget').textContent = formatCurrency(settings.totalBudget);
   document.getElementById('invested').textContent = formatCurrency(invested);
@@ -1046,9 +1056,17 @@ function updateHeaderStats() {
   unrealizedEl.textContent = formatCurrency(unrealized);
   unrealizedEl.className = 'acct-value ' + (unrealized >= 0 ? 'pos' : 'neg');
   
-  const riskEl = document.getElementById('riskPercent');
-  riskEl.textContent = `${riskPercent.toFixed(1)}%`;
-  riskEl.className = 'acct-value ' + (riskPercent > settings.riskLimit ? 'neg' : 'pos');
+  const openProfitEl = document.getElementById('openProfitPercent');
+  openProfitEl.textContent = `${openProfitPercent.toFixed(2)}%`;
+  openProfitEl.className = 'acct-value ' + (openProfitPercent >= 0 ? 'pos' : 'neg');
+  
+  const openHeatEl = document.getElementById('openHeatPercent');
+  openHeatEl.textContent = `${openHeatPercent.toFixed(2)}%`;
+  openHeatEl.className = 'acct-value ' + (openHeatPercent > settings.riskLimit ? 'neg' : 'pos');
+  
+  const deltaEl = document.getElementById('deltaPercent');
+  deltaEl.textContent = `${deltaPercent.toFixed(2)}%`;
+  deltaEl.className = 'acct-value ' + (deltaPercent >= 0 ? 'pos' : 'neg');
 }
 
 function updateDashboard() {
