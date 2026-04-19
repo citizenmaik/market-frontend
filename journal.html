@@ -184,7 +184,7 @@ input[type="number"] {
 <div class="acct-sum">
   <div class="acct-card">
     <div class="acct-label">Gesamtbudget</div>
-    <div class="acct-value" id="totalBudget">$7,500.00</div>
+    <div class="acct-value" id="totalBudget" onclick="editBudget()" style="cursor:pointer;">$7,500.00</div>
   </div>
   <div class="acct-card">
     <div class="acct-label">Investiert</div>
@@ -734,6 +734,22 @@ async function updateStopLoss(tradeId, newStopLoss) {
   } catch (error) {
     console.error('Update stop loss error:', error);
   }
+}
+
+function editBudget() {
+  const currentBudget = settings.totalBudget;
+  const newBudget = parseFloat(prompt(
+    "Gesamtbudget ändern ($):",
+    currentBudget.toFixed(2)
+  ));
+  
+  if (!newBudget || isNaN(newBudget) || newBudget <= 0) {
+    return;
+  }
+  
+  settings.totalBudget = newBudget;
+  updateHeaderStats();
+  updateDashboard();
 }
 
 async function editTeilverkauf(tradeId, tp) {
