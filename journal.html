@@ -769,13 +769,22 @@ async function saveTradeEdits() {
   const tp2Preis = parseFloat(document.getElementById('editTp2Preis').value) || null;
   const tp3Preis = parseFloat(document.getElementById('editTp3Preis').value) || null;
   
-  if (!ticker || !einstiegspreis || !kaufmenge) {
-    alert('Bitte fülle alle Pflichtfelder aus!');
+  // Validation
+  if (!ticker) {
+    alert('Ticker ist erforderlich!');
+    return;
+  }
+  if (isNaN(einstiegspreis) || einstiegspreis <= 0) {
+    alert('Ungültiger Einstiegspreis!');
+    return;
+  }
+  if (isNaN(kaufmenge) || kaufmenge <= 0) {
+    alert('Ungültige Kaufmenge!');
     return;
   }
   
   try {
-    await supabaseClient.from('trades').update({
+    const updateData = {
       ticker,
       einstiegspreis,
       kaufmenge,
@@ -784,7 +793,13 @@ async function saveTradeEdits() {
       tp1_preis: tp1Preis,
       tp2_preis: tp2Preis,
       tp3_preis: tp3Preis
-    }).eq('id', tradeId);
+    };
+    
+    console.log('Updating trade:', tradeId, updateData);
+    
+    const { error } = await supabaseClient.from('trades').update(updateData).eq('id', tradeId);
+    
+    if (error) throw error;
     
     await loadData();
     updateUI();
@@ -792,7 +807,7 @@ async function saveTradeEdits() {
     
   } catch (error) {
     console.error('Save trade edits error:', error);
-    alert('Fehler beim Speichern!');
+    alert('Fehler beim Speichern: ' + error.message);
   }
 }
 
