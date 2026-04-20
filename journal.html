@@ -80,6 +80,11 @@ body {
   padding:var(--pad);margin-bottom:var(--gap);}
 .form h2{font-family:var(--mono);font-size:12px;text-transform:uppercase;
   letter-spacing:.1em;color:var(--accent);margin-bottom:16px;}
+.form-toggle{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;}
+.toggle-icon{font-size:10px;transition:transform .2s;}
+.toggle-icon.collapsed{transform:rotate(-90deg);}
+.form-collapsible{overflow:hidden;transition:max-height .3s ease;}
+.form-collapsible.collapsed{max-height:0 !important;}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
   gap:12px;margin-bottom:16px;}
 .fg{display:flex;flex-direction:column;}
@@ -249,8 +254,12 @@ input[type="number"] {
 <!-- Trades Tab -->
 <div class="tab-content active" id="trades-content">
   <div class="form">
-    <h2>Neuer Trade</h2>
-    <div class="form-grid">
+    <h2 class="form-toggle" onclick="toggleTradeForm()">
+      <span class="toggle-icon" id="formToggleIcon">▼</span>
+      Neuer Trade
+    </h2>
+    <div class="form-collapsible" id="tradeFormContent">
+      <div class="form-grid">
       <div class="fg">
         <label for="ticker">Ticker *</label>
         <input type="text" id="ticker" placeholder="AAPL">
@@ -261,7 +270,7 @@ input[type="number"] {
       </div>
       <div class="fg">
         <label for="kaufmenge">Kaufmenge (Stk) *</label>
-        <input type="number" id="kaufmenge" step="1" placeholder="0">
+        <input type="number" id="kaufmenge" step="0.01" placeholder="0">
       </div>
       <div class="fg">
         <label for="stopLoss">Stop-Loss ($)</label>
@@ -287,6 +296,7 @@ input[type="number"] {
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
       <button class="btn btn-primary" onclick="addTrade()">Trade Hinzufügen</button>
+    </div>
     </div>
   </div>
 
@@ -619,15 +629,15 @@ function dbToTrade(t) {
     id: t.id,
     ticker: t.ticker,
     einstiegspreis: parseFloat(t.einstiegspreis),
-    kaufmenge: parseInt(t.kaufmenge),
+    kaufmenge: parseFloat(t.kaufmenge),
     kaufdatum: t.kaufdatum,
     stopLoss: t.stop_loss ? parseFloat(t.stop_loss) : 0,
     tp1Preis: t.tp1_preis ? parseFloat(t.tp1_preis) : 0,
     tp2Preis: t.tp2_preis ? parseFloat(t.tp2_preis) : 0,
     tp3Preis: t.tp3_preis ? parseFloat(t.tp3_preis) : 0,
-    tp1Menge: parseInt(t.tp1_menge || 0),
-    tp2Menge: parseInt(t.tp2_menge || 0),
-    tp3Menge: parseInt(t.tp3_menge || 0),
+    tp1Menge: parseFloat(t.tp1_menge || 0),
+    tp2Menge: parseFloat(t.tp2_menge || 0),
+    tp3Menge: parseFloat(t.tp3_menge || 0),
     tp1Datum: t.tp1_datum,
     tp2Datum: t.tp2_datum,
     tp3Datum: t.tp3_datum,
@@ -648,7 +658,7 @@ async function addTrade() {
 
   const ticker = document.getElementById('ticker').value.toUpperCase().trim();
   const einstiegspreis = parseFloat(document.getElementById('einstiegspreis').value);
-  const kaufmenge = parseInt(document.getElementById('kaufmenge').value);
+  const kaufmenge = parseFloat(document.getElementById('kaufmenge').value);
   const stopLoss = parseFloat(document.getElementById('stopLoss').value) || 0;
   const tp1Preis = parseFloat(document.getElementById('tp1Preis').value) || 0;
   const tp2Preis = parseFloat(document.getElementById('tp2Preis').value) || 0;
@@ -690,6 +700,21 @@ function resetForm() {
     document.getElementById(id).value = '';
   });
   document.getElementById('kaufdatum').value = getTodayISO();
+}
+
+function toggleTradeForm() {
+  const content = document.getElementById('tradeFormContent');
+  const icon = document.getElementById('formToggleIcon');
+  
+  if (content.classList.contains('collapsed')) {
+    content.classList.remove('collapsed');
+    icon.classList.remove('collapsed');
+    icon.textContent = '▼';
+  } else {
+    content.classList.add('collapsed');
+    icon.classList.add('collapsed');
+    icon.textContent = '▶';
+  }
 }
 
 async function deleteTrade(tradeId) {
@@ -736,7 +761,7 @@ async function updateStopLoss(tradeId, newStopLoss) {
   }
 }
 
-function editBudget() {
+async function editBudget() {
   const currentBudget = settings.totalBudget;
   const newBudget = parseFloat(prompt(
     "Gesamtbudget ändern ($):",
@@ -747,9 +772,21 @@ function editBudget() {
     return;
   }
   
-  settings.totalBudget = newBudget;
-  updateHeaderStats();
-  updateDashboard();
+  try {
+    // Update in Supabase
+    await supabaseClient
+      .from('users')
+      .update({ total_budget: newBudget })
+      .eq('email', 'default@tradingjournal.local');
+    
+    // Update local settings
+    settings.totalBudget = newBudget;
+    updateHeaderStats();
+    updateDashboard();
+  } catch (error) {
+    console.error('Budget update error:', error);
+    alert('Fehler beim Speichern des Budgets!');
+  }
 }
 
 async function editTeilverkauf(tradeId, tp) {
@@ -770,14 +807,14 @@ async function editTeilverkauf(tradeId, tp) {
   const currentMenge = trade[`tp${tp}Menge`] || 0;
   const maxMenge = calcRestmenge(trade);
   
-  const exitMenge = parseInt(prompt(
-    `TP${tp} Exit-Menge (Max: ${maxMenge} Stk):`,
-    currentMenge || Math.floor(trade.kaufmenge / 3)
+  const exitMenge = parseFloat(prompt(
+    `TP${tp} Exit-Menge (Max: ${maxMenge.toFixed(2)} Stk):`,
+    (currentMenge || (trade.kaufmenge / 3)).toFixed(2)
   ));
 
   if (!exitMenge || isNaN(exitMenge)) return;
   if (exitMenge < 0 || exitMenge > maxMenge + currentMenge) {
-    alert(`Ungültig! Max: ${maxMenge + currentMenge} Stk`);
+    alert(`Ungültig! Max: ${(maxMenge + currentMenge).toFixed(2)} Stk`);
     return;
   }
 
@@ -820,7 +857,7 @@ async function closeTrade(tradeId) {
   const restmenge = calcRestmenge(trade);
   if (restmenge > 0) {
     const ausstiegspreis = parseFloat(prompt(
-      `Ausstiegspreis für ${restmenge} Stk ${trade.ticker}:`,
+      `Ausstiegspreis für ${restmenge.toFixed(2)} Stk ${trade.ticker}:`,
       trade.livePreis
     ));
     if (!ausstiegspreis || ausstiegspreis <= 0) return;
@@ -972,8 +1009,8 @@ function renderTradesTable() {
         <td class="text-right ${plClass}">$${pl.toFixed(2)}</td>
         <td onclick="editTradeDate('${t.id}', 'kaufdatum')" style="cursor:pointer;">${formatDate(t.kaufdatum)}</td>
         <td class="text-right">${rrrDisplay}</td>
-        <td class="text-right">$${t.einstiegspreis.toFixed(2)}</td>
-        <td class="text-right">${t.kaufmenge}</td>
+        <td class="text-right">${t.einstiegspreis.toFixed(2)}</td>
+        <td class="text-right">${t.kaufmenge.toFixed(2)}</td>
         <td class="text-right">$${posGroesse.toFixed(2)}</td>
         <td class="text-right">
           <input type="number" step="0.01" value="${t.stopLoss > 0 ? t.stopLoss.toFixed(2) : '0.00'}" 
@@ -1045,7 +1082,7 @@ function renderHistorieTable() {
         <td onclick="editClosedDate('${t.id}', 'exit_datum')" style="cursor:pointer;">${formatDate(t.exitDatum)}</td>
         <td class="text-right">$${t.einstiegspreis.toFixed(2)}</td>
         <td class="text-right">$${avgExit.toFixed(2)}</td>
-        <td class="text-right">${t.kaufmenge}</td>
+        <td class="text-right">${t.kaufmenge.toFixed(2)}</td>
         <td class="text-right ${plClass}">$${pl.toFixed(2)}</td>
         <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
         <td class="text-right">${rrrDisplay}</td>
@@ -1363,6 +1400,15 @@ async function editClosedDate(tradeId, field) {
 // START
 // ══════════════════════════════════════════════════════
 init();
+
+// Collapse form on mobile by default
+if (window.innerWidth <= 768) {
+  const content = document.getElementById('tradeFormContent');
+  const icon = document.getElementById('formToggleIcon');
+  content.classList.add('collapsed');
+  icon.classList.add('collapsed');
+  icon.textContent = '▶';
+}
 </script>
 
 </body>
