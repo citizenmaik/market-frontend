@@ -174,6 +174,24 @@ input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+/* ══ MODAL ════════════════════════════════════════════ */
+.modal{display:none;position:fixed;z-index:9999;left:0;top:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);}
+.modal.active{display:flex;align-items:center;justify-content:center;}
+.modal-content{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);max-width:600px;width:90%;max-height:90vh;
+  overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.modal-header{display:flex;justify-content:space-between;align-items:center;
+  padding:16px 20px;border-bottom:1px solid var(--border);}
+.modal-header h3{font-family:var(--mono);font-size:13px;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--accent);margin:0;}
+.modal-close{font-size:24px;color:var(--muted);cursor:pointer;line-height:1;
+  transition:color .2s;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:20px;}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--border);
+  display:flex;gap:8px;justify-content:flex-end;}
 </style>
 </head>
 <body>
@@ -717,6 +735,67 @@ function toggleTradeForm() {
   }
 }
 
+function editTrade(tradeId) {
+  const trade = trades.find(t => t.id === tradeId);
+  if (!trade) return;
+  
+  // Populate modal fields
+  document.getElementById('editTradeId').value = trade.id;
+  document.getElementById('editTicker').value = trade.ticker;
+  document.getElementById('editEinstiegspreis').value = trade.einstiegspreis.toFixed(2);
+  document.getElementById('editKaufmenge').value = trade.kaufmenge.toFixed(2);
+  document.getElementById('editKaufdatum').value = trade.kaufdatum || '';
+  document.getElementById('editStopLoss').value = trade.stopLoss > 0 ? trade.stopLoss.toFixed(2) : '';
+  document.getElementById('editTp1Preis').value = trade.tp1Preis > 0 ? trade.tp1Preis.toFixed(2) : '';
+  document.getElementById('editTp2Preis').value = trade.tp2Preis > 0 ? trade.tp2Preis.toFixed(2) : '';
+  document.getElementById('editTp3Preis').value = trade.tp3Preis > 0 ? trade.tp3Preis.toFixed(2) : '';
+  
+  // Show modal
+  document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('active');
+}
+
+async function saveTradeEdits() {
+  const tradeId = document.getElementById('editTradeId').value;
+  const ticker = document.getElementById('editTicker').value.toUpperCase().trim();
+  const einstiegspreis = parseFloat(document.getElementById('editEinstiegspreis').value);
+  const kaufmenge = parseFloat(document.getElementById('editKaufmenge').value);
+  const kaufdatum = document.getElementById('editKaufdatum').value || null;
+  const stopLoss = parseFloat(document.getElementById('editStopLoss').value) || null;
+  const tp1Preis = parseFloat(document.getElementById('editTp1Preis').value) || null;
+  const tp2Preis = parseFloat(document.getElementById('editTp2Preis').value) || null;
+  const tp3Preis = parseFloat(document.getElementById('editTp3Preis').value) || null;
+  
+  if (!ticker || !einstiegspreis || !kaufmenge) {
+    alert('Bitte fülle alle Pflichtfelder aus!');
+    return;
+  }
+  
+  try {
+    await supabaseClient.from('trades').update({
+      ticker,
+      einstiegspreis,
+      kaufmenge,
+      kaufdatum,
+      stop_loss: stopLoss,
+      tp1_preis: tp1Preis,
+      tp2_preis: tp2Preis,
+      tp3_preis: tp3Preis
+    }).eq('id', tradeId);
+    
+    await loadData();
+    updateUI();
+    closeEditModal();
+    
+  } catch (error) {
+    console.error('Save trade edits error:', error);
+    alert('Fehler beim Speichern!');
+  }
+}
+
 async function deleteTrade(tradeId) {
   if (!confirm('Trade löschen?')) return;
   
@@ -1033,6 +1112,7 @@ function renderTradesTable() {
         <td onclick="editTradeDate('${t.id}', 'tp3_datum')" style="cursor:pointer;">${formatDate(t.tp3Datum)}</td>
         <td>
           <div class="action-cell">
+            <button class="action-btn edit" onclick="editTrade('${t.id}')">✏️</button>
             <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 1)">TP1</button>
             <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 2)">TP2</button>
             <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 3)">TP3</button>
@@ -1410,6 +1490,57 @@ if (window.innerWidth <= 768) {
   icon.textContent = '▶';
 }
 </script>
+
+<!-- Edit Trade Modal -->
+<div id="editModal" class="modal" onclick="if(event.target === this) closeEditModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Trade Bearbeiten</h3>
+      <span class="modal-close" onclick="closeEditModal()">&times;</span>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editTradeId">
+      <div class="form-grid">
+        <div class="fg">
+          <label for="editTicker">Ticker *</label>
+          <input type="text" id="editTicker">
+        </div>
+        <div class="fg">
+          <label for="editEinstiegspreis">Einstiegspreis ($) *</label>
+          <input type="number" id="editEinstiegspreis" step="0.01">
+        </div>
+        <div class="fg">
+          <label for="editKaufmenge">Kaufmenge (Stk) *</label>
+          <input type="number" id="editKaufmenge" step="0.01">
+        </div>
+        <div class="fg">
+          <label for="editKaufdatum">Kaufdatum</label>
+          <input type="date" id="editKaufdatum">
+        </div>
+        <div class="fg">
+          <label for="editStopLoss">Stop-Loss ($)</label>
+          <input type="number" id="editStopLoss" step="0.01">
+        </div>
+        <div class="fg">
+          <label for="editTp1Preis">TP1 Preis ($)</label>
+          <input type="number" id="editTp1Preis" step="0.01">
+        </div>
+        <div class="fg">
+          <label for="editTp2Preis">TP2 Preis ($)</label>
+          <input type="number" id="editTp2Preis" step="0.01">
+        </div>
+        <div class="fg">
+          <label for="editTp3Preis">TP3 Preis ($)</label>
+          <input type="number" id="editTp3Preis" step="0.01">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveTradeEdits()">Speichern</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
