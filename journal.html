@@ -1129,7 +1129,7 @@ function renderTradesTable() {
                  onfocus="this.select()">
         </td>
         <td>${statusDetail}</td>
-        <td class="text-right">${restmenge}</td>
+        <td class="text-right">${restmenge.toFixed(2)}</td>
         <td onclick="editTradeDate('${t.id}', 'tp1_datum')" style="cursor:pointer;">${formatDate(t.tp1Datum)}</td>
         <td onclick="editTradeDate('${t.id}', 'tp2_datum')" style="cursor:pointer;">${formatDate(t.tp2Datum)}</td>
         <td onclick="editTradeDate('${t.id}', 'tp3_datum')" style="cursor:pointer;">${formatDate(t.tp3Datum)}</td>
