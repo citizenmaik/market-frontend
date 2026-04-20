@@ -1037,6 +1037,14 @@ function calcPLPercent(t) {
   return initialValue > 0 ? (pl / initialValue) * 100 : 0;
 }
 
+function calcRealizedPLFromPartials(t) {
+  // Calculate realized P/L from TP1/2/3 exits only (not the remaining position)
+  const tp1PL = t.tp1Menge > 0 ? (t.tp1Preis - t.einstiegspreis) * t.tp1Menge : 0;
+  const tp2PL = t.tp2Menge > 0 ? (t.tp2Preis - t.einstiegspreis) * t.tp2Menge : 0;
+  const tp3PL = t.tp3Menge > 0 ? (t.tp3Preis - t.einstiegspreis) * t.tp3Menge : 0;
+  return tp1PL + tp2PL + tp3PL;
+}
+
 function calcRRR(t) {
   if (!t.stopLoss || t.stopLoss === 0) return 'N/A';
   if (t.einstiegspreis === t.stopLoss) return 'FREE';
@@ -1193,7 +1201,11 @@ function updateHeaderStats() {
   const invested = trades.reduce((sum, t) => sum + calcPosGroesse(t), 0);
   const available = settings.totalBudget - invested;
   const unrealized = trades.reduce((sum, t) => sum + calcPL(t), 0);
-  const realized = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
+  
+  // Realized P/L = closed trades + partial exits from open trades
+  const realizedFromClosed = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
+  const realizedFromPartials = trades.reduce((sum, t) => sum + calcRealizedPLFromPartials(t), 0);
+  const realized = realizedFromClosed + realizedFromPartials;
   
   const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
   const investedPercent = (invested / settings.totalBudget) * 100;
@@ -1234,7 +1246,12 @@ function updateDashboard() {
   const invested = trades.reduce((sum, t) => sum + calcPosGroesse(t), 0);
   const available = settings.totalBudget - invested;
   const unrealized = trades.reduce((sum, t) => sum + calcPL(t), 0);
-  const realized = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
+  
+  // Realized P/L = closed trades + partial exits from open trades
+  const realizedFromClosed = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
+  const realizedFromPartials = trades.reduce((sum, t) => sum + calcRealizedPLFromPartials(t), 0);
+  const realized = realizedFromClosed + realizedFromPartials;
+  
   const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
   const riskPercent = (totalRisk / settings.totalBudget) * 100;
 
