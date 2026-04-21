@@ -115,6 +115,8 @@ tbody tr{border-bottom:1px solid var(--border);transition:background .2s;}
 tbody tr:hover{background:rgba(124,106,247,.05);}
 tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
 .ticker{font-weight:600;color:var(--accent);font-size:12px;}
+.ticker-link{color:var(--accent);text-decoration:none;transition:all .2s;}
+.ticker-link:hover{color:var(--text);text-decoration:underline;}
 .pos{color:var(--green);font-weight:600;}
 .neg{color:var(--red);font-weight:600;}
 .text-right{text-align:right;}
@@ -1106,7 +1108,12 @@ function renderTradesTable() {
     return `
       <tr>
         <td><span class="badge offen">Offen</span></td>
-        <td class="ticker">${t.ticker}</td>
+        <td class="ticker">
+          <a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${t.ticker}" 
+             target="_blank" 
+             rel="noopener noreferrer"
+             class="ticker-link">${t.ticker}</a>
+        </td>
         <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
         <td class="text-right ${plClass}">$${pl.toFixed(2)}</td>
         <td onclick="editTradeDate('${t.id}', 'kaufdatum')" style="cursor:pointer;">${formatDate(t.kaufdatum)}</td>
@@ -1177,7 +1184,12 @@ function renderHistorieTable() {
     return `
       <tr>
         <td><span class="badge geschlossen">Geschlossen</span></td>
-        <td class="ticker">${t.ticker}</td>
+        <td class="ticker">
+          <a href="https://www.tradingview.com/chart/?symbol=NASDAQ:${t.ticker}" 
+             target="_blank" 
+             rel="noopener noreferrer"
+             class="ticker-link">${t.ticker}</a>
+        </td>
         <td onclick="editClosedDate('${t.id}', 'kaufdatum')" style="cursor:pointer;">${formatDate(t.kaufdatum)}</td>
         <td onclick="editClosedDate('${t.id}', 'tp1_datum')" style="cursor:pointer;">${formatDate(t.tp1Datum)}</td>
         <td onclick="editClosedDate('${t.id}', 'tp2_datum')" style="cursor:pointer;">${formatDate(t.tp2Datum)}</td>
