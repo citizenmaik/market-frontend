@@ -891,7 +891,7 @@ function calcSectorData(sym, c, spyDay, spyWk, spyMth, nameMap) {
   const rs_day_v = +(day - spyDay).toFixed(2);
 const rs_wk_v  = +(wk  - spyWk ).toFixed(2);
 const rs_mth_v = +(mth - spyMth).toFixed(2);
-const rsComposite = rs_mth_v * 0.50 + rs_wk_v * 0.35 + rs_day_v * 0.15;
+const rsComposite = rs_mth_v * 0.25 + rs_wk_v * 0.50 + rs_day_v * 0.25;
 const rs = Math.min(100, Math.max(0, Math.round(50 + rsComposite * 2)));
   const s50c=sma(c,50);
   return{name:nameMap[sym]||sym,price:price.toFixed(2),
