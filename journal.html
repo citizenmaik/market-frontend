@@ -1020,7 +1020,8 @@ function calcPosGroesse(t) {
 
 function calcRisiko(t) {
   if (!t.stopLoss || t.stopLoss === 0) return 0;
-  return Math.abs(t.einstiegspreis - t.stopLoss) * calcRestmenge(t);
+  // Use LIVE price for current risk, not entry price
+  return Math.abs(t.livePreis - t.stopLoss) * calcRestmenge(t);
 }
 
 function calcPL(t) {
