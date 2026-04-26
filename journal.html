@@ -1174,12 +1174,7 @@ function renderTradesTable() {
         </td>
         <td class="text-right">${risiko > 0 ? '$' + risiko.toFixed(2) : '-'}</td>
         <td class="text-right">${risikoPercent > 0 ? risikoPercent.toFixed(2) + '%' : '-'}</td>
-        <td class="text-right">
-          <input type="number" step="0.01" value="${t.livePreis.toFixed(2)}" 
-                 class="inline-input"
-                 onchange="updateLivePreis('${t.id}', parseFloat(this.value))"
-                 onfocus="this.select()">
-        </td>
+        <td class="text-right">$${t.livePreis.toFixed(2)}</td>
         <td>${statusDetail}</td>
         <td class="text-right">${restmenge.toFixed(2)}</td>
         <td onclick="editTradeDate('${t.id}', 'tp1_datum')" style="cursor:pointer;">${formatDate(t.tp1Datum)}</td>
