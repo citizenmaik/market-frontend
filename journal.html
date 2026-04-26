@@ -663,7 +663,8 @@ function dbToTrade(t) {
     tp3Datum: t.tp3_datum,
     exitDatum: t.exit_datum,
     livePreis: parseFloat(t.live_preis || t.einstiegspreis),
-    status: t.status
+    status: t.status,
+    initialRRR: t.initial_rrr ? parseFloat(t.initial_rrr) : null
   };
 }
 
@@ -690,6 +691,9 @@ async function addTrade() {
     return;
   }
 
+  // Calculate initial RRR
+  const initialRRR = calcInitialRRR(einstiegspreis, stopLoss, tp1Preis, tp2Preis, tp3Preis);
+
   try {
     await supabaseClient.from('trades').insert({
       user_id: USER_ID,
@@ -702,7 +706,8 @@ async function addTrade() {
       tp2_preis: tp2Preis || null,
       tp3_preis: tp3Preis || null,
       live_preis: einstiegspreis,
-      status: 'offen'
+      status: 'offen',
+      initial_rrr: initialRRR
     });
     
     await loadData();
@@ -785,6 +790,9 @@ async function saveTradeEdits() {
     return;
   }
   
+  // Recalculate initial RRR when TP prices or stop loss changes
+  const initialRRR = calcInitialRRR(einstiegspreis, stopLoss, tp1Preis, tp2Preis, tp3Preis);
+  
   try {
     const updateData = {
       ticker,
@@ -794,7 +802,8 @@ async function saveTradeEdits() {
       stop_loss: stopLoss,
       tp1_preis: tp1Preis,
       tp2_preis: tp2Preis,
-      tp3_preis: tp3Preis
+      tp3_preis: tp3Preis,
+      initial_rrr: initialRRR
     };
     
     console.log('Updating trade:', tradeId, updateData);
@@ -994,7 +1003,8 @@ async function closeTrade(tradeId) {
       tp3_datum: trade.tp3Datum || null,
       exit_datum: exitDatum,
       live_preis: trade.livePreis,
-      status: 'geschlossen'
+      status: 'geschlossen',
+      initial_rrr: trade.initialRRR || null
     });
     
     await supabaseClient.from('trades').delete().eq('id', tradeId);
@@ -1048,6 +1058,37 @@ function calcRealizedPLFromPartials(t) {
   return tp1PL + tp2PL + tp3PL;
 }
 
+function calcInitialRRR(einstiegspreis, stopLoss, tp1Preis, tp2Preis, tp3Preis) {
+  if (!stopLoss || stopLoss === 0) return null;
+  if (einstiegspreis === stopLoss) return null;
+  
+  // Calculate average target price from TPs that are set
+  let targetCount = 0;
+  let targetSum = 0;
+  
+  if (tp1Preis > 0) {
+    targetSum += tp1Preis;
+    targetCount++;
+  }
+  if (tp2Preis > 0) {
+    targetSum += tp2Preis;
+    targetCount++;
+  }
+  if (tp3Preis > 0) {
+    targetSum += tp3Preis;
+    targetCount++;
+  }
+  
+  // If no targets set, use 2R as default
+  if (targetCount === 0) return 2.0;
+  
+  const avgTarget = targetSum / targetCount;
+  const reward = avgTarget - einstiegspreis;
+  const risk = einstiegspreis - stopLoss;
+  
+  return risk !== 0 ? parseFloat((reward / risk).toFixed(2)) : null;
+}
+
 function calcRRR(t) {
   if (!t.stopLoss || t.stopLoss === 0) return 'N/A';
   if (t.einstiegspreis === t.stopLoss) return 'FREE';
@@ -1099,12 +1140,15 @@ function renderTradesTable() {
     const risikoPercent = settings.totalBudget > 0 ? (risiko / settings.totalBudget) * 100 : 0;
     const pl = calcPL(t);
     const plPercent = calcPLPercent(t);
-    const rrr = calcRRR(t);
     const restmenge = calcRestmenge(t);
     const statusDetail = calcStatusDetail(t);
     
     const plClass = pl >= 0 ? 'pos' : 'neg';
-    const rrrDisplay = typeof rrr === 'number' ? rrr.toFixed(2) + ' R' : rrr;
+    
+    // Use stored initial RRR, fallback to 'N/A' if not set
+    const rrrDisplay = t.initialRRR !== null && t.initialRRR !== undefined 
+      ? t.initialRRR.toFixed(2) + ' R' 
+      : 'N/A';
 
     return `
       <tr>
@@ -1172,9 +1216,12 @@ function renderHistorieTable() {
   tbody.innerHTML = closedTrades.map(t => {
     const pl = calcPL(t);
     const plPercent = calcPLPercent(t);
-    const rrr = calcRRR(t);
     const plClass = pl >= 0 ? 'pos' : 'neg';
-    const rrrDisplay = typeof rrr === 'number' ? rrr.toFixed(2) + ' R' : rrr;
+    
+    // Use stored initial RRR, fallback to 'N/A' if not set
+    const rrrDisplay = t.initialRRR !== null && t.initialRRR !== undefined 
+      ? t.initialRRR.toFixed(2) + ' R' 
+      : 'N/A';
     
     const tp1Value = t.tp1Preis * t.tp1Menge;
     const tp2Value = t.tp2Preis * t.tp2Menge;
