@@ -194,14 +194,148 @@ input[type="number"] {
 .modal-body{padding:20px;}
 .modal-footer{padding:16px 20px;border-top:1px solid var(--border);
   display:flex;gap:8px;justify-content:flex-end;}
+
+/* ══ PIN LOGIN ════════════════════════════════════════ */
+.pin-login {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.pin-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+.pin-container h1 {
+  font-family: var(--mono);
+  font-size: 24px;
+  color: var(--accent);
+  margin: 0 0 30px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.pin-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.pin-input {
+  width: 100%;
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 24px;
+  text-align: center;
+  letter-spacing: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.pin-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.pin-btn {
+  width: 100%;
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pin-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.pin-error {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--red);
+  margin-top: 12px;
+  min-height: 16px;
+}
+
+.logout-btn {
+  padding: 8px 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: var(--bg);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
 </style>
 </head>
 <body>
+
+<!-- PIN Login Screen -->
+<div id="pinLogin" class="pin-login">
+  <div class="pin-container">
+    <h1>🔒 Trading Journal</h1>
+    <p class="pin-label">PIN eingeben</p>
+    <input type="password" 
+           id="pinInput" 
+           class="pin-input" 
+           maxlength="4" 
+           placeholder="••••"
+           autocomplete="off">
+    <button class="pin-btn" onclick="checkPin()">Unlock</button>
+    <p id="pinError" class="pin-error"></p>
+  </div>
+</div>
+
+<!-- Main Journal Content -->
+<div id="mainContent" style="display:none;">
 
 <div class="hdr">
   <h1>Trading Journal <span style="font-size:9px;color:var(--green);">☁ Cloud</span></h1>
   <div class="hdr-right">
     <a href="index.html" class="nav-link">← Dashboard</a>
+    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
     <button class="th-btn" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
   </div>
 </div>
@@ -1564,8 +1698,75 @@ async function editClosedDate(tradeId, field) {
 }
 
 // ══════════════════════════════════════════════════════
+// PIN PROTECTION
+// ══════════════════════════════════════════════════════
+const CORRECT_PIN = '1710';
+
+function checkPin() {
+  const input = document.getElementById('pinInput');
+  const error = document.getElementById('pinError');
+  const enteredPin = input.value.trim();
+  
+  if (enteredPin === CORRECT_PIN) {
+    // Correct PIN - save to localStorage and show content
+    localStorage.setItem('journalPinUnlocked', 'true');
+    document.getElementById('pinLogin').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    error.textContent = '';
+    input.value = '';
+  } else {
+    // Wrong PIN
+    error.textContent = 'Falscher PIN!';
+    input.value = '';
+    input.focus();
+    
+    // Shake animation
+    input.style.animation = 'shake 0.5s';
+    setTimeout(() => { input.style.animation = ''; }, 500);
+  }
+}
+
+function logout() {
+  if (confirm('Journal sperren?')) {
+    localStorage.removeItem('journalPinUnlocked');
+    document.getElementById('mainContent').style.display = 'none';
+    document.getElementById('pinLogin').style.display = 'flex';
+    document.getElementById('pinInput').focus();
+  }
+}
+
+// Check PIN on page load
+function checkPinOnLoad() {
+  const isUnlocked = localStorage.getItem('journalPinUnlocked') === 'true';
+  
+  if (isUnlocked) {
+    document.getElementById('pinLogin').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+  } else {
+    document.getElementById('pinLogin').style.display = 'flex';
+    document.getElementById('mainContent').style.display = 'none';
+    setTimeout(() => {
+      document.getElementById('pinInput').focus();
+    }, 100);
+  }
+}
+
+// Enter key support for PIN input
+document.addEventListener('DOMContentLoaded', () => {
+  const pinInput = document.getElementById('pinInput');
+  if (pinInput) {
+    pinInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        checkPin();
+      }
+    });
+  }
+});
+
+// ══════════════════════════════════════════════════════
 // START
 // ══════════════════════════════════════════════════════
+checkPinOnLoad();
 init();
 
 // Collapse form on mobile by default
@@ -1628,6 +1829,8 @@ if (window.innerWidth <= 768) {
     </div>
   </div>
 </div>
+
+</div><!-- End mainContent -->
 
 </body>
 </html>
