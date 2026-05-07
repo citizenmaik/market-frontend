@@ -342,7 +342,7 @@ input[type="number"] {
 
 <div class="acct-sum">
   <div class="acct-card">
-    <div class="acct-label">Gesamtbudget</div>
+    <div class="acct-label">Portfoliowert</div>
     <div class="acct-value" id="totalBudget" onclick="editBudget()" style="cursor:pointer;">$7,500.00</div>
   </div>
   <div class="acct-card">
@@ -517,7 +517,7 @@ input[type="number"] {
     <div class="dash-card">
       <h3>Konto-Übersicht</h3>
       <div class="stat-row">
-        <span class="stat-label">Gesamtbudget</span>
+        <span class="stat-label">Portfoliowert</span>
         <span class="stat-value" id="dashBudget">$7,500.00</span>
       </div>
       <div class="stat-row">
@@ -1003,7 +1003,7 @@ async function updateStopLoss(tradeId, newStopLoss) {
 async function editBudget() {
   const currentBudget = settings.totalBudget;
   const newBudget = parseFloat(prompt(
-    "Gesamtbudget ändern ($):",
+    "Startkapital ändern ($):",
     currentBudget.toFixed(2)
   ));
   
@@ -1024,7 +1024,7 @@ async function editBudget() {
     updateDashboard();
   } catch (error) {
     console.error('Budget update error:', error);
-    alert('Fehler beim Speichern des Budgets!');
+    alert('Fehler beim Speichern des Startkapitals!');
   }
 }
 
@@ -1268,10 +1268,17 @@ function renderTradesTable() {
     return;
   }
 
+  // Calculate portfolio value for risk percentages
+  const unrealized = trades.reduce((sum, t) => sum + calcPL(t), 0);
+  const realizedFromClosed = closedTrades.reduce((sum, t) => sum + calcPL(t), 0);
+  const realizedFromPartials = trades.reduce((sum, t) => sum + calcRealizedPLFromPartials(t), 0);
+  const realized = realizedFromClosed + realizedFromPartials;
+  const portfolioValue = settings.totalBudget + realized + unrealized;
+
   tbody.innerHTML = trades.map(t => {
     const posGroesse = calcPosGroesse(t);
     const risiko = calcRisiko(t);
-    const risikoPercent = settings.totalBudget > 0 ? (risiko / settings.totalBudget) * 100 : 0;
+    const risikoPercent = portfolioValue > 0 ? (risiko / portfolioValue) * 100 : 0;
     const pl = calcPL(t);
     const plPercent = calcPLPercent(t);
     const restmenge = calcRestmenge(t);
@@ -1388,7 +1395,6 @@ function renderHistorieTable() {
 
 function updateHeaderStats() {
   const invested = trades.reduce((sum, t) => sum + calcPosGroesse(t), 0);
-  const available = settings.totalBudget - invested;
   const unrealized = trades.reduce((sum, t) => sum + calcPL(t), 0);
   
   // Realized P/L = closed trades + partial exits from open trades
@@ -1396,14 +1402,18 @@ function updateHeaderStats() {
   const realizedFromPartials = trades.reduce((sum, t) => sum + calcRealizedPLFromPartials(t), 0);
   const realized = realizedFromClosed + realizedFromPartials;
   
+  // Portfolio Value = Start Capital + All P/L
+  const portfolioValue = settings.totalBudget + realized + unrealized;
+  const available = portfolioValue - invested;
+  
   const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
-  const investedPercent = (invested / settings.totalBudget) * 100;
-  const availablePercent = (available / settings.totalBudget) * 100;
-  const openHeatPercent = (totalRisk / settings.totalBudget) * 100;
-  const openProfitPercent = (unrealized / settings.totalBudget) * 100;
+  const investedPercent = (invested / portfolioValue) * 100;
+  const availablePercent = (available / portfolioValue) * 100;
+  const openHeatPercent = (totalRisk / portfolioValue) * 100;
+  const openProfitPercent = (unrealized / portfolioValue) * 100;
   const deltaPercent = openProfitPercent - openHeatPercent;
 
-  document.getElementById('totalBudget').textContent = formatCurrency(settings.totalBudget);
+  document.getElementById('totalBudget').textContent = formatCurrency(portfolioValue);
   document.getElementById('invested').textContent = formatCurrency(invested);
   document.getElementById('investedPercent').textContent = `${investedPercent.toFixed(1)}%`;
   document.getElementById('available').textContent = formatCurrency(available);
@@ -1433,7 +1443,6 @@ function updateHeaderStats() {
 
 function updateDashboard() {
   const invested = trades.reduce((sum, t) => sum + calcPosGroesse(t), 0);
-  const available = settings.totalBudget - invested;
   const unrealized = trades.reduce((sum, t) => sum + calcPL(t), 0);
   
   // Realized P/L = closed trades + partial exits from open trades
@@ -1441,8 +1450,12 @@ function updateDashboard() {
   const realizedFromPartials = trades.reduce((sum, t) => sum + calcRealizedPLFromPartials(t), 0);
   const realized = realizedFromClosed + realizedFromPartials;
   
+  // Portfolio Value = Start Capital + All P/L
+  const portfolioValue = settings.totalBudget + realized + unrealized;
+  const available = portfolioValue - invested;
+  
   const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
-  const riskPercent = (totalRisk / settings.totalBudget) * 100;
+  const riskPercent = (totalRisk / portfolioValue) * 100;
 
   const wins = closedTrades.filter(t => calcPL(t) > 0);
   const losses = closedTrades.filter(t => calcPL(t) < 0);
@@ -1451,7 +1464,7 @@ function updateDashboard() {
   const avgWin = wins.length > 0 ? wins.reduce((sum, t) => sum + calcPL(t), 0) / wins.length : 0;
   const avgLoss = losses.length > 0 ? losses.reduce((sum, t) => sum + calcPL(t), 0) / losses.length : 0;
 
-  document.getElementById('dashBudget').textContent = formatCurrency(settings.totalBudget);
+  document.getElementById('dashBudget').textContent = formatCurrency(portfolioValue);
   document.getElementById('dashInvested').textContent = formatCurrency(invested);
   document.getElementById('dashAvailable').textContent = formatCurrency(available);
   
