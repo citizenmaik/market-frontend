@@ -303,6 +303,24 @@ input[type="number"] {
   color: var(--red);
 }
 
+.sync-btn {
+  padding: 8px 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sync-btn:hover {
+  background: var(--bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
@@ -335,6 +353,7 @@ input[type="number"] {
   <h1>Trading Journal <span style="font-size:9px;color:var(--green);">☁ Cloud</span></h1>
   <div class="hdr-right">
     <a href="index.html" class="nav-link">← Dashboard</a>
+    <button class="sync-btn" onclick="openIBKRSync()">📥 IBKR Sync</button>
     <button class="logout-btn" onclick="logout()">🚪 Logout</button>
     <button class="th-btn" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
   </div>
@@ -1777,6 +1796,314 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ══════════════════════════════════════════════════════
+// IBKR CSV IMPORT
+// ══════════════════════════════════════════════════════
+
+function openIBKRSync() {
+  document.getElementById('ibkrSyncModal').style.display = 'flex';
+  document.getElementById('syncStatus').style.display = 'none';
+  document.getElementById('kontoauszugFile').value = '';
+  document.getElementById('ordersFile').value = '';
+}
+
+function closeIBKRSync() {
+  document.getElementById('ibkrSyncModal').style.display = 'none';
+}
+
+async function startIBKRSync() {
+  const kontoFile = document.getElementById('kontoauszugFile').files[0];
+  const ordersFile = document.getElementById('ordersFile').files[0];
+  
+  if (!kontoFile || !ordersFile) {
+    showSyncStatus('Bitte beide CSV-Dateien auswählen!', 'error');
+    return;
+  }
+  
+  showSyncStatus('Verarbeite CSVs...', 'loading');
+  
+  try {
+    const kontoText = await kontoFile.text();
+    const ordersText = await ordersFile.text();
+    
+    const positions = parseKontoauszug(kontoText);
+    const transactions = parseTransaktionen(kontoText);
+    const orders = parseOffeneOrders(ordersText);
+    
+    await syncWithIBKR(positions, transactions, orders);
+    
+    showSyncStatus('Import erfolgreich! Journal wird neu geladen...', 'success');
+    setTimeout(() => {
+      closeIBKRSync();
+      loadData();
+      updateDashboard();
+    }, 1500);
+    
+  } catch (error) {
+    console.error('IBKR Sync Error:', error);
+    showSyncStatus('Fehler beim Import: ' + error.message, 'error');
+  }
+}
+
+function showSyncStatus(msg, type) {
+  const el = document.getElementById('syncStatus');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = type === 'error' ? 'rgba(255,68,102,.15)' : 
+                       type === 'success' ? 'rgba(0,208,132,.15)' :
+                       'rgba(90,96,112,.15)';
+  el.style.color = type === 'error' ? 'var(--red)' :
+                   type === 'success' ? 'var(--green)' :
+                   'var(--muted)';
+  el.style.border = `1px solid ${type === 'error' ? 'rgba(255,68,102,.3)' : 
+                                 type === 'success' ? 'rgba(0,208,132,.3)' :
+                                 'rgba(90,96,112,.3)'}`;
+}
+
+function parseKontoauszug(csvText) {
+  const lines = csvText.split('\n');
+  const positions = {};
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.startsWith('Offene Positionen,Data,Summary')) continue;
+    
+    const parts = line.split(',');
+    if (parts.length < 10) continue;
+    
+    const symbol = parts[5];
+    const menge = parseFloat(parts[6]);
+    const einstieg = parseFloat(parts[8]);
+    const aktuell = parseFloat(parts[10]);
+    
+    if (symbol && !isNaN(menge) && !isNaN(einstieg)) {
+      positions[symbol] = { symbol, menge, einstieg, aktuell };
+    }
+  }
+  
+  return positions;
+}
+
+function parseTransaktionen(csvText) {
+  const lines = csvText.split('\n');
+  const transactions = {};
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.startsWith('Transaktionen,Data,Order')) continue;
+    
+    const parts = line.split(',');
+    if (parts.length < 10) continue;
+    
+    const symbol = parts[5];
+    const datetime = parts[6].replace(/"/g, '');
+    const menge = parseFloat(parts[7]);
+    const preis = parseFloat(parts[8]);
+    
+    if (symbol && !isNaN(menge) && menge < 0 && !isNaN(preis)) {
+      if (!transactions[symbol]) transactions[symbol] = [];
+      transactions[symbol].push({
+        menge: Math.abs(menge),
+        preis,
+        datum: datetime.split(',')[0].trim()
+      });
+    }
+  }
+  
+  return transactions;
+}
+
+function parseOffeneOrders(csvText) {
+  const lines = csvText.split('\n');
+  const orders = {};
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.includes('@NASDAQ') && !line.includes('@NYSE')) continue;
+    
+    const match = line.match(/(\w+)\s+@[A-Z.]+\s+Sell\s+([\d.]+)\s+\w+\s+(Limit|Stop)\s+([\d.]+)/);
+    if (!match) continue;
+    
+    const symbol = match[1];
+    const menge = parseFloat(match[2]);
+    const typ = match[3];
+    const preis = parseFloat(match[4]);
+    
+    if (!orders[symbol]) orders[symbol] = { limits: [], stops: [] };
+    
+    if (typ === 'Limit') {
+      orders[symbol].limits.push({ menge, preis });
+    } else if (typ === 'Stop') {
+      orders[symbol].stops.push({ menge, preis });
+    }
+  }
+  
+  // Sort limits descending (TP1 = highest)
+  Object.values(orders).forEach(o => {
+    o.limits.sort((a, b) => b.preis - a.preis);
+  });
+  
+  return orders;
+}
+
+async function syncWithIBKR(positions, transactions, orders) {
+  const symbolsToSync = new Set([
+    ...Object.keys(positions),
+    ...Object.keys(transactions),
+    ...Object.keys(orders)
+  ]);
+  
+  for (const symbol of symbolsToSync) {
+    const pos = positions[symbol];
+    const trans = transactions[symbol] || [];
+    const ord = orders[symbol] || { limits: [], stops: [] };
+    
+    const existing = trades.find(t => t.ticker === symbol);
+    
+    if (pos && !existing) {
+      // NEW TRADE
+      await createTradeFromIBKR(symbol, pos, trans, ord);
+    } else if (pos && existing) {
+      // UPDATE EXISTING
+      await updateTradeFromIBKR(existing, pos, trans, ord);
+    } else if (!pos && existing) {
+      // CLOSED
+      await closeTradeFromIBKR(existing, trans);
+    }
+  }
+}
+
+async function createTradeFromIBKR(symbol, pos, trans, ord) {
+  const stopLoss = ord.stops[0]?.preis || 0;
+  const tp1 = ord.limits[0]?.preis || 0;
+  const tp2 = ord.limits[1]?.preis || 0;
+  const tp3 = ord.limits[2]?.preis || 0;
+  
+  const initialRRR = calcInitialRRR(pos.einstieg, stopLoss, tp1, tp2, tp3);
+  
+  try {
+    await supabaseClient.from('trades').insert({
+      user_id: USER_ID,
+      ticker: symbol,
+      einstiegspreis: pos.einstieg,
+      kaufmenge: pos.menge,
+      kaufdatum: new Date().toISOString().split('T')[0],
+      stop_loss: stopLoss || null,
+      tp1_preis: tp1 || null,
+      tp2_preis: tp2 || null,
+      tp3_preis: tp3 || null,
+      live_preis: pos.aktuell,
+      status: 'offen',
+      initial_rrr: initialRRR
+    });
+    
+    console.log(`✅ Created ${symbol}`);
+  } catch (error) {
+    console.error(`Error creating ${symbol}:`, error);
+  }
+}
+
+async function updateTradeFromIBKR(existing, pos, trans, ord) {
+  const updates = {};
+  let hasChanges = false;
+  
+  // Update stop if changed
+  const newStop = ord.stops[0]?.preis || 0;
+  if (newStop && Math.abs(newStop - existing.stopLoss) > 0.01) {
+    updates.stop_loss = newStop;
+    hasChanges = true;
+  }
+  
+  // Update TP prices if changed
+  const tp1 = ord.limits[0]?.preis || 0;
+  const tp2 = ord.limits[1]?.preis || 0;
+  const tp3 = ord.limits[2]?.preis || 0;
+  
+  if (tp1 && Math.abs(tp1 - (existing.tp1Preis || 0)) > 0.01) {
+    updates.tp1_preis = tp1;
+    hasChanges = true;
+  }
+  if (tp2 && Math.abs(tp2 - (existing.tp2Preis || 0)) > 0.01) {
+    updates.tp2_preis = tp2;
+    hasChanges = true;
+  }
+  if (tp3 && Math.abs(tp3 - (existing.tp3Preis || 0)) > 0.01) {
+    updates.tp3_preis = tp3;
+    hasChanges = true;
+  }
+  
+  // Check for partial exits (transactions)
+  if (trans.length > 0) {
+    trans.forEach((t, idx) => {
+      const tpKey = ['tp1', 'tp2', 'tp3'][idx];
+      if (!existing[`${tpKey}Menge`]) {
+        updates[`${tpKey}_menge`] = t.menge;
+        updates[`${tpKey}_datum`] = t.datum;
+        hasChanges = true;
+      }
+    });
+  }
+  
+  if (hasChanges) {
+    // Recalculate RRR if TP/Stop changed
+    if (updates.tp1_preis || updates.tp2_preis || updates.tp3_preis || updates.stop_loss) {
+      const newRRR = calcInitialRRR(
+        existing.einstiegspreis,
+        updates.stop_loss || existing.stopLoss,
+        updates.tp1_preis || existing.tp1Preis,
+        updates.tp2_preis || existing.tp2Preis,
+        updates.tp3_preis || existing.tp3Preis
+      );
+      updates.initial_rrr = newRRR;
+    }
+    
+    try {
+      await supabaseClient
+        .from('trades')
+        .update(updates)
+        .eq('id', existing.id);
+      
+      console.log(`✅ Updated ${existing.ticker}`);
+    } catch (error) {
+      console.error(`Error updating ${existing.ticker}:`, error);
+    }
+  }
+}
+
+async function closeTradeFromIBKR(existing, trans) {
+  const exitDatum = trans.length > 0 ? trans[0].datum : new Date().toISOString().split('T')[0];
+  
+  try {
+    await supabaseClient.from('closed_trades').insert({
+      user_id: USER_ID,
+      ticker: existing.ticker,
+      einstiegspreis: existing.einstiegspreis,
+      kaufmenge: existing.kaufmenge,
+      kaufdatum: existing.kaufdatum || null,
+      stop_loss: existing.stopLoss || null,
+      tp1_preis: existing.tp1Preis || null,
+      tp2_preis: existing.tp2Preis || null,
+      tp3_preis: existing.tp3Preis || null,
+      tp1_menge: existing.tp1Menge || 0,
+      tp2_menge: existing.tp2Menge || 0,
+      tp3_menge: existing.tp3Menge || 0,
+      tp1_datum: existing.tp1Datum || null,
+      tp2_datum: existing.tp2Datum || null,
+      tp3_datum: existing.tp3Datum || null,
+      exit_datum: exitDatum,
+      live_preis: existing.livePreis,
+      status: 'geschlossen',
+      initial_rrr: existing.initialRRR || null
+    });
+    
+    await supabaseClient.from('trades').delete().eq('id', existing.id);
+    
+    console.log(`✅ Closed ${existing.ticker}`);
+  } catch (error) {
+    console.error(`Error closing ${existing.ticker}:`, error);
+  }
+}
+
+// ══════════════════════════════════════════════════════
 // START
 // ══════════════════════════════════════════════════════
 checkPinOnLoad();
@@ -1839,6 +2166,36 @@ if (window.innerWidth <= 768) {
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeEditModal()">Abbrechen</button>
       <button class="btn btn-primary" onclick="saveTradeEdits()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- IBKR Sync Modal -->
+<div id="ibkrSyncModal" class="modal" onclick="if(event.target === this) closeIBKRSync()">
+  <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2>📥 IBKR Import</h2>
+      <button class="close-btn" onclick="closeIBKRSync()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:20px;">
+        Exportiere aus CapTrader:<br>
+        1. Activity Statement (Kontoauszug)<br>
+        2. Orders & Trades (offene Orders)
+      </p>
+      <div class="fg">
+        <label for="kontoauszugFile">Kontoauszug CSV</label>
+        <input type="file" id="kontoauszugFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);">
+      </div>
+      <div class="fg">
+        <label for="ordersFile">Offene Orders CSV</label>
+        <input type="file" id="ordersFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);">
+      </div>
+      <div id="syncStatus" style="font-family:var(--mono);font-size:11px;margin-top:15px;padding:10px;border-radius:var(--radius);display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeIBKRSync()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="startIBKRSync()">Import starten</button>
     </div>
   </div>
 </div>
