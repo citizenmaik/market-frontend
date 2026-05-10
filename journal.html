@@ -1166,7 +1166,12 @@ async function closeTrade(tradeId) {
       exit_datum: exitDatum,
       live_preis: trade.livePreis,
       status: 'geschlossen',
-      initial_rrr: trade.initialRRR || null
+      initial_rrr: trade.initialRRR || null,
+      screenshot_entry: trade.screenshotEntry || null,
+      screenshot_tp1: trade.screenshotTp1 || null,
+      screenshot_tp2: trade.screenshotTp2 || null,
+      screenshot_tp3: trade.screenshotTp3 || null,
+      screenshot_exit: trade.screenshotExit || null
     });
     
     await supabaseClient.from('trades').delete().eq('id', tradeId);
@@ -1419,7 +1424,29 @@ function renderHistorieTable() {
         <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
         <td class="text-right">${rrrDisplay}</td>
         <td>
-          <button class="action-btn delete" onclick="deleteClosedTrade('${t.id}')">×</button>
+          <div class="action-cell">
+            <button class="action-btn ${t.screenshotEntry ? 'has-screenshot' : 'upload'}" 
+                    onclick="${t.screenshotEntry ? `viewClosedScreenshot('${t.id}', 'entry')` : ''}" 
+                    title="Entry Chart" 
+                    ${!t.screenshotEntry ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>📸E</button>
+            <button class="action-btn ${t.screenshotTp1 ? 'has-screenshot' : 'upload'}" 
+                    onclick="${t.screenshotTp1 ? `viewClosedScreenshot('${t.id}', 'tp1')` : ''}" 
+                    title="TP1 Chart"
+                    ${!t.screenshotTp1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>📸₁</button>
+            <button class="action-btn ${t.screenshotTp2 ? 'has-screenshot' : 'upload'}" 
+                    onclick="${t.screenshotTp2 ? `viewClosedScreenshot('${t.id}', 'tp2')` : ''}" 
+                    title="TP2 Chart"
+                    ${!t.screenshotTp2 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>📸₂</button>
+            <button class="action-btn ${t.screenshotTp3 ? 'has-screenshot' : 'upload'}" 
+                    onclick="${t.screenshotTp3 ? `viewClosedScreenshot('${t.id}', 'tp3')` : ''}" 
+                    title="TP3 Chart"
+                    ${!t.screenshotTp3 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>📸₃</button>
+            <button class="action-btn ${t.screenshotExit ? 'has-screenshot' : 'upload'}" 
+                    onclick="${t.screenshotExit ? `viewClosedScreenshot('${t.id}', 'exit')` : ''}" 
+                    title="Exit Chart"
+                    ${!t.screenshotExit ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>📸X</button>
+            <button class="action-btn delete" onclick="deleteClosedTrade('${t.id}')">×</button>
+          </div>
         </td>
       </tr>
     `;
@@ -1929,6 +1956,8 @@ function viewScreenshot(tradeId, type) {
 
 function closeScreenshotView() {
   document.getElementById('screenshotViewModal').style.display = 'none';
+  // Show delete button again for next time
+  document.querySelector('#screenshotViewModal .btn-secondary').style.display = 'inline-block';
   currentScreenshotTradeId = null;
   currentScreenshotType = null;
 }
@@ -1954,6 +1983,31 @@ async function deleteCurrentScreenshot() {
     console.error('Screenshot delete error:', error);
     alert('Fehler beim Löschen!');
   }
+}
+
+function viewClosedScreenshot(tradeId, type) {
+  const trade = closedTrades.find(t => t.id === tradeId);
+  if (!trade) return;
+  
+  const screenshotField = `screenshot${type.charAt(0).toUpperCase() + type.slice(1)}`;
+  const screenshot = trade[screenshotField];
+  
+  if (!screenshot) return;
+  
+  const titles = {
+    entry: 'Entry Chart',
+    tp1: 'TP1 Chart',
+    tp2: 'TP2 Chart',
+    tp3: 'TP3 Chart',
+    exit: 'Exit Chart'
+  };
+  
+  document.getElementById('screenshotViewTitle').textContent = `📸 ${trade.ticker} - ${titles[type]}`;
+  document.getElementById('screenshotViewImg').src = screenshot;
+  document.getElementById('screenshotViewModal').style.display = 'flex';
+  
+  // Hide delete button for closed trades
+  document.querySelector('#screenshotViewModal .btn-secondary').style.display = 'none';
 }
 
 // ══════════════════════════════════════════════════════
@@ -2253,7 +2307,12 @@ async function closeTradeFromIBKR(existing, trans) {
       exit_datum: exitDatum,
       live_preis: existing.livePreis,
       status: 'geschlossen',
-      initial_rrr: existing.initialRRR || null
+      initial_rrr: existing.initialRRR || null,
+      screenshot_entry: existing.screenshotEntry || null,
+      screenshot_tp1: existing.screenshotTp1 || null,
+      screenshot_tp2: existing.screenshotTp2 || null,
+      screenshot_tp3: existing.screenshotTp3 || null,
+      screenshot_exit: existing.screenshotExit || null
     });
     
     await supabaseClient.from('trades').delete().eq('id', existing.id);
