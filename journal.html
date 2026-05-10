@@ -131,6 +131,10 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
 .action-btn.close:hover{background:var(--green);color:#000;}
 .action-btn.delete{background:rgba(255,68,102,.2);color:var(--red);}
 .action-btn.delete:hover{background:var(--red);color:#fff;}
+.action-btn.upload{background:rgba(90,96,112,.15);color:var(--muted);font-size:10px;}
+.action-btn.upload:hover{background:rgba(90,96,112,.25);color:var(--text);}
+.action-btn.has-screenshot{background:rgba(0,208,132,.2);color:var(--green);font-size:10px;}
+.action-btn.has-screenshot:hover{background:var(--green);color:#000;}
 .action-btn.edit{background:rgba(124,106,247,.2);color:var(--accent);}
 .action-btn.edit:hover{background:var(--accent);color:#fff;}
 
@@ -817,7 +821,12 @@ function dbToTrade(t) {
     exitDatum: t.exit_datum,
     livePreis: parseFloat(t.live_preis || t.einstiegspreis),
     status: t.status,
-    initialRRR: t.initial_rrr ? parseFloat(t.initial_rrr) : null
+    initialRRR: t.initial_rrr ? parseFloat(t.initial_rrr) : null,
+    screenshotEntry: t.screenshot_entry,
+    screenshotTp1: t.screenshot_tp1,
+    screenshotTp2: t.screenshot_tp2,
+    screenshotTp3: t.screenshot_tp3,
+    screenshotExit: t.screenshot_exit
   };
 }
 
@@ -1346,6 +1355,11 @@ function renderTradesTable() {
             <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 1)">TP1</button>
             <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 2)">TP2</button>
             <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 3)">TP3</button>
+            <button class="action-btn ${t.screenshotEntry ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'entry')" title="Entry Chart">📸E</button>
+            <button class="action-btn ${t.screenshotTp1 ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'tp1')" title="TP1 Chart">📸₁</button>
+            <button class="action-btn ${t.screenshotTp2 ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'tp2')" title="TP2 Chart">📸₂</button>
+            <button class="action-btn ${t.screenshotTp3 ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'tp3')" title="TP3 Chart">📸₃</button>
+            <button class="action-btn ${t.screenshotExit ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'exit')" title="Exit Chart">📸X</button>
             <button class="action-btn close" onclick="closeTrade('${t.id}')">Close</button>
             <button class="action-btn delete" onclick="deleteTrade('${t.id}')">×</button>
           </div>
@@ -1796,6 +1810,153 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ══════════════════════════════════════════════════════
+// SCREENSHOT UPLOAD & VIEW
+// ══════════════════════════════════════════════════════
+
+let currentScreenshotTradeId = null;
+let currentScreenshotType = null;
+
+function uploadScreenshot(tradeId, type) {
+  const trade = trades.find(t => t.id === tradeId);
+  if (!trade) return;
+  
+  // Check if screenshot already exists
+  const screenshotField = `screenshot${type.charAt(0).toUpperCase() + type.slice(1)}`;
+  if (trade[screenshotField]) {
+    viewScreenshot(tradeId, type);
+    return;
+  }
+  
+  currentScreenshotTradeId = tradeId;
+  currentScreenshotType = type;
+  
+  const titles = {
+    entry: 'Entry Chart',
+    tp1: 'TP1 Chart',
+    tp2: 'TP2 Chart',
+    tp3: 'TP3 Chart',
+    exit: 'Exit Chart'
+  };
+  
+  document.getElementById('screenshotUploadTitle').textContent = `📸 ${titles[type]}`;
+  document.getElementById('screenshotUploadDesc').textContent = `TradingView Chart für ${trade.ticker} ${titles[type]}`;
+  document.getElementById('screenshotFile').value = '';
+  document.getElementById('screenshotPreview').style.display = 'none';
+  document.getElementById('screenshotUploadModal').style.display = 'flex';
+  
+  // Preview on file select
+  document.getElementById('screenshotFile').onchange = function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('screenshotPreviewImg').src = e.target.result;
+        document.getElementById('screenshotPreview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+}
+
+function closeScreenshotUpload() {
+  document.getElementById('screenshotUploadModal').style.display = 'none';
+  currentScreenshotTradeId = null;
+  currentScreenshotType = null;
+}
+
+async function saveScreenshot() {
+  const file = document.getElementById('screenshotFile').files[0];
+  if (!file || !currentScreenshotTradeId || !currentScreenshotType) {
+    alert('Bitte Bild auswählen!');
+    return;
+  }
+  
+  try {
+    const base64 = await fileToBase64(file);
+    const fieldName = `screenshot_${currentScreenshotType}`;
+    
+    await supabaseClient
+      .from('trades')
+      .update({ [fieldName]: base64 })
+      .eq('id', currentScreenshotTradeId);
+    
+    closeScreenshotUpload();
+    await loadData();
+    renderTradesTable();
+    
+  } catch (error) {
+    console.error('Screenshot upload error:', error);
+    alert('Fehler beim Hochladen!');
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function viewScreenshot(tradeId, type) {
+  const trade = trades.find(t => t.id === tradeId);
+  if (!trade) return;
+  
+  const screenshotField = `screenshot${type.charAt(0).toUpperCase() + type.slice(1)}`;
+  const screenshot = trade[screenshotField];
+  
+  if (!screenshot) {
+    uploadScreenshot(tradeId, type);
+    return;
+  }
+  
+  const titles = {
+    entry: 'Entry Chart',
+    tp1: 'TP1 Chart',
+    tp2: 'TP2 Chart',
+    tp3: 'TP3 Chart',
+    exit: 'Exit Chart'
+  };
+  
+  currentScreenshotTradeId = tradeId;
+  currentScreenshotType = type;
+  
+  document.getElementById('screenshotViewTitle').textContent = `📸 ${trade.ticker} - ${titles[type]}`;
+  document.getElementById('screenshotViewImg').src = screenshot;
+  document.getElementById('screenshotViewModal').style.display = 'flex';
+}
+
+function closeScreenshotView() {
+  document.getElementById('screenshotViewModal').style.display = 'none';
+  currentScreenshotTradeId = null;
+  currentScreenshotType = null;
+}
+
+async function deleteCurrentScreenshot() {
+  if (!currentScreenshotTradeId || !currentScreenshotType) return;
+  
+  if (!confirm('Screenshot wirklich löschen?')) return;
+  
+  try {
+    const fieldName = `screenshot_${currentScreenshotType}`;
+    
+    await supabaseClient
+      .from('trades')
+      .update({ [fieldName]: null })
+      .eq('id', currentScreenshotTradeId);
+    
+    closeScreenshotView();
+    await loadData();
+    renderTradesTable();
+    
+  } catch (error) {
+    console.error('Screenshot delete error:', error);
+    alert('Fehler beim Löschen!');
+  }
+}
+
+// ══════════════════════════════════════════════════════
 // IBKR CSV IMPORT
 // ══════════════════════════════════════════════════════
 
@@ -2196,6 +2357,49 @@ if (window.innerWidth <= 768) {
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeIBKRSync()">Abbrechen</button>
       <button class="btn btn-primary" onclick="startIBKRSync()">Import starten</button>
+    </div>
+  </div>
+</div>
+
+<!-- Screenshot Upload Modal -->
+<div id="screenshotUploadModal" class="modal" onclick="if(event.target === this) closeScreenshotUpload()">
+  <div class="modal-content" style="max-width:500px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="screenshotUploadTitle">📸 Chart Upload</h2>
+      <button class="close-btn" onclick="closeScreenshotUpload()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:15px;" id="screenshotUploadDesc">
+        TradingView Chart Screenshot hochladen
+      </p>
+      <div class="fg">
+        <label for="screenshotFile">Bild auswählen</label>
+        <input type="file" id="screenshotFile" accept="image/*" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);">
+      </div>
+      <div id="screenshotPreview" style="margin-top:15px;display:none;">
+        <img id="screenshotPreviewImg" style="width:100%;border-radius:var(--radius);border:1px solid var(--border);">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeScreenshotUpload()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveScreenshot()">Hochladen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Screenshot View Modal -->
+<div id="screenshotViewModal" class="modal" onclick="if(event.target === this) closeScreenshotView()">
+  <div class="modal-content" style="max-width:90%;max-height:90vh;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="screenshotViewTitle">📸 Chart</h2>
+      <button class="close-btn" onclick="closeScreenshotView()">×</button>
+    </div>
+    <div class="modal-body" style="padding:0;overflow:auto;max-height:calc(90vh - 120px);">
+      <img id="screenshotViewImg" style="width:100%;display:block;">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="deleteCurrentScreenshot()">Löschen</button>
+      <button class="btn btn-primary" onclick="closeScreenshotView()">Schließen</button>
     </div>
   </div>
 </div>
