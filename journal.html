@@ -1426,25 +1426,20 @@ function renderHistorieTable() {
         <td>
           <div class="action-cell">
             <button class="action-btn ${t.screenshotEntry ? 'has-screenshot' : 'upload'}" 
-                    onclick="${t.screenshotEntry ? `viewClosedScreenshot('${t.id}', 'entry')` : ''}" 
-                    title="Entry Chart" 
-                    ${!t.screenshotEntry ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>📸E</button>
+                    onclick="uploadClosedScreenshot('${t.id}', 'entry')" 
+                    title="Entry Chart">📸E</button>
             <button class="action-btn ${t.screenshotTp1 ? 'has-screenshot' : 'upload'}" 
-                    onclick="${t.screenshotTp1 ? `viewClosedScreenshot('${t.id}', 'tp1')` : ''}" 
-                    title="TP1 Chart"
-                    ${!t.screenshotTp1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>📸₁</button>
+                    onclick="uploadClosedScreenshot('${t.id}', 'tp1')" 
+                    title="TP1 Chart">📸₁</button>
             <button class="action-btn ${t.screenshotTp2 ? 'has-screenshot' : 'upload'}" 
-                    onclick="${t.screenshotTp2 ? `viewClosedScreenshot('${t.id}', 'tp2')` : ''}" 
-                    title="TP2 Chart"
-                    ${!t.screenshotTp2 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>📸₂</button>
+                    onclick="uploadClosedScreenshot('${t.id}', 'tp2')" 
+                    title="TP2 Chart">📸₂</button>
             <button class="action-btn ${t.screenshotTp3 ? 'has-screenshot' : 'upload'}" 
-                    onclick="${t.screenshotTp3 ? `viewClosedScreenshot('${t.id}', 'tp3')` : ''}" 
-                    title="TP3 Chart"
-                    ${!t.screenshotTp3 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>📸₃</button>
+                    onclick="uploadClosedScreenshot('${t.id}', 'tp3')" 
+                    title="TP3 Chart">📸₃</button>
             <button class="action-btn ${t.screenshotExit ? 'has-screenshot' : 'upload'}" 
-                    onclick="${t.screenshotExit ? `viewClosedScreenshot('${t.id}', 'exit')` : ''}" 
-                    title="Exit Chart"
-                    ${!t.screenshotExit ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>📸X</button>
+                    onclick="uploadClosedScreenshot('${t.id}', 'exit')" 
+                    title="Exit Chart">📸X</button>
             <button class="action-btn delete" onclick="deleteClosedTrade('${t.id}')">×</button>
           </div>
         </td>
@@ -1856,6 +1851,7 @@ function uploadScreenshot(tradeId, type) {
   
   currentScreenshotTradeId = tradeId;
   currentScreenshotType = type;
+  currentScreenshotIsClosed = false;
   
   const titles = {
     entry: 'Entry Chart',
@@ -1889,6 +1885,7 @@ function closeScreenshotUpload() {
   document.getElementById('screenshotUploadModal').style.display = 'none';
   currentScreenshotTradeId = null;
   currentScreenshotType = null;
+  currentScreenshotIsClosed = false;
 }
 
 async function saveScreenshot() {
@@ -1901,15 +1898,21 @@ async function saveScreenshot() {
   try {
     const base64 = await fileToBase64(file);
     const fieldName = `screenshot_${currentScreenshotType}`;
+    const tableName = currentScreenshotIsClosed ? 'closed_trades' : 'trades';
     
     await supabaseClient
-      .from('trades')
+      .from(tableName)
       .update({ [fieldName]: base64 })
       .eq('id', currentScreenshotTradeId);
     
     closeScreenshotUpload();
     await loadData();
-    renderTradesTable();
+    
+    if (currentScreenshotIsClosed) {
+      renderHistorieTable();
+    } else {
+      renderTradesTable();
+    }
     
   } catch (error) {
     console.error('Screenshot upload error:', error);
@@ -2008,6 +2011,51 @@ function viewClosedScreenshot(tradeId, type) {
   
   // Hide delete button for closed trades
   document.querySelector('#screenshotViewModal .btn-secondary').style.display = 'none';
+}
+
+let currentScreenshotIsClosed = false;
+
+function uploadClosedScreenshot(tradeId, type) {
+  const trade = closedTrades.find(t => t.id === tradeId);
+  if (!trade) return;
+  
+  // Check if screenshot already exists
+  const screenshotField = `screenshot${type.charAt(0).toUpperCase() + type.slice(1)}`;
+  if (trade[screenshotField]) {
+    viewClosedScreenshot(tradeId, type);
+    return;
+  }
+  
+  currentScreenshotTradeId = tradeId;
+  currentScreenshotType = type;
+  currentScreenshotIsClosed = true;
+  
+  const titles = {
+    entry: 'Entry Chart',
+    tp1: 'TP1 Chart',
+    tp2: 'TP2 Chart',
+    tp3: 'TP3 Chart',
+    exit: 'Exit Chart'
+  };
+  
+  document.getElementById('screenshotUploadTitle').textContent = `📸 ${titles[type]} (Historie)`;
+  document.getElementById('screenshotUploadDesc').textContent = `TradingView Chart für ${trade.ticker} ${titles[type]}`;
+  document.getElementById('screenshotFile').value = '';
+  document.getElementById('screenshotPreview').style.display = 'none';
+  document.getElementById('screenshotUploadModal').style.display = 'flex';
+  
+  // Preview on file select
+  document.getElementById('screenshotFile').onchange = function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('screenshotPreviewImg').src = e.target.result;
+        document.getElementById('screenshotPreview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 }
 
 // ══════════════════════════════════════════════════════
