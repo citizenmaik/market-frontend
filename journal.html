@@ -1978,14 +1978,24 @@ async function createTradeFromIBKR(symbol, pos, trans, ord) {
   const tp2 = ord.limits[1]?.preis || 0;
   const tp3 = ord.limits[2]?.preis || 0;
   
-  const initialRRR = calcInitialRRR(pos.einstieg, stopLoss, tp1, tp2, tp3);
+  // Calculate original kaufmenge from current position + sold transactions
+  let originalMenge = pos.menge;
+  if (trans.length > 0) {
+    trans.forEach(t => originalMenge += t.menge);
+  }
+  
+  // Use Einstands Kurs (average cost) from position, not transaction price
+  const einstiegspreis = pos.einstieg;
+  
+  // Calculate RRR only once at creation
+  const initialRRR = calcInitialRRR(einstiegspreis, stopLoss, tp1, tp2, tp3);
   
   try {
     await supabaseClient.from('trades').insert({
       user_id: USER_ID,
       ticker: symbol,
-      einstiegspreis: pos.einstieg,
-      kaufmenge: pos.menge,
+      einstiegspreis: einstiegspreis,
+      kaufmenge: originalMenge,
       kaufdatum: new Date().toISOString().split('T')[0],
       stop_loss: stopLoss || null,
       tp1_preis: tp1 || null,
@@ -2043,19 +2053,9 @@ async function updateTradeFromIBKR(existing, pos, trans, ord) {
     });
   }
   
+  // DO NOT recalculate RRR on updates - keep original RRR
+  
   if (hasChanges) {
-    // Recalculate RRR if TP/Stop changed
-    if (updates.tp1_preis || updates.tp2_preis || updates.tp3_preis || updates.stop_loss) {
-      const newRRR = calcInitialRRR(
-        existing.einstiegspreis,
-        updates.stop_loss || existing.stopLoss,
-        updates.tp1_preis || existing.tp1Preis,
-        updates.tp2_preis || existing.tp2Preis,
-        updates.tp3_preis || existing.tp3Preis
-      );
-      updates.initial_rrr = newRRR;
-    }
-    
     try {
       await supabaseClient
         .from('trades')
