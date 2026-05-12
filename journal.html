@@ -2240,24 +2240,50 @@ function parseKontoauszug(csvText) {
   const positions = {};
   
   console.log('=== PARSING KONTOAUSZUG ===');
+  console.log('Total lines:', lines.length);
+  console.log('First 5 lines:');
+  lines.slice(0, 5).forEach((line, idx) => {
+    console.log(`  ${idx}: ${line.substring(0, 100)}`);
+  });
+  
+  let foundPositionsHeader = false;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    
+    // Debug: Check if we find the header
+    if (line.includes('Offene Positionen')) {
+      console.log(`Line ${i} contains "Offene Positionen":`, line.substring(0, 100));
+      foundPositionsHeader = true;
+    }
+    
     if (!line.startsWith('Offene Positionen,Data,Summary')) continue;
     
     const parts = line.split(',');
-    if (parts.length < 10) continue;
+    console.log(`Line ${i} matched! Parts:`, parts.length, 'Symbol:', parts[5]);
+    
+    if (parts.length < 10) {
+      console.log('  -> Skipped: Not enough parts');
+      continue;
+    }
     
     const symbol = parts[5];
     const menge = parseFloat(parts[6]);
     const einstieg = parseFloat(parts[8]);
     const aktuell = parseFloat(parts[10]);
     
-    console.log(`Found position: ${symbol} - ${menge} @ ${einstieg}`);
+    console.log(`  -> Parsing: ${symbol} - ${menge} @ ${einstieg}`);
     
     if (symbol && !isNaN(menge) && !isNaN(einstieg)) {
       positions[symbol] = { symbol, menge, einstieg, aktuell };
+      console.log(`  -> ✅ Added ${symbol}`);
+    } else {
+      console.log(`  -> ❌ Invalid: symbol=${symbol}, menge=${menge}, einstieg=${einstieg}`);
     }
+  }
+  
+  if (!foundPositionsHeader) {
+    console.error('❌ NEVER FOUND "Offene Positionen" IN CSV!');
   }
   
   console.log('Total positions parsed:', Object.keys(positions).length);
