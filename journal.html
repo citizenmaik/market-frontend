@@ -358,6 +358,7 @@ input[type="number"] {
   <div class="hdr-right">
     <a href="index.html" class="nav-link">← Dashboard</a>
     <button class="sync-btn" onclick="openIBKRSync()">📥 IBKR Sync</button>
+    <button class="sync-btn" onclick="exportTrades()">📤 Export</button>
     <button class="logout-btn" onclick="logout()">🚪 Logout</button>
     <button class="th-btn" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
   </div>
@@ -2059,6 +2060,118 @@ function uploadClosedScreenshot(tradeId, type) {
 }
 
 // ══════════════════════════════════════════════════════
+// CSV EXPORT
+// ══════════════════════════════════════════════════════
+
+function exportTrades() {
+  const allTrades = [
+    ...trades.map(t => ({...t, status: 'Offen'})),
+    ...closedTrades.map(t => ({...t, status: 'Geschlossen'}))
+  ];
+  
+  if (allTrades.length === 0) {
+    alert('Keine Trades zum Exportieren!');
+    return;
+  }
+  
+  // CSV Header
+  const headers = [
+    'Status',
+    'Ticker',
+    'Kaufdatum',
+    'Exit Datum',
+    'Einstiegspreis',
+    'Kaufmenge',
+    'Restmenge',
+    'Stop-Loss',
+    'TP1 Preis',
+    'TP1 Menge',
+    'TP1 Datum',
+    'TP2 Preis',
+    'TP2 Menge',
+    'TP2 Datum',
+    'TP3 Preis',
+    'TP3 Menge',
+    'TP3 Datum',
+    'Live Preis',
+    'P/L $',
+    'P/L %',
+    'Initial RRR',
+    'Risiko $',
+    'Risiko %'
+  ];
+  
+  // CSV Rows
+  const rows = allTrades.map(t => {
+    const pl = calcPL(t);
+    const plPercent = calcPLPercent(t);
+    const risiko = calcRisiko(t);
+    const restmenge = calcRestmenge(t);
+    const posGroesse = calcPosGroesse(t);
+    
+    // Calculate portfolio value for risk %
+    const unrealized = trades.reduce((sum, tr) => sum + calcPL(tr), 0);
+    const realizedFromClosed = closedTrades.reduce((sum, tr) => sum + calcPL(tr), 0);
+    const realizedFromPartials = trades.reduce((sum, tr) => sum + calcRealizedPLFromPartials(tr), 0);
+    const realized = realizedFromClosed + realizedFromPartials;
+    const portfolioValue = settings.totalBudget + realized + unrealized;
+    const risikoPercent = portfolioValue > 0 ? (risiko / portfolioValue) * 100 : 0;
+    
+    return [
+      t.status,
+      t.ticker,
+      formatDate(t.kaufdatum) || '',
+      formatDate(t.exitDatum) || '',
+      t.einstiegspreis.toFixed(2),
+      t.kaufmenge.toFixed(2),
+      restmenge.toFixed(2),
+      t.stopLoss > 0 ? t.stopLoss.toFixed(2) : '',
+      t.tp1Preis > 0 ? t.tp1Preis.toFixed(2) : '',
+      t.tp1Menge > 0 ? t.tp1Menge.toFixed(2) : '',
+      formatDate(t.tp1Datum) || '',
+      t.tp2Preis > 0 ? t.tp2Preis.toFixed(2) : '',
+      t.tp2Menge > 0 ? t.tp2Menge.toFixed(2) : '',
+      formatDate(t.tp2Datum) || '',
+      t.tp3Preis > 0 ? t.tp3Preis.toFixed(2) : '',
+      t.tp3Menge > 0 ? t.tp3Menge.toFixed(2) : '',
+      formatDate(t.tp3Datum) || '',
+      t.livePreis.toFixed(2),
+      pl.toFixed(2),
+      plPercent.toFixed(2),
+      t.initialRRR !== null ? t.initialRRR.toFixed(2) : '',
+      risiko.toFixed(2),
+      risikoPercent.toFixed(2)
+    ];
+  });
+  
+  // Build CSV
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => {
+      // Escape commas and quotes
+      const str = String(cell);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }).join(','))
+  ].join('\n');
+  
+  // Download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  const timestamp = new Date().toISOString().split('T')[0];
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `trades_export_${timestamp}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// ══════════════════════════════════════════════════════
 // IBKR CSV IMPORT
 // ══════════════════════════════════════════════════════
 
@@ -2126,6 +2239,8 @@ function parseKontoauszug(csvText) {
   const lines = csvText.split('\n');
   const positions = {};
   
+  console.log('=== PARSING KONTOAUSZUG ===');
+  
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (!line.startsWith('Offene Positionen,Data,Summary')) continue;
@@ -2138,10 +2253,15 @@ function parseKontoauszug(csvText) {
     const einstieg = parseFloat(parts[8]);
     const aktuell = parseFloat(parts[10]);
     
+    console.log(`Found position: ${symbol} - ${menge} @ ${einstieg}`);
+    
     if (symbol && !isNaN(menge) && !isNaN(einstieg)) {
       positions[symbol] = { symbol, menge, einstieg, aktuell };
     }
   }
+  
+  console.log('Total positions parsed:', Object.keys(positions).length);
+  console.log('Symbols:', Object.keys(positions));
   
   return positions;
 }
@@ -2215,6 +2335,13 @@ async function syncWithIBKR(positions, transactions, orders) {
     ...Object.keys(orders)
   ]);
   
+  console.log('=== IBKR SYNC START ===');
+  console.log('Positions:', Object.keys(positions));
+  console.log('Transactions:', Object.keys(transactions));
+  console.log('Orders:', Object.keys(orders));
+  console.log('Symbols to sync:', Array.from(symbolsToSync));
+  console.log('Existing trades in journal:', trades.map(t => t.ticker));
+  
   for (const symbol of symbolsToSync) {
     const pos = positions[symbol];
     const trans = transactions[symbol] || [];
@@ -2222,17 +2349,28 @@ async function syncWithIBKR(positions, transactions, orders) {
     
     const existing = trades.find(t => t.ticker === symbol);
     
+    console.log(`\n--- Processing ${symbol} ---`);
+    console.log('Has position:', !!pos);
+    console.log('Has transactions:', trans.length);
+    console.log('Has orders:', ord.limits.length + ord.stops.length);
+    console.log('Exists in journal:', !!existing);
+    
     if (pos && !existing) {
       // NEW TRADE
+      console.log(`→ NEW: Creating ${symbol}`);
       await createTradeFromIBKR(symbol, pos, trans, ord);
     } else if (pos && existing) {
       // UPDATE EXISTING
+      console.log(`→ UPDATE: Updating ${symbol}`);
       await updateTradeFromIBKR(existing, pos, trans, ord);
     } else if (!pos && existing) {
       // CLOSED
+      console.log(`→ CLOSE: Closing ${symbol} (no position in CSV)`);
       await closeTradeFromIBKR(existing, trans);
     }
   }
+  
+  console.log('=== IBKR SYNC END ===');
 }
 
 async function createTradeFromIBKR(symbol, pos, trans, ord) {
