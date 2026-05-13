@@ -330,6 +330,22 @@ input[type="number"] {
   10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
   20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
+
+/* ══ IMPORT MODE TABS ═══════════════════════════════ */
+.import-mode-tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg);border-radius:6px;padding:3px;}
+.import-mode-tab{flex:1;padding:8px 12px;border:none;border-radius:4px;font-family:var(--mono);
+  font-size:11px;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.07em;
+  background:transparent;color:var(--muted);}
+.import-mode-tab.mode-tab-active{background:var(--accent);color:#fff;}
+.import-preview{background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:12px;margin-top:12px;font-family:var(--mono);font-size:11px;max-height:180px;
+  overflow-y:auto;color:var(--muted);}
+.import-preview-row{display:flex;justify-content:space-between;padding:4px 0;
+  border-bottom:1px solid var(--border);}
+.import-preview-row:last-child{border-bottom:none;}
+.import-preview-row .sym{color:var(--text);font-weight:600;}
+.import-preview-row .open-tag{color:var(--blue);}
+.import-preview-row .closed-tag{color:var(--green);}
 </style>
 </head>
 <body>
@@ -2175,11 +2191,31 @@ function exportTrades() {
 // IBKR CSV IMPORT
 // ══════════════════════════════════════════════════════
 
+let currentImportMode = 'umsatz';
+
 function openIBKRSync() {
   document.getElementById('ibkrSyncModal').style.display = 'flex';
   document.getElementById('syncStatus').style.display = 'none';
   document.getElementById('kontoauszugFile').value = '';
   document.getElementById('ordersFile').value = '';
+  const uf = document.getElementById('umsatzFile');
+  if (uf) uf.value = '';
+  const pv = document.getElementById('importPreview');
+  if (pv) pv.style.display = 'none';
+  showImportMode('umsatz');
+}
+
+function showImportMode(mode) {
+  currentImportMode = mode;
+  ['kontoauszug','umsatz'].forEach(m => {
+    const tab = document.getElementById('importMode_' + m);
+    const sec = document.getElementById('importSection_' + m);
+    if (tab) tab.classList.toggle('mode-tab-active', m === mode);
+    if (sec) sec.style.display = m === mode ? 'block' : 'none';
+  });
+  document.getElementById('syncStatus').style.display = 'none';
+  const pv = document.getElementById('importPreview');
+  if (pv) pv.style.display = 'none';
 }
 
 function closeIBKRSync() {
@@ -2187,6 +2223,12 @@ function closeIBKRSync() {
 }
 
 async function startIBKRSync() {
+  if (currentImportMode === 'umsatz') {
+    await startUmsatzImport();
+    return;
+  }
+
+  // ── Kontoauszug + Orders mode (legacy) ──
   const kontoFile = document.getElementById('kontoauszugFile').files[0];
   const ordersFile = document.getElementById('ordersFile').files[0];
   
@@ -2233,6 +2275,238 @@ function showSyncStatus(msg, type) {
   el.style.border = `1px solid ${type === 'error' ? 'rgba(255,68,102,.3)' : 
                                  type === 'success' ? 'rgba(0,208,132,.3)' :
                                  'rgba(90,96,112,.3)'}`;
+}
+
+// ══════════════════════════════════════════════════════
+// IBKR UMSATZÜBERSICHT IMPORT (Activity Statement)
+// ══════════════════════════════════════════════════════
+
+async function startUmsatzImport() {
+  const file = document.getElementById('umsatzFile').files[0];
+  if (!file) {
+    showSyncStatus('Bitte CSV-Datei der Umsatzübersicht auswählen!', 'error');
+    return;
+  }
+  showSyncStatus('Verarbeite Umsatzübersicht…', 'loading');
+  try {
+    const text = await file.text();
+    const groups = parseActivityStatement(text);
+    
+    const symbols = Object.keys(groups);
+    if (symbols.length === 0) {
+      showSyncStatus('Keine Transaktionen gefunden. Prüfe das CSV-Format.', 'error');
+      return;
+    }
+    
+    // Show preview before import
+    showImportPreview(groups);
+    showSyncStatus(`${symbols.length} Symbole erkannt — bereit zum Import.`, 'loading');
+    
+    // Store for confirm step
+    window._pendingImportGroups = groups;
+    document.getElementById('ibkrImportConfirmBtn').style.display = 'inline-block';
+    document.getElementById('ibkrStartBtn').style.display = 'none';
+    
+  } catch (error) {
+    console.error('Umsatz Parse Error:', error);
+    showSyncStatus('Fehler beim Lesen: ' + error.message, 'error');
+  }
+}
+
+async function confirmUmsatzImport() {
+  const groups = window._pendingImportGroups;
+  if (!groups) return;
+  document.getElementById('ibkrImportConfirmBtn').style.display = 'none';
+  document.getElementById('ibkrStartBtn').style.display = 'inline-block';
+  showSyncStatus('Importiere Trades in Supabase…', 'loading');
+  try {
+    const result = await importFromActivityStatement(groups);
+    showSyncStatus(
+      `✓ Import abgeschlossen — ${result.created} neue offene Trades, ${result.closed} geschlossene Trades importiert, ${result.skipped} übersprungen (bereits vorhanden).`,
+      'success'
+    );
+    window._pendingImportGroups = null;
+    const pv = document.getElementById('importPreview');
+    if (pv) pv.style.display = 'none';
+    setTimeout(() => { closeIBKRSync(); loadData(); updateDashboard(); }, 2200);
+  } catch (error) {
+    console.error('Umsatz Import Error:', error);
+    showSyncStatus('Fehler beim Import: ' + error.message, 'error');
+  }
+}
+
+function showImportPreview(groups) {
+  const pv = document.getElementById('importPreview');
+  if (!pv) return;
+  pv.innerHTML = '';
+  pv.style.display = 'block';
+  
+  Object.entries(groups).sort((a,b) => a[0].localeCompare(b[0])).forEach(([sym, data]) => {
+    const isOpen = data.netQty > 0.001;
+    const totalBought = data.buys.reduce((s,b) => s + b.qty, 0);
+    const avgEntry = totalBought > 0
+      ? (data.buys.reduce((s,b) => s + b.qty * b.price, 0) / totalBought).toFixed(2)
+      : '—';
+    
+    const row = document.createElement('div');
+    row.className = 'import-preview-row';
+    row.innerHTML = `
+      <span class="sym">${sym}</span>
+      <span style="color:var(--muted)">${totalBought.toFixed(2)} Stk @ $${avgEntry}</span>
+      <span class="${isOpen ? 'open-tag' : 'closed-tag'}">${isOpen ? '● Offen' : '✓ Geschlossen'}</span>
+    `;
+    pv.appendChild(row);
+  });
+}
+
+// Parse CSV line correctly (handle quoted commas)
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      inQuotes = !inQuotes;
+    } else if (c === ',' && !inQuotes) {
+      result.push(cur.trim());
+      cur = '';
+    } else {
+      cur += c;
+    }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function parseActivityStatement(csvText) {
+  const lines = csvText.split('\n');
+  const groups = {};
+  
+  // Detect language — German uses "Transaktionen", English uses "Trades"
+  const sectionKey = csvText.includes('Transaktionen,') ? 'Transaktionen' : 'Trades';
+  
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    const parts = parseCSVLine(line);
+    if (parts.length < 8) continue;
+    
+    const section = parts[0];
+    const rowType = parts[1];
+    const discriminator = parts[2];
+    
+    if (section !== sectionKey) continue;
+    if (rowType !== 'Data') continue;
+    
+    const symbol = parts[5];
+    if (!symbol) continue;
+    if (!groups[symbol]) groups[symbol] = { buys: [], sells: [], netQty: null, realizedPL: 0 };
+    
+    if (discriminator === 'Order' && parts.length >= 14) {
+      // Individual trade row
+      const datetime = parts[6];
+      const qty = parseFloat(parts[7]);
+      const tPrice = parseFloat(parts[8]);
+      const proceeds = parseFloat(parts[10]);
+      const commission = parseFloat(parts[11]);
+      const basis = parseFloat(parts[12]);
+      const realizedPL = parseFloat(parts[13]);
+      const code = parts[15] || '';
+      
+      if (isNaN(qty) || isNaN(tPrice)) continue;
+      
+      // Extract date part from "YYYY-MM-DD, HH:MM:SS"
+      const date = datetime.split(',')[0].trim();
+      
+      if (qty > 0) {
+        groups[symbol].buys.push({ date, qty, price: tPrice, proceeds, commission, basis, code });
+      } else if (qty < 0) {
+        groups[symbol].sells.push({ date, qty: Math.abs(qty), price: tPrice, proceeds, commission, realizedPL, code });
+        if (!isNaN(realizedPL)) groups[symbol].realizedPL += realizedPL;
+      }
+    } else if ((discriminator === 'SubTotal' || discriminator === 'Total') && parts[5]) {
+      // Symbol subtotal — quantity = net position
+      const netQty = parseFloat(parts[7]);
+      if (!isNaN(netQty)) groups[symbol].netQty = netQty;
+    }
+  }
+  
+  // For symbols without a SubTotal row, compute net qty manually
+  for (const [sym, data] of Object.entries(groups)) {
+    if (data.netQty === null) {
+      const bought = data.buys.reduce((s,b) => s + b.qty, 0);
+      const sold = data.sells.reduce((s,s2) => s + s2.qty, 0);
+      data.netQty = bought - sold;
+    }
+  }
+  
+  return groups;
+}
+
+async function importFromActivityStatement(groups) {
+  const result = { created: 0, closed: 0, skipped: 0 };
+  
+  for (const [symbol, data] of Object.entries(groups)) {
+    if (data.buys.length === 0) { result.skipped++; continue; }
+    
+    // Check if already exists
+    const existingOpen = trades.find(t => t.ticker === symbol);
+    const existingClosed = closedTrades.find(t => t.ticker === symbol);
+    
+    const totalBought = data.buys.reduce((s,b) => s + b.qty, 0);
+    const avgEntry = totalBought > 0
+      ? data.buys.reduce((s,b) => s + b.qty * b.price, 0) / totalBought
+      : 0;
+    const firstBuyDate = data.buys[0].date;
+    const isOpen = (data.netQty || 0) > 0.001;
+    
+    if (isOpen && !existingOpen) {
+      try {
+        await supabaseClient.from('trades').insert({
+          user_id: USER_ID,
+          ticker: symbol,
+          einstiegspreis: parseFloat(avgEntry.toFixed(4)),
+          kaufmenge: parseFloat(totalBought.toFixed(4)),
+          kaufdatum: firstBuyDate,
+          stop_loss: null, tp1_preis: null, tp2_preis: null, tp3_preis: null,
+          live_preis: 0, status: 'offen', initial_rrr: null
+        });
+        result.created++;
+      } catch(e) { console.error('Insert open', symbol, e); result.skipped++; }
+      
+    } else if (!isOpen && !existingClosed) {
+      const lastSell = data.sells.length > 0 ? data.sells[data.sells.length - 1] : null;
+      const lastSellDate = lastSell ? lastSell.date : firstBuyDate;
+      const totalSold = data.sells.reduce((s,s2) => s + s2.qty, 0);
+      const avgExit = totalSold > 0
+        ? data.sells.reduce((s,s2) => s + s2.qty * s2.price, 0) / totalSold
+        : avgEntry;
+      
+      try {
+        await supabaseClient.from('closed_trades').insert({
+          user_id: USER_ID,
+          ticker: symbol,
+          einstiegspreis: parseFloat(avgEntry.toFixed(4)),
+          kaufmenge: parseFloat(totalBought.toFixed(4)),
+          kaufdatum: firstBuyDate,
+          exit_datum: lastSellDate,
+          live_preis: parseFloat(avgExit.toFixed(4)),
+          status: 'geschlossen',
+          stop_loss: null, tp1_preis: null, tp2_preis: null, tp3_preis: null,
+          tp1_menge: 0, tp2_menge: 0, tp3_menge: 0,
+          tp1_datum: null, tp2_datum: null, tp3_datum: null,
+          initial_rrr: null
+        });
+        result.closed++;
+      } catch(e) { console.error('Insert closed', symbol, e); result.skipped++; }
+      
+    } else {
+      result.skipped++;
+    }
+  }
+  
+  return result;
 }
 
 function parseKontoauszug(csvText) {
@@ -2535,6 +2809,19 @@ async function closeTradeFromIBKR(existing, trans) {
   }
 }
 
+async function previewUmsatzFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const text = await file.text();
+  const groups = parseActivityStatement(text);
+  if (Object.keys(groups).length > 0) {
+    showImportPreview(groups);
+    showSyncStatus(`${Object.keys(groups).length} Symbole erkannt — klicke "Analysieren" zum Import.`, 'loading');
+  } else {
+    showSyncStatus('Keine Transaktionen gefunden. Prüfe das CSV-Format (Abschnitt "Transaktionen" / "Trades").', 'error');
+  }
+}
+
 // ══════════════════════════════════════════════════════
 // START
 // ══════════════════════════════════════════════════════
@@ -2604,30 +2891,66 @@ if (window.innerWidth <= 768) {
 
 <!-- IBKR Sync Modal -->
 <div id="ibkrSyncModal" class="modal" onclick="if(event.target === this) closeIBKRSync()">
-  <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
+  <div class="modal-content" style="max-width:620px;" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <h2>📥 IBKR Import</h2>
-      <button class="close-btn" onclick="closeIBKRSync()">×</button>
+      <h2 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:0;">📥 IBKR Import</h2>
+      <button class="close-btn" onclick="closeIBKRSync()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1;">×</button>
     </div>
-    <div class="modal-body">
-      <p style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:20px;">
-        Exportiere aus CapTrader:<br>
-        1. Activity Statement (Kontoauszug)<br>
-        2. Orders & Trades (offene Orders)
-      </p>
-      <div class="fg">
-        <label for="kontoauszugFile">Kontoauszug CSV</label>
-        <input type="file" id="kontoauszugFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);">
+    <div class="modal-body" style="padding:20px;">
+
+      <!-- Mode Tabs -->
+      <div class="import-mode-tabs">
+        <button id="importMode_umsatz" class="import-mode-tab mode-tab-active" onclick="showImportMode('umsatz')">
+          📊 Umsatzübersicht
+        </button>
+        <button id="importMode_kontoauszug" class="import-mode-tab" onclick="showImportMode('kontoauszug')">
+          📑 Kontoauszug + Orders
+        </button>
       </div>
-      <div class="fg">
-        <label for="ordersFile">Offene Orders CSV</label>
-        <input type="file" id="ordersFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);">
+
+      <!-- Umsatzübersicht Section -->
+      <div id="importSection_umsatz">
+        <p style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+          Exportiere aus IBKR / CapTrader:<br>
+          <strong style="color:var(--text);">Berichte → Kontoauszug → Abschnitt "Transaktionen"</strong><br>
+          Zeitraum frei wählbar. Format: CSV (Deutsch oder Englisch).
+        </p>
+        <div class="fg">
+          <label for="umsatzFile" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Umsatzübersicht CSV</label>
+          <input type="file" id="umsatzFile" accept=".csv"
+            style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);"
+            onchange="previewUmsatzFile(this)">
+        </div>
+        <!-- Preview Table -->
+        <div id="importPreview" class="import-preview" style="display:none;"></div>
       </div>
+
+      <!-- Kontoauszug + Orders Section (legacy) -->
+      <div id="importSection_kontoauszug" style="display:none;">
+        <p style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+          Exportiere aus CapTrader:<br>
+          1. Activity Statement (Kontoauszug)<br>
+          2. Orders &amp; Trades (offene Orders)
+        </p>
+        <div class="fg">
+          <label for="kontoauszugFile" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Kontoauszug CSV</label>
+          <input type="file" id="kontoauszugFile" accept=".csv"
+            style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);">
+        </div>
+        <div class="fg" style="margin-top:12px;">
+          <label for="ordersFile" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Offene Orders CSV</label>
+          <input type="file" id="ordersFile" accept=".csv"
+            style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);">
+        </div>
+      </div>
+
       <div id="syncStatus" style="font-family:var(--mono);font-size:11px;margin-top:15px;padding:10px;border-radius:var(--radius);display:none;"></div>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn btn-secondary" onclick="closeIBKRSync()">Abbrechen</button>
-      <button class="btn btn-primary" onclick="startIBKRSync()">Import starten</button>
+      <button id="ibkrStartBtn" class="btn btn-primary" onclick="startIBKRSync()">Analysieren</button>
+      <button id="ibkrImportConfirmBtn" class="btn btn-primary" onclick="confirmUmsatzImport()"
+        style="display:none;background:var(--green);color:#000;">✓ Import bestätigen</button>
     </div>
   </div>
 </div>
