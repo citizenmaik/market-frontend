@@ -618,7 +618,7 @@ input[type="number"] {
       </div>
       <div class="stat-row">
         <span class="stat-label">Risiko-Limit</span>
-        <span class="stat-value">5.00%</span>
+        <span class="stat-value" id="dashRisikoLimit">0.00%</span>
       </div>
     </div>
   </div>
@@ -1572,7 +1572,15 @@ function updateDashboard() {
   const riskPctEl = document.getElementById('dashRiskPct');
   riskPctEl.textContent = `${riskPercent.toFixed(2)}%`;
   riskPctEl.className = 'stat-value ' + (riskPercent > settings.riskLimit ? 'neg' : 'pos');
-}
+
+  // Risiko-Limit = Delta % (Open Profit % - Open Heat %)
+  const deltaEl = document.getElementById('deltaPercent');
+  const deltaVal = deltaEl ? parseFloat(deltaEl.textContent) : 0;
+  const limitEl = document.getElementById('dashRisikoLimit');
+  if (limitEl) {
+    limitEl.textContent = `${isNaN(deltaVal) ? '0.00' : deltaVal.toFixed(2)}%`;
+    limitEl.className = 'stat-value ' + (deltaVal >= 0 ? 'pos' : 'neg');
+  }
 
 // ══════════════════════════════════════════════════════
 // LIVE PRICES
