@@ -1325,7 +1325,13 @@ function renderTradesTable() {
   const realized = realizedFromClosed + realizedFromPartials;
   const portfolioValue = settings.totalBudget + realized + unrealized;
 
-  tbody.innerHTML = trades.map(t => {
+  const sortedTrades = [...trades].sort((a, b) => {
+    const da = a.kaufdatum || '';
+    const db = b.kaufdatum || '';
+    return db.localeCompare(da);
+  });
+
+  tbody.innerHTML = sortedTrades.map(t => {
     const posGroesse = calcPosGroesse(t);
     const risiko = calcRisiko(t);
     const risikoPercent = portfolioValue > 0 ? (risiko / portfolioValue) * 100 : 0;
@@ -1404,7 +1410,13 @@ function renderHistorieTable() {
     return;
   }
 
-  tbody.innerHTML = closedTrades.map(t => {
+  const sortedClosed = [...closedTrades].sort((a, b) => {
+    const da = a.kaufdatum || '';
+    const db = b.kaufdatum || '';
+    return db.localeCompare(da);
+  });
+
+  tbody.innerHTML = sortedClosed.map(t => {
     const pl = calcPL(t);
     const plPercent = calcPLPercent(t);
     const plClass = pl >= 0 ? 'pos' : 'neg';
