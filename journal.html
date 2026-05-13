@@ -2382,86 +2382,95 @@ function parseCSVLine(line) {
 function parseActivityStatement(csvText) {
   const lines = csvText.split('\n');
   const groups = {};
-  
-  // Detect language — German uses "Transaktionen", English uses "Trades"
+  const currentPositions = {}; // from MTM section: symbol → { qty, price }
+
+  // Detect language
   const sectionKey = csvText.includes('Transaktionen,') ? 'Transaktionen' : 'Trades';
-  
+  const mtmKey = csvText.includes('Mark-to-Market-Performance-Überblick')
+    ? 'Mark-to-Market-Performance-Überblick'
+    : 'Mark-to-Market Performance Summary';
+
   for (const raw of lines) {
     const line = raw.trim();
     if (!line) continue;
     const parts = parseCSVLine(line);
-    if (parts.length < 8) continue;
-    
-    const section = parts[0];
-    const rowType = parts[1];
-    const discriminator = parts[2];
-    
-    if (section !== sectionKey) continue;
-    if (rowType !== 'Data') continue;
-    
+    if (parts.length < 4) continue;
+
+    // ── Mark-to-Market: get actual current position ──
+    if (parts[0] === mtmKey && parts[1] === 'Data' && parts[3]) {
+      const assetClass = parts[2] || '';
+      if (assetClass === 'Aktien' || assetClass === 'Stocks') {
+        const sym = parts[3];
+        const currentQty = parseFloat(parts[5]); // Aktuell Menge
+        const currentPriceRaw = parts[7];
+        const currentPrice = (currentPriceRaw && currentPriceRaw !== '--') ? parseFloat(currentPriceRaw) : null;
+        if (!isNaN(currentQty)) {
+          currentPositions[sym] = { qty: currentQty, price: currentPrice };
+        }
+      }
+      continue;
+    }
+
+    if (parts[0] !== sectionKey) continue;
+    if (parts[1] === 'Header') continue;
+
     const symbol = parts[5];
     if (!symbol) continue;
-    if (!groups[symbol]) groups[symbol] = { buys: [], sells: [], netQty: null, realizedPL: 0 };
-    
-    if (discriminator === 'Order' && parts.length >= 14) {
-      // Individual trade row
+    if (!groups[symbol]) groups[symbol] = { buys: [], sells: [], realizedPL: 0, currentQty: null, currentPrice: null };
+
+    // ── Individual trade row ──
+    if (parts[1] === 'Data' && parts[2] === 'Order' && parts.length >= 14) {
       const datetime = parts[6];
       const qty = parseFloat(parts[7]);
       const tPrice = parseFloat(parts[8]);
-      const proceeds = parseFloat(parts[10]);
-      const commission = parseFloat(parts[11]);
-      const basis = parseFloat(parts[12]);
       const realizedPL = parseFloat(parts[13]);
       const code = parts[15] || '';
-      
+
       if (isNaN(qty) || isNaN(tPrice)) continue;
-      
-      // Extract date part from "YYYY-MM-DD, HH:MM:SS"
       const date = datetime.split(',')[0].trim();
-      
+
       if (qty > 0) {
-        groups[symbol].buys.push({ date, qty, price: tPrice, proceeds, commission, basis, code });
+        groups[symbol].buys.push({ date, qty, price: tPrice, code });
       } else if (qty < 0) {
-        groups[symbol].sells.push({ date, qty: Math.abs(qty), price: tPrice, proceeds, commission, realizedPL, code });
+        groups[symbol].sells.push({ date, qty: Math.abs(qty), price: tPrice, realizedPL, code });
         if (!isNaN(realizedPL)) groups[symbol].realizedPL += realizedPL;
       }
-    } else if ((discriminator === 'SubTotal' || discriminator === 'Total') && parts[5]) {
-      // Symbol subtotal — quantity = net position
-      const netQty = parseFloat(parts[7]);
-      if (!isNaN(netQty)) groups[symbol].netQty = netQty;
     }
   }
-  
-  // For symbols without a SubTotal row, compute net qty manually
+
+  // Attach current position from MTM section
   for (const [sym, data] of Object.entries(groups)) {
-    if (data.netQty === null) {
-      const bought = data.buys.reduce((s,b) => s + b.qty, 0);
-      const sold = data.sells.reduce((s,s2) => s + s2.qty, 0);
-      data.netQty = bought - sold;
-    }
+    const pos = currentPositions[sym];
+    if (pos) { data.currentQty = pos.qty; data.currentPrice = pos.price; }
   }
-  
+
   return groups;
 }
 
 async function importFromActivityStatement(groups) {
   const result = { created: 0, closed: 0, skipped: 0 };
-  
+
   for (const [symbol, data] of Object.entries(groups)) {
-    if (data.buys.length === 0) { result.skipped++; continue; }
-    
-    // Check if already exists
+    // Determine if position is currently open using MTM data
+    const currentQty = data.currentQty;
+    const isOpen = currentQty !== null ? currentQty > 0 : false;
+
+    // Skip if no buy data AND position is not open (pre-period closed positions)
+    if (data.buys.length === 0 && !isOpen) { result.skipped++; continue; }
+
+    // Check if already in journal
     const existingOpen = trades.find(t => t.ticker === symbol);
     const existingClosed = closedTrades.find(t => t.ticker === symbol);
-    
+
     const totalBought = data.buys.reduce((s,b) => s + b.qty, 0);
     const avgEntry = totalBought > 0
       ? data.buys.reduce((s,b) => s + b.qty * b.price, 0) / totalBought
       : 0;
-    const firstBuyDate = data.buys[0].date;
-    const isOpen = (data.netQty || 0) > 0.001;
-    
+    const firstBuyDate = data.buys.length > 0 ? data.buys[0].date : null;
+
     if (isOpen && !existingOpen) {
+      // Open trade — use currentQty as position size (partial exits may have occurred)
+      const livePrice = data.currentPrice || 0;
       try {
         await supabaseClient.from('trades').insert({
           user_id: USER_ID,
@@ -2470,19 +2479,19 @@ async function importFromActivityStatement(groups) {
           kaufmenge: parseFloat(totalBought.toFixed(4)),
           kaufdatum: firstBuyDate,
           stop_loss: null, tp1_preis: null, tp2_preis: null, tp3_preis: null,
-          live_preis: 0, status: 'offen', initial_rrr: null
+          live_preis: livePrice, status: 'offen', initial_rrr: null
         });
         result.created++;
       } catch(e) { console.error('Insert open', symbol, e); result.skipped++; }
-      
-    } else if (!isOpen && !existingClosed) {
+
+    } else if (!isOpen && !existingClosed && data.buys.length > 0) {
+      // Closed trade
       const lastSell = data.sells.length > 0 ? data.sells[data.sells.length - 1] : null;
       const lastSellDate = lastSell ? lastSell.date : firstBuyDate;
       const totalSold = data.sells.reduce((s,s2) => s + s2.qty, 0);
       const avgExit = totalSold > 0
         ? data.sells.reduce((s,s2) => s + s2.qty * s2.price, 0) / totalSold
         : avgEntry;
-      
       try {
         await supabaseClient.from('closed_trades').insert({
           user_id: USER_ID,
@@ -2500,12 +2509,12 @@ async function importFromActivityStatement(groups) {
         });
         result.closed++;
       } catch(e) { console.error('Insert closed', symbol, e); result.skipped++; }
-      
+
     } else {
       result.skipped++;
     }
   }
-  
+
   return result;
 }
 
