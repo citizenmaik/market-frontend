@@ -2450,62 +2450,87 @@ function parseActivityStatement(csvText) {
 async function importFromActivityStatement(groups) {
   const result = { created: 0, closed: 0, skipped: 0 };
 
+  // Helper: map sells array → tp1/tp2/tp3 fields (max 3 slots; extra sells merged into tp3)
+  function mapTPs(sells) {
+    if (!sells || sells.length === 0) return {};
+    const s = sells;
+    const tp3Sells = s.slice(2); // everything from index 2 onward
+    const tp3Qty = tp3Sells.reduce((sum, x) => sum + x.qty, 0);
+    const tp3Price = tp3Qty > 0
+      ? tp3Sells.reduce((sum, x) => sum + x.qty * x.price, 0) / tp3Qty
+      : null;
+    const tp3Date = tp3Sells.length > 0 ? tp3Sells[tp3Sells.length - 1].date : null;
+    return {
+      tp1_preis: s[0] ? s[0].price : null,
+      tp1_menge: s[0] ? s[0].qty   : null,
+      tp1_datum: s[0] ? s[0].date  : null,
+      tp2_preis: s[1] ? s[1].price : null,
+      tp2_menge: s[1] ? s[1].qty   : null,
+      tp2_datum: s[1] ? s[1].date  : null,
+      tp3_preis: tp3Qty > 0 ? parseFloat(tp3Price.toFixed(4)) : null,
+      tp3_menge: tp3Qty > 0 ? parseFloat(tp3Qty.toFixed(4))  : null,
+      tp3_datum: tp3Date || null,
+    };
+  }
+
   for (const [symbol, data] of Object.entries(groups)) {
-    // Determine if position is currently open using MTM data
     const currentQty = data.currentQty;
     const isOpen = currentQty !== null ? currentQty > 0 : false;
 
-    // Skip if no buy data AND position is not open (pre-period closed positions)
+    // Skip pre-period positions with no buy data
     if (data.buys.length === 0 && !isOpen) { result.skipped++; continue; }
 
-    // Check if already in journal
-    const existingOpen = trades.find(t => t.ticker === symbol);
+    const existingOpen   = trades.find(t => t.ticker === symbol);
     const existingClosed = closedTrades.find(t => t.ticker === symbol);
 
-    const totalBought = data.buys.reduce((s,b) => s + b.qty, 0);
-    const avgEntry = totalBought > 0
-      ? data.buys.reduce((s,b) => s + b.qty * b.price, 0) / totalBought
+    const totalBought = data.buys.reduce((s, b) => s + b.qty, 0);
+    const avgEntry    = totalBought > 0
+      ? data.buys.reduce((s, b) => s + b.qty * b.price, 0) / totalBought
       : 0;
     const firstBuyDate = data.buys.length > 0 ? data.buys[0].date : null;
+    const sellsSorted  = [...data.sells].sort((a, b) => a.date.localeCompare(b.date));
+    const tpFields     = mapTPs(sellsSorted);
 
     if (isOpen && !existingOpen) {
-      // Open trade — use currentQty as position size (partial exits may have occurred)
-      const livePrice = data.currentPrice || 0;
+      // ── OPEN TRADE (with partial exits already taken) ──
       try {
         await supabaseClient.from('trades').insert({
           user_id: USER_ID,
           ticker: symbol,
           einstiegspreis: parseFloat(avgEntry.toFixed(4)),
-          kaufmenge: parseFloat(totalBought.toFixed(4)),
-          kaufdatum: firstBuyDate,
-          stop_loss: null, tp1_preis: null, tp2_preis: null, tp3_preis: null,
-          live_preis: livePrice, status: 'offen', initial_rrr: null
+          kaufmenge:       parseFloat(totalBought.toFixed(4)),
+          kaufdatum:       firstBuyDate,
+          live_preis:      data.currentPrice || 0,
+          status:          'offen',
+          initial_rrr:     null,
+          stop_loss:       null,
+          ...tpFields
         });
         result.created++;
       } catch(e) { console.error('Insert open', symbol, e); result.skipped++; }
 
     } else if (!isOpen && !existingClosed && data.buys.length > 0) {
-      // Closed trade
-      const lastSell = data.sells.length > 0 ? data.sells[data.sells.length - 1] : null;
+      // ── CLOSED TRADE ──
+      const lastSell     = sellsSorted.length > 0 ? sellsSorted[sellsSorted.length - 1] : null;
       const lastSellDate = lastSell ? lastSell.date : firstBuyDate;
-      const totalSold = data.sells.reduce((s,s2) => s + s2.qty, 0);
-      const avgExit = totalSold > 0
-        ? data.sells.reduce((s,s2) => s + s2.qty * s2.price, 0) / totalSold
+      const totalSold    = sellsSorted.reduce((s, x) => s + x.qty, 0);
+      const avgExit      = totalSold > 0
+        ? sellsSorted.reduce((s, x) => s + x.qty * x.price, 0) / totalSold
         : avgEntry;
+
       try {
         await supabaseClient.from('closed_trades').insert({
           user_id: USER_ID,
           ticker: symbol,
           einstiegspreis: parseFloat(avgEntry.toFixed(4)),
-          kaufmenge: parseFloat(totalBought.toFixed(4)),
-          kaufdatum: firstBuyDate,
-          exit_datum: lastSellDate,
-          live_preis: parseFloat(avgExit.toFixed(4)),
-          status: 'geschlossen',
-          stop_loss: null, tp1_preis: null, tp2_preis: null, tp3_preis: null,
-          tp1_menge: 0, tp2_menge: 0, tp3_menge: 0,
-          tp1_datum: null, tp2_datum: null, tp3_datum: null,
-          initial_rrr: null
+          kaufmenge:       parseFloat(totalBought.toFixed(4)),
+          kaufdatum:       firstBuyDate,
+          exit_datum:      lastSellDate,
+          live_preis:      parseFloat(avgExit.toFixed(4)),
+          status:          'geschlossen',
+          initial_rrr:     null,
+          stop_loss:       null,
+          ...tpFields
         });
         result.closed++;
       } catch(e) { console.error('Insert closed', symbol, e); result.skipped++; }
