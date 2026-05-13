@@ -930,7 +930,7 @@ function editTrade(tradeId) {
   document.getElementById('editTicker').value = trade.ticker;
   document.getElementById('editEinstiegspreis').value = trade.einstiegspreis.toFixed(2);
   document.getElementById('editKaufmenge').value = trade.kaufmenge.toFixed(2);
-  document.getElementById('editKaufdatum').value = trade.kaufdatum || '';
+  document.getElementById('editKaufdatum').value = (trade.kaufdatum || '').substring(0, 10);
   document.getElementById('editStopLoss').value = trade.stopLoss > 0 ? trade.stopLoss.toFixed(2) : '';
   document.getElementById('editTp1Preis').value = trade.tp1Preis > 0 ? trade.tp1Preis.toFixed(2) : '';
   document.getElementById('editTp2Preis').value = trade.tp2Preis > 0 ? trade.tp2Preis.toFixed(2) : '';
