@@ -2492,7 +2492,7 @@ async function importFromActivityStatement(groups) {
     const tpFields     = mapTPs(sellsSorted);
 
     if (isOpen && !existingOpen) {
-      // ── OPEN TRADE (with partial exits already taken) ──
+      // ── NEW OPEN TRADE ──
       try {
         await supabaseClient.from('trades').insert({
           user_id: USER_ID,
@@ -2508,6 +2508,22 @@ async function importFromActivityStatement(groups) {
         });
         result.created++;
       } catch(e) { console.error('Insert open', symbol, e); result.skipped++; }
+
+    } else if (isOpen && existingOpen) {
+      // ── UPDATE EXISTING OPEN TRADE — patch missing TP fields ──
+      const needsUpdate = sellsSorted.length > 0 && (
+        !existingOpen.tp1Menge || existingOpen.tp1Menge === 0
+      );
+      if (needsUpdate) {
+        try {
+          await supabaseClient.from('trades')
+            .update(tpFields)
+            .eq('id', existingOpen.id);
+          result.created++; // count as fixed
+        } catch(e) { console.error('Update open TP', symbol, e); result.skipped++; }
+      } else {
+        result.skipped++;
+      }
 
     } else if (!isOpen && !existingClosed && data.buys.length > 0) {
       // ── CLOSED TRADE ──
