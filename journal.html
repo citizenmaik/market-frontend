@@ -2546,6 +2546,51 @@ async function importFromActivityStatement(groups) {
         result.skipped++;
       }
 
+    } else if (!isOpen && existingOpen) {
+      // ── EXISTING OPEN TRADE WURDE GESCHLOSSEN → nach closed_trades verschieben ──
+      const lastSell     = sellsSorted.length > 0 ? sellsSorted[sellsSorted.length - 1] : null;
+      const lastSellDate = lastSell ? lastSell.date : null;
+      const totalSold    = sellsSorted.reduce((s, x) => s + x.qty, 0);
+      const avgExit      = totalSold > 0
+        ? sellsSorted.reduce((s, x) => s + x.qty * x.price, 0) / totalSold
+        : existingOpen.livePreis || 0;
+
+      // Use existing trade data for entry (already in journal)
+      const entryPrice = existingOpen.einstiegspreis || avgEntry;
+      const entryQty   = existingOpen.kaufmenge || totalBought;
+      const entryDate  = existingOpen.kaufdatum || firstBuyDate;
+      const existingTPs = {
+        tp1_preis: existingOpen.tp1Preis || tpFields.tp1_preis,
+        tp1_menge: existingOpen.tp1Menge || tpFields.tp1_menge,
+        tp1_datum: (existingOpen.tp1Datum || '').substring(0,10) || tpFields.tp1_datum,
+        tp2_preis: existingOpen.tp2Preis || tpFields.tp2_preis,
+        tp2_menge: existingOpen.tp2Menge || tpFields.tp2_menge,
+        tp2_datum: (existingOpen.tp2Datum || '').substring(0,10) || tpFields.tp2_datum,
+        tp3_preis: existingOpen.tp3Preis || tpFields.tp3_preis,
+        tp3_menge: existingOpen.tp3Menge || tpFields.tp3_menge,
+        tp3_datum: (existingOpen.tp3Datum || '').substring(0,10) || tpFields.tp3_datum,
+      };
+
+      try {
+        // Insert into closed_trades
+        await supabaseClient.from('closed_trades').insert({
+          user_id:        USER_ID,
+          ticker:         symbol,
+          einstiegspreis: parseFloat(parseFloat(entryPrice).toFixed(4)),
+          kaufmenge:      parseFloat(parseFloat(entryQty).toFixed(4)),
+          kaufdatum:      (entryDate || '').substring(0,10),
+          exit_datum:     lastSellDate,
+          live_preis:     parseFloat(avgExit.toFixed(4)),
+          status:         'geschlossen',
+          stop_loss:      existingOpen.stopLoss || null,
+          initial_rrr:    existingOpen.initialRrr || null,
+          ...existingTPs
+        });
+        // Delete from trades
+        await supabaseClient.from('trades').delete().eq('id', existingOpen.id);
+        result.closed++;
+      } catch(e) { console.error('Close existing trade', symbol, e); result.skipped++; }
+
     } else if (!isOpen && !existingClosed && data.buys.length > 0) {
       // ── CLOSED TRADE ──
       const lastSell     = sellsSorted.length > 0 ? sellsSorted[sellsSorted.length - 1] : null;
