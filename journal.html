@@ -2498,11 +2498,10 @@ async function importFromActivityStatement(groups) {
     const currentQty = data.currentQty;
     const isOpen = currentQty !== null ? currentQty > 0 : false;
 
-    // Skip pre-period positions with no buy data
-    if (data.buys.length === 0 && !isOpen) { result.skipped++; continue; }
-
+    // Skip only if: no buys, not open in CSV, AND not an existing open trade that just closed
     const existingOpen   = trades.find(t => t.ticker === symbol);
     const existingClosed = closedTrades.find(t => t.ticker === symbol);
+    if (data.buys.length === 0 && !isOpen && !existingOpen) { result.skipped++; continue; }
 
     const totalBought = data.buys.reduce((s, b) => s + b.qty, 0);
     const avgEntry    = totalBought > 0
