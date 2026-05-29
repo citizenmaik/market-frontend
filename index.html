@@ -557,12 +557,12 @@ async function getCandles(symbols, range='1y') {
 const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','IWM','BINANCE:BTCUSDT','GLD'];
 const IDX_META = {SPY:'S&P 500',RSP:'S&P 500 EQ WT',QQQ:'NASDAQ 100',QQQE:'NASDAQ 100 EQ WT',IWM:'RUSSELL 2000','BINANCE:BTCUSDT':'BITCOIN',GLD:'GOLD ETF'};
 
-const SEC_SYMS  = ['RSPG','RSPN','RSPU','RSPH','RSPR','RSPM','RSPS','RSPC','RSPD','RSPT','RSPF'];
-const SEC_NAMES = {RSPG:'Energy',RSPN:'Industrials',RSPU:'Utilities',RSPH:'Health Care',
-  RSPR:'Real Estate',RSPM:'Materials',RSPS:'Cons Stpl',RSPC:'Comm Svcs',RSPD:'Cons Disc',RSPT:'Technology',RSPF:'Financials'};
+const SEC_SYMS  = ['XLK','XLF','XLV','XLE','XLI','XLC','XLY','XLP','XLRE','XLU','XLB'];
+const SEC_NAMES = {XLK:'Technology',XLF:'Financials',XLV:'Health Care',XLE:'Energy',
+  XLI:'Industrials',XLC:'Communication',XLY:'Consumer Disc',XLP:'Consumer Staples',XLRE:'Real Estate',XLU:'Utilities',XLB:'Materials'};
 
-const IND_SYMS = ['SMH','FAN','LIT','BOAT','COPX','REMX','IEZ','SLX','SIL','POWR','SHLD','CIBR','BOTZ','CLOU','IGV','ICLN','GDX','PAVE','IDU','XLRE','DRIV','CARZ','XBI','WQTM','KBE','QTUM','TAN','URA','PBJ','ITA','XOP','IPO','SOCL','BLOK','IHI','MOO','WGMI'];
-const IND_NAMES = {SMH:'Semiconductors',FAN:'Wind Energy',LIT:'Lithium & Battery',BOAT:'Shipping',COPX:'Copper Miners',REMX:'Rare Earth',IEZ:'Oil Equipment',SLX:'Steel',SIL:'Silver Miners',POWR:'Utilities',SHLD:'Cybersecurity',CIBR:'Cybersecurity 2',BOTZ:'Robotics & AI',CLOU:'Cloud Computing',IGV:'Software',ICLN:'Clean Energy',GDX:'Gold Miners',PAVE:'Infrastructure',IDU:'Electric Utilities',XLRE:'Real Estate',DRIV:'Autonomous Vehicles',CARZ:'Auto & Parts',XBI:'Biotech',WQTM:'Quantum Computing',KBE:'Banks',QTUM:'Quantum Tech',TAN:'Solar Energy',URA:'Uranium',PBJ:'Food & Beverage',ITA:'Aerospace & Def',XOP:'Oil & Gas E&P',IPO:'IPOs',SOCL:'Social Media',BLOK:'Blockchain',IHI:'Medical Devices',MOO:'Agribusiness',WGMI:'Bitcoin Miners'};
+const IND_SYMS = ['IBB','IHI','ITA','ITB','IGV','IYT','IYR','IYW','IYH','IYE','IYF','IYC','IYK','IYJ','IYM','IYZ','HACK','SKYY','TAN','ICLN','JETS','XME','KRE','KBE','GDX','GDXJ'];
+const IND_NAMES = {IBB:'Biotech',IHI:'Medical Devices',ITA:'Aerospace & Defense',ITB:'Home Construction',IGV:'Software',IYT:'Transportation',IYR:'Real Estate',IYW:'Technology',IYH:'Healthcare',IYE:'Energy',IYF:'Financials',IYC:'Consumer Disc',IYK:'Consumer Staples',IYJ:'Industrials',IYM:'Materials',IYZ:'Telecom',HACK:'Cybersecurity',SKYY:'Cloud Computing',TAN:'Solar Energy',ICLN:'Clean Energy',JETS:'Airlines',XME:'Metals & Mining',KRE:'Regional Banks',KBE:'Banks',GDX:'Gold Miners',GDXJ:'Jr. Gold Miners'};
 
 const FAC_SYMS = ['IVW','IVE','HDV','OEF','IJH','IJR','MTUM','IPO'];
 const FAC_LBLS = {IVW:'Growth',IVE:'Value',HDV:'High Dividend',OEF:'Large-Cap',IJH:'Mid-Cap',IJR:'Small-Cap',MTUM:'Momentum',IPO:'IPOs'};
