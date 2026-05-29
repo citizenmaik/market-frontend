@@ -483,11 +483,12 @@ function miniSpark(closes22, m1pct) {
   const bars = closes22.slice(-22);
   const mn = Math.min(...bars), mx = Math.max(...bars);
   const range = mx - mn || 1;
-  const color = m1pct >= 0 ? 'var(--green)' : 'var(--red)';
   const spans = bars.map((v,i) => {
     const h = Math.max(2, Math.round((v-mn)/range*16)+2);
-    const c = i===bars.length-1 ? color : 'var(--muted)';
-    return `<span style="width:3px;height:${h}px;background:${c};border-radius:1px;opacity:${i===bars.length-1?1:0.45}"></span>`;
+    const up = i === 0 ? true : v >= bars[i-1];
+    const c = up ? 'var(--green)' : 'var(--red)';
+    const op = i === bars.length-1 ? 1 : 0.5;
+    return `<span style="width:3px;height:${h}px;background:${c};border-radius:1px;opacity:${op}"></span>`;
   }).join('');
   return `<span class="spark">${spans}</span>`;
 }
