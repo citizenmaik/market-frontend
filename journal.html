@@ -251,11 +251,11 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
 <div class="hdr">
   <h1>Trading Journal <span style="font-size:9px;color:var(--green);">☁ Cloud</span></h1>
   <div class="hdr-right">
-    <a href="index.html" class="nav-link">← <span class="sync-btn-text">Dashboard</span></a>
+    <a href="index.html" class="nav-link">← Dashboard</a>
     <button class="sync-btn mobile-hide" onclick="openIBKRSync()">📥 <span class="sync-btn-text">IBKR Sync</span></button>
     <button class="sync-btn mobile-hide" onclick="exportTrades()">📤 <span class="sync-btn-text">Export</span></button>
-    <button class="logout-btn" onclick="logout()">🚪 <span class="logout-btn-text">Logout</span></button>
-    <button class="th-btn" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+    <button class="th-btn" style="margin-left:auto;" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
   </div>
 </div>
 
@@ -923,6 +923,10 @@ function checkPinOnLoad() {
 document.addEventListener('DOMContentLoaded', () => {
   const pinInput = document.getElementById('pinInput');
   if (pinInput) pinInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPin(); });
+  // Trade-Form immer zugeklappt starten
+  const _fc = document.getElementById('tradeFormContent');
+  const _fi = document.getElementById('formToggleIcon');
+  if (_fc && _fi) { _fc.classList.add('collapsed'); _fi.classList.add('collapsed'); _fi.textContent = '▶'; }
 });
 
 // ── SCREENSHOTS ───────────────────────────────────────
