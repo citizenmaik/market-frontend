@@ -29,7 +29,7 @@
   --pad:16px;
   --transition: background .25s, color .25s, border-color .25s;
 }
-[data-theme="dark"] {
+[data-theme="dark"] {a
   --bg:#0a0b0e; --surface:#111318; --surface2:#171b22; --border:#1e2330;
   --text:#e8eaf0; --muted:#5a6070; --th-btn:#1e2535;
 }
@@ -846,12 +846,12 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
   const rs_ratio = +(100 * (1 + (mth - spyMth) / 100)).toFixed(2);
   const rs_1m    = +(mth - spyMth).toFixed(2);
 
-  // RS score: 1D×0.15 + 1W×0.35 + 2W×0.35 + 1M×0.15, Multiplikator ×3.5
+  // RS score: 1D×0.20 + 1W×0.35 + 2W×0.30 + 1M×0.15, Multiplikator ×3.5
   const rs_day_v = day - spyDay;
   const rs_wk_v  = wk  - spyWk;
   const rs_2w_v  = w2  - spy2w;
   const rs_mth_v = mth - spyMth;
-  const rsComposite = rs_day_v * 0.15 + rs_wk_v * 0.35 + rs_2w_v * 0.35 + rs_mth_v * 0.15;
+  const rsComposite = rs_day_v * 0.20 + rs_wk_v * 0.35 + rs_2w_v * 0.30 + rs_mth_v * 0.15;
   const rs = Math.min(100, Math.max(0, Math.round(50 + rsComposite * 3.5)));
 
   // VARS: RS-Momentum — non-overlapping Wochen-RS-Delta, normiert /100
