@@ -1027,7 +1027,6 @@ async function refreshAll() {
     const spy2w  = spyC.length > 14 ? (spyPrice / spyC[spyC.length-14] - 1) * 100 : 0;
     const spyMth = spyC.length > 21 ? (spyPrice / spyC[spyC.length-21] - 1) * 100 : 0;
     const spy3m  = spyC.length > 63 ? (spyPrice / spyC[spyC.length-63] - 1) * 100 : spyMth;
-    const spy3m  = spyC.length > 63 ? (spyPrice / spyC[spyC.length-63] - 1) * 100 : spyMth;
 
     const [trend, pt, yields, sectors, industries, factors] = await Promise.all([
       loadTrend(candleData),
