@@ -832,30 +832,27 @@ function renderFac(data) {
 // TWEEVEST-ALIGNED: calcSectorData
 // Neue Felder: w2 (rolling 14d), rs_ratio, rs_1m, vars, atr_mult, closes22
 // ══════════════════════════════════════════════════════
-function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
+function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, nameMap) {
   if(c.length < 5) return null;
   const price = c[c.length-1];
 
   // Perf windows
   const day  = (price / c[c.length-2] - 1) * 100;
   const wk   = c.length > 6  ? (price / c[c.length-6]  - 1) * 100 : 0;
-  const w2   = c.length > 14 ? (price / c[c.length-14] - 1) * 100 : 0;   // rolling 2W
-  const mth  = c.length > 21 ? (price / c[c.length-21] - 1) * 100 : 0;   // rolling 1M (21 trading days)
+  const w2   = c.length > 14 ? (price / c[c.length-14] - 1) * 100 : 0;
+  const mth  = c.length > 21 ? (price / c[c.length-21] - 1) * 100 : 0;
+  const m3   = c.length > 63 ? (price / c[c.length-63] - 1) * 100 : mth;
 
-  // RS Ratio (Tweevest: ~100 = benchmark parity, >100 = outperforming)
-  // Formula: 100 * (1 + (mth - spyMth) / 100)
+  // RS Ratio
   const rs_ratio = +(100 * (1 + (mth - spyMth) / 100)).toFixed(2);
+  const rs_1m    = +(mth - spyMth).toFixed(2);
 
-  // RS 1M% = outperformance vs SPY over 1M window
-  const rs_1m = +(mth - spyMth).toFixed(2);
-
-  // Legacy RS score (0-100) für Badge-Farbe
-  // Gewichtung: Mth×0.30 + 2W×0.30 + Wk×0.40 + Day×0.00, Multiplikator ×3.5
-  const rs_day_v    = day  - spyDay;
-  const rs_wk_v     = wk   - spyWk;
-  const rs_2w_v     = w2   - spy2w;
-  const rs_mth_v    = mth  - spyMth;
-  const rsComposite = rs_mth_v * 0.30 + rs_2w_v * 0.30 + rs_wk_v * 0.40;
+  // RS score (0-100): Mth×0.20 + 3M×0.25 + 2W×0.20 + Wk×0.35, Multiplikator ×3.5
+  const rs_wk_v  = wk  - spyWk;
+  const rs_2w_v  = w2  - spy2w;
+  const rs_mth_v = mth - spyMth;
+  const rs_3m_v  = m3  - spy3m;
+  const rsComposite = rs_3m_v * 0.25 + rs_mth_v * 0.20 + rs_2w_v * 0.20 + rs_wk_v * 0.35;
   const rs = Math.min(100, Math.max(0, Math.round(50 + rsComposite * 3.5)));
 
   // VARS: RS-Momentum — non-overlapping Wochen-RS-Delta, normiert /100
@@ -905,21 +902,21 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
   };
 }
 
-async function loadSectors(candleData, spyDay, spyWk, spy2w, spyMth) {
+async function loadSectors(candleData, spyDay, spyWk, spy2w, spyMth, spy3m) {
   const result = {};
   SEC_SYMS.forEach(sym => {
     const c = clean(candleData[sym]?.c || []);
-    const d = calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, SEC_NAMES);
+    const d = calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, SEC_NAMES);
     if(d) result[sym] = d;
   });
   return result;
 }
 
-async function loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth) {
+async function loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth, spy3m) {
   const result = {};
   IND_SYMS.forEach(sym => {
     const c = clean(candleData[sym]?.c || []);
-    const d = calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, IND_NAMES);
+    const d = calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, IND_NAMES);
     if(d) result[sym] = d;
   });
   return result;
@@ -1016,7 +1013,7 @@ async function refreshAll() {
 
     const [idxData, candleData, breadthRaw] = await Promise.all([
       loadIndices(),
-      getCandles(mainSyms, '6mo'),
+      getCandles(mainSyms, '1y'),
       fetch(`${API}?type=breadth&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({}))
     ]);
 
@@ -1030,13 +1027,14 @@ async function refreshAll() {
     const spy2w  = spyC.length > 14 ? (spyPrice / spyC[spyC.length-14] - 1) * 100 : 0;
     const spyMth = spyC.length > 21 ? (spyPrice / spyC[spyC.length-21] - 1) * 100 : 0;
     const spy3m  = spyC.length > 63 ? (spyPrice / spyC[spyC.length-63] - 1) * 100 : spyMth;
+    const spy3m  = spyC.length > 63 ? (spyPrice / spyC[spyC.length-63] - 1) * 100 : spyMth;
 
     const [trend, pt, yields, sectors, industries, factors] = await Promise.all([
       loadTrend(candleData),
       loadPT(candleData),
       loadYields(),
-      loadSectors(candleData,   spyDay, spyWk, spy2w, spyMth),
-      loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth),
+      loadSectors(candleData,    spyDay, spyWk, spy2w, spyMth, spy3m),
+      loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth, spy3m),
       loadFactors(candleData, spyMth),
     ]);
 
