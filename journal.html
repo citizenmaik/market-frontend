@@ -663,7 +663,10 @@ function renderTradesTable() {
     const pl = calcPL(t), plPercent = calcPLPercent(t);
     const restmenge = calcRestmenge(t), statusDetail = calcStatusDetail(t);
     const plClass = pl >= 0 ? 'pos' : 'neg';
-    const rrrDisplay = t.initialRRR !== null && t.initialRRR !== undefined ? t.initialRRR.toFixed(2) + ' R' : 'N/A';
+    // RRR: gespeicherten Wert nutzen, sonst live aus TP/Stop berechnen
+    const liveRRR = calcInitialRRR(t.einstiegspreis, t.stopLoss, t.tp1Preis, t.tp2Preis, t.tp3Preis);
+    const rrrVal = (t.initialRRR !== null && t.initialRRR !== undefined) ? t.initialRRR : liveRRR;
+    const rrrDisplay = rrrVal !== null ? rrrVal.toFixed(2) + ' R' : 'N/A';
     return `<tr>
       <td><span class="badge offen">Offen</span></td>
       <td class="ticker"><a href="https://www.tradingview.com/chart/?symbol=${t.ticker}" target="_blank" rel="noopener noreferrer" class="ticker-link">${t.ticker}</a></td>
@@ -706,7 +709,9 @@ function renderHistorieTable() {
   const sortedClosed = [...closedTrades].sort((a, b) => (b.kaufdatum || '').localeCompare(a.kaufdatum || ''));
   tbody.innerHTML = sortedClosed.map(t => {
     const pl = calcPL(t), plPercent = calcPLPercent(t), plClass = pl >= 0 ? 'pos' : 'neg';
-    const rrrDisplay = t.initialRRR !== null && t.initialRRR !== undefined ? t.initialRRR.toFixed(2) + ' R' : 'N/A';
+    const liveRRR = calcInitialRRR(t.einstiegspreis, t.stopLoss, t.tp1Preis, t.tp2Preis, t.tp3Preis);
+    const rrrVal = (t.initialRRR !== null && t.initialRRR !== undefined) ? t.initialRRR : liveRRR;
+    const rrrDisplay = rrrVal !== null ? rrrVal.toFixed(2) + ' R' : 'N/A';
     const tp1Value = t.tp1Preis * t.tp1Menge, tp2Value = t.tp2Preis * t.tp2Menge, tp3Value = t.tp3Preis * t.tp3Menge;
     const avgExit = (tp1Value + tp2Value + tp3Value) / t.kaufmenge;
     return `<tr>
