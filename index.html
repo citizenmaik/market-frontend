@@ -856,23 +856,27 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
   const rsComposite = rs_mth_v * 0.25 + rs_wk_v * 0.50 + rs_day_v * 0.25;
   const rs = Math.min(100, Math.max(0, Math.round(50 + rsComposite * 5)));
 
-  // VARS: RS-Momentum — Δ RS-Composite (1W vs 2W window), normiert auf ±1 Skala
-  // RS_1w = wk - spyWk, RS_2w = w2 - spy2w
-  // VARS = (RS_1w - RS_2w) / 10  → kleine Zahl wie Tweevest (~±0.3)
-  const rs_wk_val = wk  - spyWk;
-  const rs_2w_val = w2  - spy2w;
-  const vars = +((rs_wk_val - rs_2w_val) / 10).toFixed(3);
+  // VARS: RS-Momentum — non-overlapping Wochen-RS-Delta, normiert /100
+  // RS_week1 = letzte 5 Tage RS vs SPY
+  // RS_week2 = die 5 Tage davor (Tag -10 bis -5) RS vs SPY
+  // VARS = (RS_week1 - RS_week2) / 100
+  const rs_week1 = wk - spyWk;                          // 5d RS (kumulativ)
+  const perf_week2_alone = c.length > 10                 // Perf von Tag-10 bis Tag-5
+    ? (c[c.length-6] / c[c.length-11] - 1) * 100 : 0;
+  const spy_week2_alone  = spy2w - spyWk;                // SPY Perf derselben Woche
+  const rs_week2 = perf_week2_alone - spy_week2_alone;
+  const vars = +((rs_week1 - rs_week2) / 100).toFixed(3);
 
-  // ATR Multiplier: |perf_1m%| / ATR_pct_daily(21)
-  // ATR_pct = average |daily % change| over last 21 days
-  // Sign: perf_1m vorzeichen (positiv wenn Monat grün, negativ wenn rot)
-  const slice21 = c.slice(-22);  // 22 closes → 21 changes
+  // ATR Multiplier: |perf_1m%| / ATR_pct_daily(42)
+  // 42-Tage-Fenster (empirisch kalibriert auf Tweevest-Größenordnung)
+  // Sign: perf_1m Vorzeichen
+  const slice42 = c.slice(-43);  // 43 closes → 42 changes
   let atrPctSum = 0;
-  for(let i = 1; i < slice21.length; i++) {
-    atrPctSum += Math.abs((slice21[i] - slice21[i-1]) / slice21[i-1]) * 100;
+  for(let i = 1; i < slice42.length; i++) {
+    atrPctSum += Math.abs((slice42[i] - slice42[i-1]) / slice42[i-1]) * 100;
   }
-  const atrPct21 = atrPctSum / (slice21.length - 1);  // avg daily % ATR
-  const atr_mult_abs = atrPct21 > 0 ? +(Math.abs(mth) / atrPct21).toFixed(2) : 0;
+  const atrPct42 = atrPctSum / (slice42.length - 1);
+  const atr_mult_abs = atrPct42 > 0 ? +(Math.abs(mth) / atrPct42).toFixed(2) : 0;
   const atr_mult_signed = mth >= 0 ? atr_mult_abs : -atr_mult_abs;
 
   // 52W data for above50 check
