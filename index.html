@@ -850,11 +850,12 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
   const rs_1m = +(mth - spyMth).toFixed(2);
 
   // Legacy RS score (0-100) für Badge-Farbe
-  // Gewichtung: RS_Mth×0.33 + RS_Wk×0.34 + RS_Day×0.33, Multiplikator ×4.0
+  // Gewichtung: RS_Mth×0.25 + RS_2W×0.25 + RS_Wk×0.30 + RS_Day×0.20, Multiplikator ×4.0
   const rs_day_v    = day  - spyDay;
   const rs_wk_v     = wk   - spyWk;
+  const rs_2w_v     = w2   - spy2w;
   const rs_mth_v    = mth  - spyMth;
-  const rsComposite = rs_mth_v * 0.33 + rs_wk_v * 0.34 + rs_day_v * 0.33;
+  const rsComposite = rs_mth_v * 0.25 + rs_2w_v * 0.25 + rs_wk_v * 0.30 + rs_day_v * 0.20;
   const rs = Math.min(100, Math.max(0, Math.round(50 + rsComposite * 4.0)));
 
   // VARS: RS-Momentum — non-overlapping Wochen-RS-Delta, normiert /100
