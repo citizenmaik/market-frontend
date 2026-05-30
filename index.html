@@ -29,7 +29,7 @@
   --pad:16px;
   --transition: background .25s, color .25s, border-color .25s;
 }
-[data-theme="dark"] {a
+[data-theme="dark"] {
   --bg:#0a0b0e; --surface:#111318; --surface2:#171b22; --border:#1e2330;
   --text:#e8eaf0; --muted:#5a6070; --th-btn:#1e2535;
 }
@@ -505,6 +505,8 @@ function toggleTheme() {
   html.dataset.theme = next; localStorage.setItem('theme', next);
   document.getElementById('thBtn').textContent = next === 'dark' ? '🌙' : '☀️';
 }
+// Force dark mode reset (v2)
+if (localStorage.getItem('theme') === 'light') localStorage.setItem('theme', 'dark');
 const savedTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.dataset.theme = savedTheme;
 document.getElementById('thBtn').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
