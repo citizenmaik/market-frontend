@@ -867,16 +867,16 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
   const rs_week2 = perf_week2_alone - spy_week2_alone;
   const vars = +((rs_week1 - rs_week2) / 100).toFixed(3);
 
-  // ATR Multiplier: |perf_1m%| / ATR_pct_daily(77)
-  // 77-Tage-Fenster (empirisch kalibriert auf Tweevest-Größenordnung)
-  // Sign: perf_1m Vorzeichen
-  const slice77 = c.slice(-78);  // 78 closes → 77 changes
+  // ATR Multiplier: perf_1m% / ATR_pct_daily(21)
+  // Close-to-close ATR ist ~2x kleiner als True Range (H-L) die Tweevest nutzt.
+  // Korrekturfaktor: Ergebnis / 2.0
+  const slice21 = c.slice(-22);  // 22 closes → 21 changes
   let atrPctSum = 0;
-  for(let i = 1; i < slice77.length; i++) {
-    atrPctSum += Math.abs((slice77[i] - slice77[i-1]) / slice77[i-1]) * 100;
+  for(let i = 1; i < slice21.length; i++) {
+    atrPctSum += Math.abs((slice21[i] - slice21[i-1]) / slice21[i-1]) * 100;
   }
-  const atrPct77 = atrPctSum / (slice77.length - 1);
-  const atr_mult_abs = atrPct77 > 0 ? +(Math.abs(mth) / atrPct77).toFixed(2) : 0;
+  const atrPct21 = atrPctSum / (slice21.length - 1);
+  const atr_mult_abs = atrPct21 > 0 ? +((Math.abs(mth) / atrPct21) / 2.0).toFixed(2) : 0;
   const atr_mult_signed = mth >= 0 ? atr_mult_abs : -atr_mult_abs;
 
   // 52W data for above50 check
