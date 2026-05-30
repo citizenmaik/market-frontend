@@ -226,17 +226,10 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
 @media (max-width: 600px) {
   .hdr { flex-direction:column; align-items:flex-start; gap:8px; }
   .hdr-right { flex-wrap:wrap; gap:6px; width:100%; }
-  .sync-btn, .logout-btn, .nav-link {
-    padding:6px 8px; font-size:10px;
-  }
-  .sync-btn span, .logout-btn span { display:none; } /* Emoji bleibt, Text weg */
-  /* Kompakte Icon-only Buttons auf sehr kleinen Screens */
-  @supports (container-type: inline-size) {
-    .sync-btn, .logout-btn { min-width:unset; }
-  }
+  .sync-btn, .logout-btn, .nav-link { padding:6px 8px; font-size:10px; }
+  .mobile-hide { display:none !important; }
 }
 @media (max-width: 400px) {
-  /* Nur Emoji auf sehr kleinen Screens */
   .sync-btn-text, .logout-btn-text { display:none; }
 }
 </style>
@@ -259,8 +252,8 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
   <h1>Trading Journal <span style="font-size:9px;color:var(--green);">☁ Cloud</span></h1>
   <div class="hdr-right">
     <a href="index.html" class="nav-link">← <span class="sync-btn-text">Dashboard</span></a>
-    <button class="sync-btn" onclick="openIBKRSync()">📥 <span class="sync-btn-text">IBKR Sync</span></button>
-    <button class="sync-btn" onclick="exportTrades()">📤 <span class="sync-btn-text">Export</span></button>
+    <button class="sync-btn mobile-hide" onclick="openIBKRSync()">📥 <span class="sync-btn-text">IBKR Sync</span></button>
+    <button class="sync-btn mobile-hide" onclick="exportTrades()">📤 <span class="sync-btn-text">Export</span></button>
     <button class="logout-btn" onclick="logout()">🚪 <span class="logout-btn-text">Logout</span></button>
     <button class="th-btn" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
   </div>
@@ -1322,9 +1315,13 @@ async function previewUmsatzFile(input) {
 // ── START ─────────────────────────────────────────────
 checkPinOnLoad();
 init();
-if (window.innerWidth <= 768) {
-  const content = document.getElementById('tradeFormContent'), icon = document.getElementById('formToggleIcon');
-  content.classList.add('collapsed'); icon.classList.add('collapsed'); icon.textContent = '▶';
+// Trade-Form immer zugeklappt starten
+const _formContent = document.getElementById('tradeFormContent');
+const _formIcon = document.getElementById('formToggleIcon');
+if (_formContent && _formIcon) {
+  _formContent.classList.add('collapsed');
+  _formIcon.classList.add('collapsed');
+  _formIcon.textContent = '▶';
 }
 </script>
 
