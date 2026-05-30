@@ -856,26 +856,24 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
   const rsComposite = rs_mth_v * 0.25 + rs_wk_v * 0.50 + rs_day_v * 0.25;
   const rs = Math.min(100, Math.max(0, Math.round(50 + rsComposite * 5)));
 
-  // VARS: Volume-Adjusted RS — we approximate as RS momentum:
-  // (rs_1m current) - (rs_1m 5 days ago)
-  // For a simple proxy: compare rs over last 5d window vs the 5d-prior window
-  const rs_prev5 = c.length > 26
-    ? ((c[c.length-6] / c[c.length-26] - 1) * 100 - spy2w)
-    : rs_1m;
-  const vars = +(rs_1m - rs_prev5).toFixed(3);
+  // VARS: RS-Momentum — Δ RS-Composite (1W vs 2W window), normiert auf ±1 Skala
+  // RS_1w = wk - spyWk, RS_2w = w2 - spy2w
+  // VARS = (RS_1w - RS_2w) / 10  → kleine Zahl wie Tweevest (~±0.3)
+  const rs_wk_val = wk  - spyWk;
+  const rs_2w_val = w2  - spy2w;
+  const vars = +((rs_wk_val - rs_2w_val) / 10).toFixed(3);
 
-  // ATR Multiplier: how many ATRs has the stock moved this month?
-  // ATR(14) on daily closes (simplified as average true range proxy)
-  const recent = c.slice(-15);
-  let atrSum = 0;
-  for(let i = 1; i < recent.length; i++) {
-    atrSum += Math.abs(recent[i] - recent[i-1]);
+  // ATR Multiplier: |perf_1m%| / ATR_pct_daily(21)
+  // ATR_pct = average |daily % change| over last 21 days
+  // Sign: perf_1m vorzeichen (positiv wenn Monat grün, negativ wenn rot)
+  const slice21 = c.slice(-22);  // 22 closes → 21 changes
+  let atrPctSum = 0;
+  for(let i = 1; i < slice21.length; i++) {
+    atrPctSum += Math.abs((slice21[i] - slice21[i-1]) / slice21[i-1]) * 100;
   }
-  const atr14 = atrSum / (recent.length - 1);
-  const move1m = Math.abs(price - c[c.length-21]);
-  const atr_mult = atr14 > 0 ? +(move1m / atr14).toFixed(2) : 0;
-  // Sign: positive if price is up on the month, negative if down
-  const atr_mult_signed = mth >= 0 ? atr_mult : -atr_mult;
+  const atrPct21 = atrPctSum / (slice21.length - 1);  // avg daily % ATR
+  const atr_mult_abs = atrPct21 > 0 ? +(Math.abs(mth) / atrPct21).toFixed(2) : 0;
+  const atr_mult_signed = mth >= 0 ? atr_mult_abs : -atr_mult_abs;
 
   // 52W data for above50 check
   const s50c = sma(c, 50);
