@@ -1211,8 +1211,31 @@ async function importFromActivityStatement(groups) {
       try { await supabaseClient.from('trades').insert({ user_id: USER_ID, ticker: symbol, einstiegspreis: parseFloat(avgEntry.toFixed(4)), kaufmenge: parseFloat(totalBought.toFixed(4)), kaufdatum: firstBuyDate, live_preis: data.currentPrice || 0, status: 'offen', initial_rrr: null, stop_loss: null, ...tpFields }); result.created++; }
       catch(e) { console.error('Insert open', symbol, e); result.skipped++; }
     } else if (isOpen && existingOpen) {
-      const needsUpdate = sellsSorted.length > 0 && (!existingOpen.tp1Menge || existingOpen.tp1Menge === 0);
-      if (needsUpdate) { try { await supabaseClient.from('trades').update(tpFields).eq('id', existingOpen.id); result.created++; } catch(e) { result.skipped++; } }
+      const hasTp1 = existingOpen.tp1Menge > 0;
+      const hasTp2 = existingOpen.tp2Menge > 0;
+      const hasTp3 = existingOpen.tp3Menge > 0;
+      const sellCount = sellsSorted.length;
+      const needsUpdate = sellCount > 0 && (
+        !hasTp1 ||
+        (sellCount >= 2 && !hasTp2) ||
+        (sellCount >= 3 && !hasTp3)
+      );
+      if (needsUpdate) {
+        // Map sells with offset: skip slots already filled by existing TPs
+        const offset = hasTp1 ? (hasTp2 ? (hasTp3 ? 3 : 2) : 1) : 0;
+        const newSells = sellsSorted.slice(offset);
+        const offsetFields = mapTPs(newSells);
+        const mergedTPs = {};
+        if (!hasTp1 && offsetFields.tp1_datum) { mergedTPs.tp1_preis = offsetFields.tp1_preis; mergedTPs.tp1_menge = offsetFields.tp1_menge; mergedTPs.tp1_datum = offsetFields.tp1_datum; }
+        if (!hasTp2 && offsetFields.tp1_datum && hasTp1) { mergedTPs.tp2_preis = offsetFields.tp1_preis; mergedTPs.tp2_menge = offsetFields.tp1_menge; mergedTPs.tp2_datum = offsetFields.tp1_datum; }
+        else if (!hasTp2 && offsetFields.tp2_datum) { mergedTPs.tp2_preis = offsetFields.tp2_preis; mergedTPs.tp2_menge = offsetFields.tp2_menge; mergedTPs.tp2_datum = offsetFields.tp2_datum; }
+        if (!hasTp3 && offsetFields.tp1_datum && hasTp1 && hasTp2) { mergedTPs.tp3_preis = offsetFields.tp1_preis; mergedTPs.tp3_menge = offsetFields.tp1_menge; mergedTPs.tp3_datum = offsetFields.tp1_datum; }
+        else if (!hasTp3 && offsetFields.tp3_datum) { mergedTPs.tp3_preis = offsetFields.tp3_preis; mergedTPs.tp3_menge = offsetFields.tp3_menge; mergedTPs.tp3_datum = offsetFields.tp3_datum; }
+        if (Object.keys(mergedTPs).length > 0) {
+          try { await supabaseClient.from('trades').update(mergedTPs).eq('id', existingOpen.id); result.created++; }
+          catch(e) { result.skipped++; }
+        } else result.skipped++;
+      }
       else result.skipped++;
     } else if (!isOpen && existingOpen) {
       const lastSell = sellsSorted.length > 0 ? sellsSorted[sellsSorted.length - 1] : null;
