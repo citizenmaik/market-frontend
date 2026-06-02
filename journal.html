@@ -1054,45 +1054,19 @@ function exportTrades() {
 }
 
 // ── IBKR IMPORT ───────────────────────────────────────
-let currentImportMode = 'umsatz';
+// ── IBKR IMPORT ──────────────────────────────────────
 
 function openIBKRSync() {
   document.getElementById('ibkrSyncModal').style.display = 'flex';
   document.getElementById('syncStatus').style.display = 'none';
+  document.getElementById('ibkrImportConfirmBtn').style.display = 'none';
+  document.getElementById('ibkrStartBtn').style.display = 'inline-block';
   document.getElementById('kontoauszugFile').value = '';
   document.getElementById('ordersFile').value = '';
-  const uf = document.getElementById('umsatzFile'); if (uf) uf.value = '';
-  const pv = document.getElementById('importPreview'); if (pv) pv.style.display = 'none';
-  showImportMode('umsatz');
-}
-
-function showImportMode(mode) {
-  currentImportMode = mode;
-  ['kontoauszug','umsatz'].forEach(m => {
-    const tab = document.getElementById('importMode_' + m), sec = document.getElementById('importSection_' + m);
-    if (tab) tab.classList.toggle('mode-tab-active', m === mode);
-    if (sec) sec.style.display = m === mode ? 'block' : 'none';
-  });
-  document.getElementById('syncStatus').style.display = 'none';
   const pv = document.getElementById('importPreview'); if (pv) pv.style.display = 'none';
 }
 
 function closeIBKRSync() { document.getElementById('ibkrSyncModal').style.display = 'none'; }
-
-async function startIBKRSync() {
-  if (currentImportMode === 'umsatz') { await startUmsatzImport(); return; }
-  const kontoFile = document.getElementById('kontoauszugFile').files[0];
-  const ordersFile = document.getElementById('ordersFile').files[0];
-  if (!kontoFile || !ordersFile) { showSyncStatus('Bitte beide CSV-Dateien auswählen!', 'error'); return; }
-  showSyncStatus('Verarbeite CSVs...', 'loading');
-  try {
-    const kontoText = await kontoFile.text(), ordersText = await ordersFile.text();
-    const positions = parseKontoauszug(kontoText), transactions = parseTransaktionen(kontoText), orders = parseOffeneOrders(ordersText);
-    await syncWithIBKR(positions, transactions, orders);
-    showSyncStatus('Import erfolgreich!', 'success');
-    setTimeout(() => { closeIBKRSync(); loadData(); updateDashboard(); }, 1500);
-  } catch (error) { console.error('IBKR Sync Error:', error); showSyncStatus('Fehler beim Import: ' + error.message, 'error'); }
-}
 
 function showSyncStatus(msg, type) {
   const el = document.getElementById('syncStatus');
@@ -1102,49 +1076,7 @@ function showSyncStatus(msg, type) {
   el.style.border = `1px solid ${type === 'error' ? 'rgba(255,68,102,.3)' : type === 'success' ? 'rgba(0,208,132,.3)' : 'rgba(90,96,112,.3)'}`;
 }
 
-async function startUmsatzImport() {
-  const file = document.getElementById('umsatzFile').files[0];
-  if (!file) { showSyncStatus('Bitte CSV-Datei der Umsatzübersicht auswählen!', 'error'); return; }
-  showSyncStatus('Verarbeite Umsatzübersicht…', 'loading');
-  try {
-    const text = await file.text(), groups = parseActivityStatement(text);
-    const symbols = Object.keys(groups);
-    if (symbols.length === 0) { showSyncStatus('Keine Transaktionen gefunden.', 'error'); return; }
-    showImportPreview(groups);
-    showSyncStatus(`${symbols.length} Symbole erkannt — bereit zum Import.`, 'loading');
-    window._pendingImportGroups = groups;
-    document.getElementById('ibkrImportConfirmBtn').style.display = 'inline-block';
-    document.getElementById('ibkrStartBtn').style.display = 'none';
-  } catch (error) { console.error('Umsatz Parse Error:', error); showSyncStatus('Fehler beim Lesen: ' + error.message, 'error'); }
-}
-
-async function confirmUmsatzImport() {
-  const groups = window._pendingImportGroups;
-  if (!groups) return;
-  document.getElementById('ibkrImportConfirmBtn').style.display = 'none';
-  document.getElementById('ibkrStartBtn').style.display = 'inline-block';
-  showSyncStatus('Importiere Trades in Supabase…', 'loading');
-  try {
-    const result = await importFromActivityStatement(groups);
-    showSyncStatus(`✓ Import abgeschlossen — ${result.created} neue offene, ${result.closed} geschlossene Trades, ${result.skipped} übersprungen.`, 'success');
-    window._pendingImportGroups = null;
-    const pv = document.getElementById('importPreview'); if (pv) pv.style.display = 'none';
-    setTimeout(() => { closeIBKRSync(); loadData(); updateDashboard(); }, 2200);
-  } catch (error) { console.error('Umsatz Import Error:', error); showSyncStatus('Fehler beim Import: ' + error.message, 'error'); }
-}
-
-function showImportPreview(groups) {
-  const pv = document.getElementById('importPreview'); if (!pv) return;
-  pv.innerHTML = ''; pv.style.display = 'block';
-  Object.entries(groups).sort((a,b) => a[0].localeCompare(b[0])).forEach(([sym, data]) => {
-    const isOpen = data.netQty > 0.001;
-    const totalBought = data.buys.reduce((s,b) => s + b.qty, 0);
-    const avgEntry = totalBought > 0 ? (data.buys.reduce((s,b) => s + b.qty * b.price, 0) / totalBought).toFixed(2) : '—';
-    const row = document.createElement('div'); row.className = 'import-preview-row';
-    row.innerHTML = `<span class="sym">${sym}</span><span style="color:var(--muted)">${totalBought.toFixed(2)} Stk @ $${avgEntry}</span><span class="${isOpen ? 'open-tag' : 'closed-tag'}">${isOpen ? '● Offen' : '✓ Geschlossen'}</span>`;
-    pv.appendChild(row);
-  });
-}
+// ── PARSE FUNCTIONS ───────────────────────────────────
 
 function parseCSVLine(line) {
   const result = []; let cur = '', inQuotes = false;
@@ -1157,136 +1089,35 @@ function parseCSVLine(line) {
   result.push(cur.trim()); return result;
 }
 
-function parseActivityStatement(csvText) {
-  const lines = csvText.split('\n'), groups = {}, currentPositions = {};
-  const sectionKey = csvText.includes('Transaktionen,') ? 'Transaktionen' : 'Trades';
-  const mtmKey = csvText.includes('Mark-to-Market-Performance-Überblick') ? 'Mark-to-Market-Performance-Überblick' : 'Mark-to-Market Performance Summary';
+function parseKontoauszugCSV(csvText) {
+  // Returns: { positions: {sym: {menge, einstieg, aktuell}}, sells: {sym: [{date, qty, price}]} }
+  const lines = csvText.split('\n');
+  const positions = {}, sells = {};
   for (const raw of lines) {
     const line = raw.trim(); if (!line) continue;
-    const parts = parseCSVLine(line); if (parts.length < 4) continue;
-    if (parts[0] === mtmKey && parts[1] === 'Data' && parts[3]) {
-      const assetClass = parts[2] || '';
-      if (assetClass === 'Aktien' || assetClass === 'Stocks') {
-        const sym = parts[3], currentQty = parseFloat(parts[5]);
-        const currentPrice = (parts[7] && parts[7] !== '--') ? parseFloat(parts[7]) : null;
-        if (!isNaN(currentQty)) currentPositions[sym] = { qty: currentQty, price: currentPrice };
-      }
-      continue;
+    const parts = parseCSVLine(line); if (parts.length < 6) continue;
+    // Offene Positionen
+    if (parts[0] === 'Offene Positionen' && parts[1] === 'Data' && parts[2] === 'Summary') {
+      const sym = parts[5], menge = parseFloat(parts[6]), einstieg = parseFloat(parts[8]), aktuell = parseFloat(parts[10]);
+      if (sym && !isNaN(menge) && menge > 0) positions[sym] = { menge, einstieg, aktuell };
     }
-    if (parts[0] !== sectionKey) continue; if (parts[1] === 'Header') continue;
-    const symbol = parts[5]; if (!symbol) continue;
-    if (!groups[symbol]) groups[symbol] = { buys: [], sells: [], realizedPL: 0, currentQty: null, currentPrice: null };
-    if (parts[1] === 'Data' && parts[2] === 'Order' && parts.length >= 14) {
-      const datetime = parts[6], qty = parseFloat(parts[7]), tPrice = parseFloat(parts[8]), realizedPL = parseFloat(parts[13]);
-      if (isNaN(qty) || isNaN(tPrice)) continue;
-      const date = datetime.split(',')[0].trim();
-      if (qty > 0) groups[symbol].buys.push({ date, qty, price: tPrice });
-      else if (qty < 0) { groups[symbol].sells.push({ date, qty: Math.abs(qty), price: tPrice, realizedPL }); if (!isNaN(realizedPL)) groups[symbol].realizedPL += realizedPL; }
+    // Transaktionen: nur Sells (menge < 0)
+    if ((parts[0] === 'Transaktionen' || parts[0] === 'Trades') && parts[1] === 'Data' && parts[2] === 'Order') {
+      const sym = parts[5]; if (!sym) continue;
+      const datetime = parts[6] || '', qty = parseFloat(parts[7]), price = parseFloat(parts[8]);
+      if (isNaN(qty) || isNaN(price) || qty >= 0) continue; // only sells
+      const date = datetime.replace(/"/g,'').split(',')[0].trim();
+      if (!sells[sym]) sells[sym] = [];
+      sells[sym].push({ date, qty: Math.abs(qty), price });
     }
   }
-  for (const [sym, data] of Object.entries(groups)) { const pos = currentPositions[sym]; if (pos) { data.currentQty = pos.qty; data.currentPrice = pos.price; } }
-  return groups;
-}
-
-async function importFromActivityStatement(groups) {
-  const result = { created: 0, closed: 0, skipped: 0 };
-  function mapTPs(sells) {
-    if (!sells || sells.length === 0) return {};
-    const s = sells, tp3Sells = s.slice(2);
-    const tp3Qty = tp3Sells.reduce((sum, x) => sum + x.qty, 0);
-    const tp3Price = tp3Qty > 0 ? tp3Sells.reduce((sum, x) => sum + x.qty * x.price, 0) / tp3Qty : null;
-    const tp3Date = tp3Sells.length > 0 ? tp3Sells[tp3Sells.length - 1].date : null;
-    return { tp1_preis: s[0]?.price||null, tp1_menge: s[0]?.qty||null, tp1_datum: s[0]?.date||null, tp2_preis: s[1]?.price||null, tp2_menge: s[1]?.qty||null, tp2_datum: s[1]?.date||null, tp3_preis: tp3Qty > 0 ? parseFloat(tp3Price.toFixed(4)) : null, tp3_menge: tp3Qty > 0 ? parseFloat(tp3Qty.toFixed(4)) : null, tp3_datum: tp3Date||null };
-  }
-  for (const [symbol, data] of Object.entries(groups)) {
-    const currentQty = data.currentQty, isOpen = currentQty !== null ? currentQty > 0 : false;
-    const existingOpen = trades.find(t => t.ticker === symbol), existingClosed = closedTrades.find(t => t.ticker === symbol);
-    if (data.buys.length === 0 && !isOpen && !existingOpen) { result.skipped++; continue; }
-    const totalBought = data.buys.reduce((s, b) => s + b.qty, 0);
-    const avgEntry = totalBought > 0 ? data.buys.reduce((s, b) => s + b.qty * b.price, 0) / totalBought : 0;
-    const firstBuyDate = data.buys.length > 0 ? data.buys[0].date : null;
-    const sellsSorted = [...data.sells].sort((a, b) => a.date.localeCompare(b.date));
-    const tpFields = mapTPs(sellsSorted);
-    if (isOpen && !existingOpen) {
-      try { await supabaseClient.from('trades').insert({ user_id: USER_ID, ticker: symbol, einstiegspreis: parseFloat(avgEntry.toFixed(4)), kaufmenge: parseFloat(totalBought.toFixed(4)), kaufdatum: firstBuyDate, live_preis: data.currentPrice || 0, status: 'offen', initial_rrr: null, stop_loss: null, ...tpFields }); result.created++; }
-      catch(e) { console.error('Insert open', symbol, e); result.skipped++; }
-    } else if (isOpen && existingOpen) {
-      const hasTp1 = existingOpen.tp1Menge > 0;
-      const hasTp2 = existingOpen.tp2Menge > 0;
-      const hasTp3 = existingOpen.tp3Menge > 0;
-      const sellCount = sellsSorted.length;
-      const needsUpdate = sellCount > 0 && (
-        !hasTp1 ||
-        (sellCount >= 2 && !hasTp2) ||
-        (sellCount >= 3 && !hasTp3)
-      );
-      if (needsUpdate) {
-        // Map sells with offset: skip slots already filled by existing TPs
-        const offset = hasTp1 ? (hasTp2 ? (hasTp3 ? 3 : 2) : 1) : 0;
-        const newSells = sellsSorted.slice(offset);
-        const offsetFields = mapTPs(newSells);
-        const mergedTPs = {};
-        if (!hasTp1 && offsetFields.tp1_datum) { mergedTPs.tp1_preis = offsetFields.tp1_preis; mergedTPs.tp1_menge = offsetFields.tp1_menge; mergedTPs.tp1_datum = offsetFields.tp1_datum; }
-        if (!hasTp2 && offsetFields.tp1_datum && hasTp1) { mergedTPs.tp2_preis = offsetFields.tp1_preis; mergedTPs.tp2_menge = offsetFields.tp1_menge; mergedTPs.tp2_datum = offsetFields.tp1_datum; }
-        else if (!hasTp2 && offsetFields.tp2_datum) { mergedTPs.tp2_preis = offsetFields.tp2_preis; mergedTPs.tp2_menge = offsetFields.tp2_menge; mergedTPs.tp2_datum = offsetFields.tp2_datum; }
-        if (!hasTp3 && offsetFields.tp1_datum && hasTp1 && hasTp2) { mergedTPs.tp3_preis = offsetFields.tp1_preis; mergedTPs.tp3_menge = offsetFields.tp1_menge; mergedTPs.tp3_datum = offsetFields.tp1_datum; }
-        else if (!hasTp3 && offsetFields.tp3_datum) { mergedTPs.tp3_preis = offsetFields.tp3_preis; mergedTPs.tp3_menge = offsetFields.tp3_menge; mergedTPs.tp3_datum = offsetFields.tp3_datum; }
-        if (Object.keys(mergedTPs).length > 0) {
-          try { await supabaseClient.from('trades').update(mergedTPs).eq('id', existingOpen.id); result.created++; }
-          catch(e) { result.skipped++; }
-        } else result.skipped++;
-      }
-      else result.skipped++;
-    } else if (!isOpen && existingOpen) {
-      const lastSell = sellsSorted.length > 0 ? sellsSorted[sellsSorted.length - 1] : null;
-      const totalSold = sellsSorted.reduce((s, x) => s + x.qty, 0);
-      const avgExit = totalSold > 0 ? sellsSorted.reduce((s, x) => s + x.qty * x.price, 0) / totalSold : existingOpen.livePreis || 0;
-      const existingTPs = { tp1_preis: existingOpen.tp1Preis || tpFields.tp1_preis, tp1_menge: existingOpen.tp1Menge || tpFields.tp1_menge, tp1_datum: (existingOpen.tp1Datum || '').substring(0,10) || tpFields.tp1_datum, tp2_preis: existingOpen.tp2Preis || tpFields.tp2_preis, tp2_menge: existingOpen.tp2Menge || tpFields.tp2_menge, tp2_datum: (existingOpen.tp2Datum || '').substring(0,10) || tpFields.tp2_datum, tp3_preis: existingOpen.tp3Preis || tpFields.tp3_preis, tp3_menge: existingOpen.tp3Menge || tpFields.tp3_menge, tp3_datum: (existingOpen.tp3Datum || '').substring(0,10) || tpFields.tp3_datum };
-      try { await supabaseClient.from('closed_trades').insert({ user_id: USER_ID, ticker: symbol, einstiegspreis: parseFloat(parseFloat(existingOpen.einstiegspreis).toFixed(4)), kaufmenge: parseFloat(parseFloat(existingOpen.kaufmenge).toFixed(4)), kaufdatum: (existingOpen.kaufdatum || '').substring(0,10), exit_datum: lastSell?.date||null, live_preis: parseFloat(avgExit.toFixed(4)), status: 'geschlossen', stop_loss: existingOpen.stopLoss || null, initial_rrr: existingOpen.initialRrr || null, ...existingTPs }); await supabaseClient.from('trades').delete().eq('id', existingOpen.id); result.closed++; }
-      catch(e) { console.error('Close existing trade', symbol, e); result.skipped++; }
-    } else if (!isOpen && !existingClosed && data.buys.length > 0) {
-      const lastSell = sellsSorted.length > 0 ? sellsSorted[sellsSorted.length - 1] : null;
-      const totalSold = sellsSorted.reduce((s, x) => s + x.qty, 0);
-      const avgExit = totalSold > 0 ? sellsSorted.reduce((s, x) => s + x.qty * x.price, 0) / totalSold : avgEntry;
-      try { await supabaseClient.from('closed_trades').insert({ user_id: USER_ID, ticker: symbol, einstiegspreis: parseFloat(avgEntry.toFixed(4)), kaufmenge: parseFloat(totalBought.toFixed(4)), kaufdatum: firstBuyDate, exit_datum: lastSell?.date||null, live_preis: parseFloat(avgExit.toFixed(4)), status: 'geschlossen', initial_rrr: null, stop_loss: null, ...tpFields }); result.closed++; }
-      catch(e) { console.error('Insert closed', symbol, e); result.skipped++; }
-    } else result.skipped++;
-  }
-  return result;
-}
-
-function parseKontoauszug(csvText) {
-  const lines = csvText.split('\n'), positions = {};
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line.startsWith('Offene Positionen,Data,Summary')) continue;
-    const parts = line.split(','); if (parts.length < 10) continue;
-    const symbol = parts[5], menge = parseFloat(parts[6]), einstieg = parseFloat(parts[8]), aktuell = parseFloat(parts[10]);
-    if (symbol && !isNaN(menge) && !isNaN(einstieg)) positions[symbol] = { symbol, menge, einstieg, aktuell };
-  }
-  return positions;
-}
-
-function parseTransaktionen(csvText) {
-  const lines = csvText.split('\n'), transactions = {};
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line.startsWith('Transaktionen,Data,Order')) continue;
-    const parts = line.split(','); if (parts.length < 10) continue;
-    const symbol = parts[5], datetime = parts[6].replace(/"/g, ''), menge = parseFloat(parts[7]), preis = parseFloat(parts[8]);
-    if (symbol && !isNaN(menge) && menge < 0 && !isNaN(preis)) {
-      if (!transactions[symbol]) transactions[symbol] = [];
-      transactions[symbol].push({ menge: Math.abs(menge), preis, datum: datetime.split(',')[0].trim() });
-    }
-  }
-  return transactions;
+  return { positions, sells };
 }
 
 function parseOffeneOrders(csvText) {
   const lines = csvText.split('\n'), orders = {};
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line.includes('@NASDAQ') && !line.includes('@NYSE')) continue;
+  for (const line of lines) {
+    if (!line.includes('@NASDAQ') && !line.includes('@NYSE') && !line.includes('@ARCA') && !line.includes('@BATS')) continue;
     const match = line.match(/(\w+)\s+@[A-Z.]+\s+Sell\s+([\d.]+)\s+\w+\s+(Limit|Stop)\s+([\d.]+)/);
     if (!match) continue;
     const symbol = match[1], menge = parseFloat(match[2]), typ = match[3], preis = parseFloat(match[4]);
@@ -1298,50 +1129,189 @@ function parseOffeneOrders(csvText) {
   return orders;
 }
 
-async function syncWithIBKR(positions, transactions, orders) {
-  const symbolsToSync = new Set([...Object.keys(positions), ...Object.keys(transactions), ...Object.keys(orders)]);
-  for (const symbol of symbolsToSync) {
-    const pos = positions[symbol], trans = transactions[symbol] || [], ord = orders[symbol] || { limits: [], stops: [] };
-    const existing = trades.find(t => t.ticker === symbol);
-    if (pos && !existing) await createTradeFromIBKR(symbol, pos, trans, ord);
-    else if (pos && existing) await updateTradeFromIBKR(existing, pos, trans, ord);
-    else if (!pos && existing) await closeTradeFromIBKR(existing, trans);
-  }
-}
+// ── PREVIEW ───────────────────────────────────────────
 
-async function createTradeFromIBKR(symbol, pos, trans, ord) {
-  const stopLoss = ord.stops[0]?.preis || 0, tp1 = ord.limits[0]?.preis || 0, tp2 = ord.limits[1]?.preis || 0, tp3 = ord.limits[2]?.preis || 0;
-  let originalMenge = pos.menge; trans.forEach(t => originalMenge += t.menge);
-  const initialRRR = calcInitialRRR(pos.einstieg, stopLoss, tp1, tp2, tp3);
-  try { await supabaseClient.from('trades').insert({ user_id: USER_ID, ticker: symbol, einstiegspreis: pos.einstieg, kaufmenge: originalMenge, kaufdatum: new Date().toISOString().split('T')[0], stop_loss: stopLoss||null, tp1_preis: tp1||null, tp2_preis: tp2||null, tp3_preis: tp3||null, live_preis: pos.aktuell, status: 'offen', initial_rrr: initialRRR }); }
-  catch (error) { console.error(`Error creating ${symbol}:`, error); }
-}
-
-async function updateTradeFromIBKR(existing, pos, trans, ord) {
-  const updates = {}; let hasChanges = false;
-  const newStop = ord.stops[0]?.preis || 0;
-  if (newStop && Math.abs(newStop - existing.stopLoss) > 0.01) { updates.stop_loss = newStop; hasChanges = true; }
-  const tp1 = ord.limits[0]?.preis || 0, tp2 = ord.limits[1]?.preis || 0, tp3 = ord.limits[2]?.preis || 0;
-  if (tp1 && Math.abs(tp1 - (existing.tp1Preis||0)) > 0.01) { updates.tp1_preis = tp1; hasChanges = true; }
-  if (tp2 && Math.abs(tp2 - (existing.tp2Preis||0)) > 0.01) { updates.tp2_preis = tp2; hasChanges = true; }
-  if (tp3 && Math.abs(tp3 - (existing.tp3Preis||0)) > 0.01) { updates.tp3_preis = tp3; hasChanges = true; }
-  if (trans.length > 0) trans.forEach((t, idx) => { const tpKey = ['tp1','tp2','tp3'][idx]; if (!existing[`${tpKey}Menge`]) { updates[`${tpKey}_menge`] = t.menge; updates[`${tpKey}_datum`] = t.datum; hasChanges = true; } });
-  if (hasChanges) { try { await supabaseClient.from('trades').update(updates).eq('id', existing.id); } catch (error) { console.error(`Error updating ${existing.ticker}:`, error); } }
-}
-
-async function closeTradeFromIBKR(existing, trans) {
-  const exitDatum = trans.length > 0 ? trans[0].datum : new Date().toISOString().split('T')[0];
+async function startIBKRSync() {
+  const kontoFile = document.getElementById('kontoauszugFile').files[0];
+  const ordersFile = document.getElementById('ordersFile').files[0];
+  if (!kontoFile) { showSyncStatus('Bitte Kontoauszug CSV auswählen!', 'error'); return; }
+  showSyncStatus('Lese CSVs…', 'loading');
   try {
-    await supabaseClient.from('closed_trades').insert({ user_id: USER_ID, ticker: existing.ticker, einstiegspreis: existing.einstiegspreis, kaufmenge: existing.kaufmenge, kaufdatum: existing.kaufdatum||null, stop_loss: existing.stopLoss||null, tp1_preis: existing.tp1Preis||null, tp2_preis: existing.tp2Preis||null, tp3_preis: existing.tp3Preis||null, tp1_menge: existing.tp1Menge||0, tp2_menge: existing.tp2Menge||0, tp3_menge: existing.tp3Menge||0, tp1_datum: existing.tp1Datum||null, tp2_datum: existing.tp2Datum||null, tp3_datum: existing.tp3Datum||null, exit_datum: exitDatum, live_preis: existing.livePreis, status: 'geschlossen', initial_rrr: existing.initialRRR||null, screenshot_entry: existing.screenshotEntry||null, screenshot_tp1: existing.screenshotTp1||null, screenshot_tp2: existing.screenshotTp2||null, screenshot_tp3: existing.screenshotTp3||null, screenshot_exit: existing.screenshotExit||null });
-    await supabaseClient.from('trades').delete().eq('id', existing.id);
-  } catch (error) { console.error(`Error closing ${existing.ticker}:`, error); }
+    const kontoText = await kontoFile.text();
+    const ordersText = ordersFile ? await ordersFile.text() : '';
+    const { positions, sells } = parseKontoauszugCSV(kontoText);
+    const orders = ordersText ? parseOffeneOrders(ordersText) : {};
+    // Build preview: all tickers from positions + sells
+    const allSyms = new Set([...Object.keys(positions), ...Object.keys(sells)]);
+    if (allSyms.size === 0) { showSyncStatus('Keine Positionen/Transaktionen gefunden.', 'error'); return; }
+    window._pendingImport = { positions, sells, orders };
+    showImportPreview(positions, sells);
+    showSyncStatus(`${allSyms.size} Symbole erkannt — bereit zum Import.`, 'loading');
+    document.getElementById('ibkrImportConfirmBtn').style.display = 'inline-block';
+    document.getElementById('ibkrStartBtn').style.display = 'none';
+  } catch(e) { console.error(e); showSyncStatus('Fehler: ' + e.message, 'error'); }
 }
 
-async function previewUmsatzFile(input) {
-  const file = input.files[0]; if (!file) return;
-  const text = await file.text(), groups = parseActivityStatement(text);
-  if (Object.keys(groups).length > 0) { showImportPreview(groups); showSyncStatus(`${Object.keys(groups).length} Symbole erkannt.`, 'loading'); }
-  else showSyncStatus('Keine Transaktionen gefunden.', 'error');
+function showImportPreview(positions, sells) {
+  const pv = document.getElementById('importPreview'); if (!pv) return;
+  pv.innerHTML = ''; pv.style.display = 'block';
+  const allSyms = new Set([...Object.keys(positions), ...Object.keys(sells)]);
+  [...allSyms].sort().forEach(sym => {
+    const isOpen = !!positions[sym];
+    const pos = positions[sym];
+    const symSells = sells[sym] || [];
+    const row = document.createElement('div'); row.className = 'import-preview-row';
+    const info = isOpen
+      ? `${pos.menge.toFixed(2)} Stk @ $${pos.einstieg.toFixed(2)}`
+      : `${symSells.reduce((s,x) => s+x.qty,0).toFixed(2)} Stk @ $–`;
+    const sellInfo = symSells.length > 0 ? ` · ${symSells.length} Sell(s)` : '';
+    row.innerHTML = `<span class="sym">${sym}</span><span style="color:var(--muted)">${info}${sellInfo}</span><span class="${isOpen ? 'open-tag' : 'closed-tag'}">${isOpen ? '● Offen' : '✓ Geschlossen'}</span>`;
+    pv.appendChild(row);
+  });
+}
+
+// ── CONFIRM IMPORT ────────────────────────────────────
+
+async function confirmUmsatzImport() {
+  const { positions, sells, orders } = window._pendingImport || {};
+  if (!positions) return;
+  document.getElementById('ibkrImportConfirmBtn').style.display = 'none';
+  document.getElementById('ibkrStartBtn').style.display = 'inline-block';
+  showSyncStatus('Importiere…', 'loading');
+  try {
+    const result = await runImport(positions, sells, orders);
+    showSyncStatus(`✓ Fertig — ${result.created} aktualisiert, ${result.closed} geschlossen, ${result.skipped} übersprungen.`, 'success');
+    window._pendingImport = null;
+    const pv = document.getElementById('importPreview'); if (pv) pv.style.display = 'none';
+    setTimeout(() => { closeIBKRSync(); loadData(); updateDashboard(); }, 2000);
+  } catch(e) { console.error(e); showSyncStatus('Fehler: ' + e.message, 'error'); }
+}
+
+// ── CORE IMPORT LOGIC ─────────────────────────────────
+
+async function runImport(positions, sells, orders) {
+  const result = { created: 0, closed: 0, skipped: 0 };
+
+  // All symbols: from open positions + from sells
+  const allSyms = new Set([...Object.keys(positions), ...Object.keys(sells)]);
+
+  for (const sym of allSyms) {
+    const isOpen = !!positions[sym];
+    const pos = positions[sym] || null;
+    const symSells = (sells[sym] || []).slice().sort((a,b) => a.date.localeCompare(b.date));
+    const ord = orders[sym] || { limits: [], stops: [] };
+
+    const existingTrade = trades.find(t => t.ticker === sym);
+
+    if (isOpen && !existingTrade) {
+      // New trade: insert with stop/tp from orders
+      await createNewTrade(sym, pos, symSells, ord);
+      result.created++;
+
+    } else if (isOpen && existingTrade) {
+      // Existing open trade: update TPs from sells + update stop/tp prices from orders
+      const updated = await updateExistingTrade(existingTrade, symSells, ord);
+      if (updated) result.created++; else result.skipped++;
+
+    } else if (!isOpen && existingTrade) {
+      // Position gone from depot → close trade
+      await closeTrade(existingTrade, symSells);
+      result.closed++;
+
+    } else {
+      // Not open, no existing trade → skip (already closed or irrelevant)
+      result.skipped++;
+    }
+  }
+  return result;
+}
+
+async function createNewTrade(sym, pos, symSells, ord) {
+  const stopLoss = ord.stops[0]?.preis || null;
+  const tp1 = ord.limits[0]?.preis || null, tp2 = ord.limits[1]?.preis || null, tp3 = ord.limits[2]?.preis || null;
+  const tpFromSells = mapSellsToTPs(symSells, { tp1Menge: 0, tp2Menge: 0, tp3Menge: 0 });
+  await supabaseClient.from('trades').insert({
+    user_id: USER_ID, ticker: sym,
+    einstiegspreis: parseFloat(pos.einstieg.toFixed(4)),
+    kaufmenge: parseFloat(pos.menge.toFixed(4)),
+    kaufdatum: new Date().toISOString().split('T')[0],
+    live_preis: pos.aktuell || 0, status: 'offen',
+    stop_loss: stopLoss, tp1_preis: tp1, tp2_preis: tp2, tp3_preis: tp3,
+    initial_rrr: null, ...tpFromSells
+  });
+}
+
+async function updateExistingTrade(existing, symSells, ord) {
+  const updates = {};
+  // Update stop/tp prices from orders if changed
+  const newStop = ord.stops[0]?.preis || null;
+  if (newStop && Math.abs(newStop - (existing.stopLoss || 0)) > 0.01) updates.stop_loss = newStop;
+  const tp1p = ord.limits[0]?.preis || null, tp2p = ord.limits[1]?.preis || null, tp3p = ord.limits[2]?.preis || null;
+  if (tp1p && Math.abs(tp1p - (existing.tp1Preis || 0)) > 0.01) updates.tp1_preis = tp1p;
+  if (tp2p && Math.abs(tp2p - (existing.tp2Preis || 0)) > 0.01) updates.tp2_preis = tp2p;
+  if (tp3p && Math.abs(tp3p - (existing.tp3Preis || 0)) > 0.01) updates.tp3_preis = tp3p;
+  // Update TP dates/qty from sells (offset-aware: skip already-recorded TPs)
+  const tpUpdates = mapSellsToTPs(symSells, existing);
+  Object.assign(updates, tpUpdates);
+  if (Object.keys(updates).length === 0) return false;
+  await supabaseClient.from('trades').update(updates).eq('id', existing.id);
+  return true;
+}
+
+async function closeTrade(existing, symSells) {
+  const lastSell = symSells.length > 0 ? symSells[symSells.length - 1] : null;
+  const totalSold = symSells.reduce((s, x) => s + x.qty, 0);
+  const avgExit = totalSold > 0 ? symSells.reduce((s, x) => s + x.qty * x.price, 0) / totalSold : existing.livePreis || 0;
+  const tpFromSells = mapSellsToTPs(symSells, existing);
+  await supabaseClient.from('closed_trades').insert({
+    user_id: USER_ID, ticker: existing.ticker,
+    einstiegspreis: parseFloat(parseFloat(existing.einstiegspreis).toFixed(4)),
+    kaufmenge: parseFloat(parseFloat(existing.kaufmenge).toFixed(4)),
+    kaufdatum: (existing.kaufdatum || '').substring(0, 10),
+    exit_datum: lastSell?.date || null,
+    live_preis: parseFloat(avgExit.toFixed(4)),
+    status: 'geschlossen',
+    stop_loss: existing.stopLoss || null,
+    initial_rrr: existing.initialRrr || null,
+    tp1_preis: existing.tp1Preis || tpFromSells.tp1_preis || null,
+    tp1_menge: existing.tp1Menge || tpFromSells.tp1_menge || null,
+    tp1_datum: (existing.tp1Datum || '').substring(0,10) || tpFromSells.tp1_datum || null,
+    tp2_preis: existing.tp2Preis || tpFromSells.tp2_preis || null,
+    tp2_menge: existing.tp2Menge || tpFromSells.tp2_menge || null,
+    tp2_datum: (existing.tp2Datum || '').substring(0,10) || tpFromSells.tp2_datum || null,
+    tp3_preis: existing.tp3Preis || tpFromSells.tp3_preis || null,
+    tp3_menge: existing.tp3Menge || tpFromSells.tp3_menge || null,
+    tp3_datum: (existing.tp3Datum || '').substring(0,10) || tpFromSells.tp3_datum || null,
+    screenshot_entry: existing.screenshotEntry || null,
+    screenshot_tp1: existing.screenshotTp1 || null,
+    screenshot_tp2: existing.screenshotTp2 || null,
+    screenshot_tp3: existing.screenshotTp3 || null,
+    screenshot_exit: existing.screenshotExit || null
+  });
+  await supabaseClient.from('trades').delete().eq('id', existing.id);
+}
+
+// Maps new sells to TP slots, skipping already-recorded TPs
+function mapSellsToTPs(sells, existing) {
+  if (!sells || sells.length === 0) return {};
+  const hasTp1 = (existing.tp1Menge || 0) > 0;
+  const hasTp2 = (existing.tp2Menge || 0) > 0;
+  const hasTp3 = (existing.tp3Menge || 0) > 0;
+  // Only take sells that haven't been recorded yet
+  const offset = hasTp1 ? (hasTp2 ? (hasTp3 ? 3 : 2) : 1) : 0;
+  const newSells = sells.slice(offset);
+  if (newSells.length === 0) return {};
+  const updates = {};
+  if (!hasTp1 && newSells[0]) { updates.tp1_preis = newSells[0].price; updates.tp1_menge = newSells[0].qty; updates.tp1_datum = newSells[0].date; }
+  if (!hasTp2 && newSells[hasTp1 ? 0 : 1]) {
+    const s = newSells[hasTp1 ? 0 : 1];
+    updates.tp2_preis = s.price; updates.tp2_menge = s.qty; updates.tp2_datum = s.date;
+  }
+  if (!hasTp3 && newSells[hasTp1 ? (hasTp2 ? 0 : 1) : 2]) {
+    const s = newSells[hasTp1 ? (hasTp2 ? 0 : 1) : 2];
+    updates.tp3_preis = s.price; updates.tp3_menge = s.qty; updates.tp3_datum = s.date;
+  }
+  return updates;
 }
 
 // ── START ─────────────────────────────────────────────
@@ -1381,37 +1351,24 @@ if (_formContent && _formIcon) {
   </div>
 </div>
 
-<!-- IBKR Sync Modal -->
+<!-- IBKR Import Modal -->
 <div id="ibkrSyncModal" class="modal" onclick="if(event.target === this) closeIBKRSync()">
-  <div class="modal-content" style="max-width:620px;" onclick="event.stopPropagation()">
+  <div class="modal-content" style="max-width:520px;" onclick="event.stopPropagation()">
     <div class="modal-header">
       <h2 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:0;">📥 IBKR Import</h2>
       <button onclick="closeIBKRSync()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1;">×</button>
     </div>
     <div class="modal-body" style="padding:20px;">
-      <div class="import-mode-tabs">
-        <button id="importMode_umsatz" class="import-mode-tab mode-tab-active" onclick="showImportMode('umsatz')">📊 Umsatzübersicht</button>
-        <button id="importMode_kontoauszug" class="import-mode-tab" onclick="showImportMode('kontoauszug')">📑 Kontoauszug + Orders</button>
+      <p style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.6;">Exportiere aus CapTrader:<br><strong style="color:var(--text);">1. Activity Statement (Kontoauszug)</strong><br><strong style="color:var(--text);">2. Orders &amp; Trades (offene Orders)</strong></p>
+      <div class="fg">
+        <label for="kontoauszugFile" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.06em;">Kontoauszug CSV *</label>
+        <input type="file" id="kontoauszugFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);width:100%;box-sizing:border-box;">
       </div>
-      <div id="importSection_umsatz">
-        <p style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.6;">Exportiere aus IBKR / CapTrader:<br><strong style="color:var(--text);">Berichte → Kontoauszug → Abschnitt "Transaktionen"</strong><br>Format: CSV (Deutsch oder Englisch).</p>
-        <div class="fg">
-          <label for="umsatzFile" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Umsatzübersicht CSV</label>
-          <input type="file" id="umsatzFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);" onchange="previewUmsatzFile(this)">
-        </div>
-        <div id="importPreview" class="import-preview" style="display:none;"></div>
+      <div class="fg" style="margin-top:12px;">
+        <label for="ordersFile" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.06em;">Offene Orders CSV (optional)</label>
+        <input type="file" id="ordersFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);width:100%;box-sizing:border-box;">
       </div>
-      <div id="importSection_kontoauszug" style="display:none;">
-        <p style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.6;">Exportiere aus CapTrader:<br>1. Activity Statement (Kontoauszug)<br>2. Orders &amp; Trades (offene Orders)</p>
-        <div class="fg">
-          <label for="kontoauszugFile" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Kontoauszug CSV</label>
-          <input type="file" id="kontoauszugFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);">
-        </div>
-        <div class="fg" style="margin-top:12px;">
-          <label for="ordersFile" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Offene Orders CSV</label>
-          <input type="file" id="ordersFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);">
-        </div>
-      </div>
+      <div id="importPreview" class="import-preview" style="display:none;margin-top:16px;"></div>
       <div id="syncStatus" style="font-family:var(--mono);font-size:11px;margin-top:15px;padding:10px;border-radius:var(--radius);display:none;"></div>
     </div>
     <div class="modal-footer">
