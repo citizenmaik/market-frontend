@@ -1215,7 +1215,7 @@ async function runImport(positions, sells, orders) {
 
     } else if (!isOpen && existingTrade) {
       // Position gone from depot → close trade
-      await closeTrade(existingTrade, symSells);
+      await closeTradeFromImport(existingTrade, symSells);
       result.closed++;
 
     } else {
@@ -1258,7 +1258,7 @@ async function updateExistingTrade(existing, symSells, ord) {
   return true;
 }
 
-async function closeTrade(existing, symSells) {
+async function closeTradeFromImport(existing, symSells) {
   const lastSell = symSells.length > 0 ? symSells[symSells.length - 1] : null;
   const totalSold = symSells.reduce((s, x) => s + x.qty, 0);
   const avgExit = totalSold > 0 ? symSells.reduce((s, x) => s + x.qty * x.price, 0) / totalSold : existing.livePreis || 0;
