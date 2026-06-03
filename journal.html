@@ -267,11 +267,10 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
   <div class="acct-card"><div class="acct-label">Verfügbar %</div><div class="acct-value" id="availablePercent">100.0%</div></div>
   <div class="acct-card"><div class="acct-label">Realisiert P/L</div><div class="acct-value" id="realizedPL">$0.00</div></div>
   <div class="acct-card"><div class="acct-label">Unrealisiert P/L</div><div class="acct-value" id="unrealizedPL">$0.00</div></div>
-  <div class="acct-card"><div class="acct-label">Open Profit %</div><div class="acct-value" id="openProfitPercent">0.0%</div></div>
   <div class="acct-card" title="Open Exposure Risk: Gesamtrisiko aller offenen Positionen bei simultaner Stop-Auslösung. Ziel: &lt;10%"><div class="acct-label">OER / Open Heat</div><div class="acct-value neg" id="openHeatPercent">-0.0%</div></div>
   <div class="acct-card" title="New Exposure Risk: Kumuliertes Risiko aller noch unfinanzierten Positionen (Stop unter Entry). Sinkt bei Stop-Raise auf Breakeven."><div class="acct-label">NER (unfin.)</div><div class="acct-value neg" id="nerPercent">-0.0%</div></div>
   <div class="acct-card" title="New Exposure Profit: Unrealisierter Gewinn aller unfinanzierten Positionen. Positiv = Traction vorhanden."><div class="acct-label">NEP (unfin.)</div><div class="acct-value" id="nepPercent">0.0%</div></div>
-  <div class="acct-card" title="Open Exposure Profit / Cushion: Gesamte unrealisierte Gewinne + realisierte Trims aller Positionen. Basis für neue Exposure."><div class="acct-label">OEP / Cushion</div><div class="acct-value" id="oepPercent">0.0%</div></div>
+  <div class="acct-card" title="OEP / Cushion: Kumulativer Gesamtpuffer = unrealisierter Gewinn (offene Trades) + realisierter Gewinn (alle geschlossenen Trades + Trims). Basis für neue Exposure."><div class="acct-label">OEP / Cushion</div><div class="acct-value" id="oepPercent">0.0%</div></div>
   <div class="acct-card" title="Delta = OEP minus OER. Positiv = Portfolio im Gewinn nach Absicherung."><div class="acct-label">Delta %</div><div class="acct-value" id="deltaPercent">0.0%</div></div>
 </div>
 
@@ -790,13 +789,13 @@ function updateHeaderStats() {
   const totalNEP = trades.reduce((sum, t) => sum + calcNEPSingle(t), 0);
   const nepPercent = (totalNEP / portfolioValue) * 100;
 
-  // OEP / Cushion: unrealisierter Gewinn aller Positionen + realisierte Trims
-  const totalOEP = trades.reduce((sum, t) => sum + calcOEPSingle(t), 0) + realizedFromPartials;
+  // OEP / Cushion: kumulativer Puffer = unrealisiert (offene Trades) + realisiert gesamt
+  // Beantwortet: Wie viel Finanzierungsbasis wurde insgesamt aufgebaut?
+  const totalOEP = unrealized + realized;
   const oepPercent = (totalOEP / portfolioValue) * 100;
 
   const investedPercent = (invested / portfolioValue) * 100;
   const availablePercent = (available / portfolioValue) * 100;
-  const openProfitPercent = (unrealized / portfolioValue) * 100;
   const deltaPercent = oepPercent - openHeatPercent;
 
   document.getElementById('totalBudget').textContent = formatCurrency(portfolioValue);
@@ -810,9 +809,6 @@ function updateHeaderStats() {
 
   const unrealizedEl = document.getElementById('unrealizedPL');
   unrealizedEl.textContent = formatCurrency(unrealized); unrealizedEl.className = 'acct-value ' + (unrealized >= 0 ? 'pos' : 'neg');
-
-  const openProfitEl = document.getElementById('openProfitPercent');
-  openProfitEl.textContent = `${openProfitPercent.toFixed(2)}%`; openProfitEl.className = 'acct-value ' + (openProfitPercent >= 0 ? 'pos' : 'neg');
 
   // OER / Open Heat
   const openHeatEl = document.getElementById('openHeatPercent');
