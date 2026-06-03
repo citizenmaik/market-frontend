@@ -592,7 +592,7 @@ function calcOverall(secData, indData, trendData, vix, mcScores) {
       {lbl:`Sektor-Breadth`,          score:score_sec,   weight:'20%', detail:`${Math.round(pct_sec_50*100)}% >50SMA, ${Math.round(pct_sec_rs*100)}% RS≥60`},
       {lbl:`Industry-Breadth`,        score:score_ind,   weight:'20%', detail:`${Math.round(pct_ind_50*100)}% >50SMA, ${Math.round(pct_ind_rs*100)}% RS≥60`},
       {lbl:`Trend Status`,            score:score_trend, weight:'25%', detail:`${pos}/${total} positiv`},
-      {lbl:`VIX ${vix!=null?'('+vix.toFixed(2)+')':''}`, score:score_vix, weight:'15%', detail:''},
+      {lbl:`VIX ${vix!=null?'('+Number(vix).toFixed(2)+')':''}`, score:score_vix, weight:'15%', detail:''},
       {lbl:`MC-Scores Ø`,             score:score_mc,    weight:'20%', detail:`Ø ${avg_mc.toFixed(1)}`},
     ]
   };
@@ -634,7 +634,7 @@ function renderOverall(result) {
 async function loadIndices() {
   const [quotesData, vixRes] = await Promise.all([
     getQuotes(IDX_SYMS),
-    fetch(`${API}?type=vix&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({}))
+    fetch(`${API}?type=vix&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({vix:null}))
   ]);
   const row = document.getElementById('idxRow'); row.innerHTML='';
   const YF_MAP = {'BINANCE:BTCUSDT':'BTC-USD','GLD':'GLD','SPY':'SPY','RSP':'RSP','QQQ':'QQQ','QQQE':'QQQE','IWM':'IWM'};
@@ -649,8 +649,8 @@ async function loadIndices() {
       <div class="ch ${chg>=0?'up':'dn'}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
       <div class="nm">${IDX_META[sym]}</div></a>`;
   });
-  const vix=vixRes.vix;
-  row.innerHTML+=`<a class="ic" href="https://finance.yahoo.com/quote/%5EVIX" target="_blank" rel="noopener noreferrer"><div class="tk">VIX</div><div class="pr">${vix!=null?vix.toFixed(2):'—'}</div>
+  const vix = vixRes?.vix ?? null;
+  row.innerHTML+=`<a class="ic" href="https://finance.yahoo.com/quote/%5EVIX" target="_blank" rel="noopener noreferrer"><div class="tk">VIX</div><div class="pr">${vix!=null?Number(vix).toFixed(2):'—'}</div>
     <div class="ch" style="color:var(--muted)">—</div><div class="nm">VOLATILITY</div></a>`;
   return {quotes:quotesData, vix};
 }
