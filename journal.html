@@ -268,8 +268,11 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
   <div class="acct-card"><div class="acct-label">Realisiert P/L</div><div class="acct-value" id="realizedPL">$0.00</div></div>
   <div class="acct-card"><div class="acct-label">Unrealisiert P/L</div><div class="acct-value" id="unrealizedPL">$0.00</div></div>
   <div class="acct-card"><div class="acct-label">Open Profit %</div><div class="acct-value" id="openProfitPercent">0.0%</div></div>
-  <div class="acct-card"><div class="acct-label">Open Heat %</div><div class="acct-value neg" id="openHeatPercent">-0.0%</div></div>
-  <div class="acct-card"><div class="acct-label">Delta %</div><div class="acct-value" id="deltaPercent">0.0%</div></div>
+  <div class="acct-card" title="Open Exposure Risk: Gesamtrisiko aller offenen Positionen bei simultaner Stop-Auslösung. Ziel: &lt;10%"><div class="acct-label">OER / Open Heat</div><div class="acct-value neg" id="openHeatPercent">-0.0%</div></div>
+  <div class="acct-card" title="New Exposure Risk: Kumuliertes Risiko aller noch unfinanzierten Positionen (Stop unter Entry). Sinkt bei Stop-Raise auf Breakeven."><div class="acct-label">NER (unfin.)</div><div class="acct-value neg" id="nerPercent">-0.0%</div></div>
+  <div class="acct-card" title="New Exposure Profit: Unrealisierter Gewinn aller unfinanzierten Positionen. Positiv = Traction vorhanden."><div class="acct-label">NEP (unfin.)</div><div class="acct-value" id="nepPercent">0.0%</div></div>
+  <div class="acct-card" title="Open Exposure Profit / Cushion: Gesamte unrealisierte Gewinne + realisierte Trims aller Positionen. Basis für neue Exposure."><div class="acct-label">OEP / Cushion</div><div class="acct-value" id="oepPercent">0.0%</div></div>
+  <div class="acct-card" title="Delta = OEP minus OER. Positiv = Portfolio im Gewinn nach Absicherung."><div class="acct-label">Delta %</div><div class="acct-value" id="deltaPercent">0.0%</div></div>
 </div>
 
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--gap);padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);">
@@ -621,7 +624,33 @@ async function closeTrade(tradeId) {
 // ── CALCULATIONS ──────────────────────────────────────
 function calcRestmenge(t) { return t.kaufmenge - t.tp1Menge - t.tp2Menge - t.tp3Menge; }
 function calcPosGroesse(t) { return t.einstiegspreis * calcRestmenge(t); }
-function calcRisiko(t) { if (!t.stopLoss || t.stopLoss === 0) return 0; return Math.abs(t.livePreis - t.stopLoss) * calcRestmenge(t); }
+
+// OER / Open Heat: Risiko aller offenen Positionen (Kurs − aktueller Stop) × Restmenge
+// Unabhängig davon ob finanziert oder nicht
+function calcRisiko(t) {
+  if (!t.stopLoss || t.stopLoss === 0) return 0;
+  return Math.abs(t.livePreis - t.stopLoss) * calcRestmenge(t);
+}
+
+// NER: Nur unfinanzierte Positionen (Stop noch UNTER Entry)
+// Finanziert = Stop >= Entry (Breakeven oder darüber)
+function calcNERSingle(t) {
+  if (!t.stopLoss || t.stopLoss === 0) return 0;
+  if (t.stopLoss >= t.einstiegspreis) return 0; // finanziert
+  return (t.einstiegspreis - t.stopLoss) * calcRestmenge(t);
+}
+
+// NEP: Unrealisierter Gewinn nur für unfinanzierte Positionen
+function calcNEPSingle(t) {
+  if (!t.stopLoss || t.stopLoss === 0) return 0;
+  if (t.stopLoss >= t.einstiegspreis) return 0; // finanziert → zählt zu OEP, nicht NEP
+  return (t.livePreis - t.einstiegspreis) * calcRestmenge(t);
+}
+
+// OEP / Cushion: Unrealisierter Gewinn ALLER offenen Positionen + realisierte Trims
+function calcOEPSingle(t) {
+  return (t.livePreis - t.einstiegspreis) * calcRestmenge(t);
+}
 function calcPL(t) {
   const tp1Value = t.tp1Menge * t.tp1Preis, tp2Value = t.tp2Menge * t.tp2Preis, tp3Value = t.tp3Menge * t.tp3Preis;
   const restValue = calcRestmenge(t) * t.livePreis;
@@ -679,7 +708,7 @@ function renderTradesTable() {
       <td class="text-right">$${posGroesse.toFixed(2)}</td>
       <td class="text-right"><input type="number" step="0.01" value="${t.stopLoss > 0 ? t.stopLoss.toFixed(2) : '0.00'}" class="inline-input" onchange="updateStopLoss('${t.id}', parseFloat(this.value))" onfocus="this.select()"></td>
       <td class="text-right">${risiko > 0 ? '$' + risiko.toFixed(2) : '-'}</td>
-      <td class="text-right">${risikoPercent > 0 ? risikoPercent.toFixed(2) + '%' : '-'}</td>
+      <td class="text-right" title="${t.stopLoss >= t.einstiegspreis ? '✅ Finanziert — Stop ≥ Entry → NER = 0' : '⚠️ Unfinanziert — Stop < Entry → zählt zu NER'}">${risikoPercent > 0 ? risikoPercent.toFixed(2) + '%' : '-'} ${t.stopLoss > 0 && t.stopLoss >= t.einstiegspreis ? '<span style="color:var(--green);font-size:9px;margin-left:2px;">✅fin</span>' : t.stopLoss > 0 ? '<span style="color:var(--yellow);font-size:9px;margin-left:2px;">⚠unfin</span>' : ''}</td>
       <td class="text-right">$${t.livePreis.toFixed(2)}</td>
       <td>${statusDetail}</td>
       <td class="text-right">${restmenge.toFixed(2)}</td>
@@ -748,27 +777,66 @@ function updateHeaderStats() {
   const realized = realizedFromClosed + realizedFromPartials;
   const portfolioValue = settings.totalBudget + realized + unrealized;
   const available = portfolioValue - invested;
+
+  // OER / Open Heat: alle offenen Positionen
   const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
+  const openHeatPercent = (totalRisk / portfolioValue) * 100;
+
+  // NER: nur unfinanzierte Positionen (Stop < Entry)
+  const totalNER = trades.reduce((sum, t) => sum + calcNERSingle(t), 0);
+  const nerPercent = (totalNER / portfolioValue) * 100;
+
+  // NEP: unrealisierter Gewinn unfinanzierter Positionen
+  const totalNEP = trades.reduce((sum, t) => sum + calcNEPSingle(t), 0);
+  const nepPercent = (totalNEP / portfolioValue) * 100;
+
+  // OEP / Cushion: unrealisierter Gewinn aller Positionen + realisierte Trims
+  const totalOEP = trades.reduce((sum, t) => sum + calcOEPSingle(t), 0) + realizedFromPartials;
+  const oepPercent = (totalOEP / portfolioValue) * 100;
+
   const investedPercent = (invested / portfolioValue) * 100;
   const availablePercent = (available / portfolioValue) * 100;
-  const openHeatPercent = (totalRisk / portfolioValue) * 100;
   const openProfitPercent = (unrealized / portfolioValue) * 100;
-  const deltaPercent = openProfitPercent - openHeatPercent;
+  const deltaPercent = oepPercent - openHeatPercent;
+
   document.getElementById('totalBudget').textContent = formatCurrency(portfolioValue);
   document.getElementById('invested').textContent = formatCurrency(invested);
   document.getElementById('investedPercent').textContent = `${investedPercent.toFixed(1)}%`;
   document.getElementById('available').textContent = formatCurrency(available);
   document.getElementById('availablePercent').textContent = `${availablePercent.toFixed(1)}%`;
+
   const realizedEl = document.getElementById('realizedPL');
   realizedEl.textContent = formatCurrency(realized); realizedEl.className = 'acct-value ' + (realized >= 0 ? 'pos' : 'neg');
+
   const unrealizedEl = document.getElementById('unrealizedPL');
   unrealizedEl.textContent = formatCurrency(unrealized); unrealizedEl.className = 'acct-value ' + (unrealized >= 0 ? 'pos' : 'neg');
+
   const openProfitEl = document.getElementById('openProfitPercent');
   openProfitEl.textContent = `${openProfitPercent.toFixed(2)}%`; openProfitEl.className = 'acct-value ' + (openProfitPercent >= 0 ? 'pos' : 'neg');
+
+  // OER / Open Heat
   const openHeatEl = document.getElementById('openHeatPercent');
   openHeatEl.textContent = `-${openHeatPercent.toFixed(2)}%`; openHeatEl.className = 'acct-value neg';
+
+  // NER
+  const nerEl = document.getElementById('nerPercent');
+  nerEl.textContent = nerPercent > 0 ? `-${nerPercent.toFixed(2)}%` : '0.00%';
+  nerEl.className = 'acct-value ' + (nerPercent > 0 ? 'neg' : 'pos');
+
+  // NEP
+  const nepEl = document.getElementById('nepPercent');
+  nepEl.textContent = `${nepPercent >= 0 ? '+' : ''}${nepPercent.toFixed(2)}%`;
+  nepEl.className = 'acct-value ' + (nepPercent >= 0 ? 'pos' : 'neg');
+
+  // OEP / Cushion
+  const oepEl = document.getElementById('oepPercent');
+  oepEl.textContent = `${oepPercent >= 0 ? '+' : ''}${oepPercent.toFixed(2)}%`;
+  oepEl.className = 'acct-value ' + (oepPercent >= 0 ? 'pos' : 'neg');
+
+  // Delta
   const deltaEl = document.getElementById('deltaPercent');
-  deltaEl.textContent = `${deltaPercent.toFixed(2)}%`; deltaEl.className = 'acct-value ' + (deltaPercent >= 0 ? 'pos' : 'neg');
+  deltaEl.textContent = `${deltaPercent >= 0 ? '+' : ''}${deltaPercent.toFixed(2)}%`;
+  deltaEl.className = 'acct-value ' + (deltaPercent >= 0 ? 'pos' : 'neg');
 }
 
 function updateDashboard() {
