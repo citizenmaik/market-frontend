@@ -60,6 +60,9 @@ body {
 .acct-value{font-size:20px;font-weight:600;letter-spacing:-.02em;}
 .acct-value.pos{color:var(--green);}
 .acct-value.neg{color:var(--red);}
+.acct-value.alert-green{color:var(--green);}
+.acct-value.alert-yellow{color:var(--yellow);}
+.acct-value.alert-red{color:var(--red);}
 .tabs{display:flex;gap:4px;margin-bottom:var(--gap);border-bottom:1px solid var(--border);}
 .tab{padding:10px 16px;background:transparent;border:none;color:var(--muted);
   font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .2s;
@@ -267,8 +270,8 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
   <div class="acct-card"><div class="acct-label">Verfügbar %</div><div class="acct-value" id="availablePercent">100.0%</div></div>
   <div class="acct-card"><div class="acct-label">Realisiert P/L</div><div class="acct-value" id="realizedPL">$0.00</div></div>
   <div class="acct-card"><div class="acct-label">Unrealisiert P/L</div><div class="acct-value" id="unrealizedPL">$0.00</div></div>
-  <div class="acct-card" title="Open Exposure Risk: Gesamtrisiko aller offenen Positionen bei simultaner Stop-Auslösung. Ziel: &lt;10%"><div class="acct-label">OER / Open Heat</div><div class="acct-value neg" id="openHeatPercent">-0.0%</div></div>
-  <div class="acct-card" title="New Exposure Risk: Kumuliertes Risiko aller noch unfinanzierten Positionen (Stop unter Entry). Sinkt bei Stop-Raise auf Breakeven."><div class="acct-label">NER (unfin.)</div><div class="acct-value neg" id="nerPercent">-0.0%</div></div>
+  <div class="acct-card" id="oerCard" title="Open Exposure Risk: Gesamtrisiko aller offenen Positionen bei simultaner Stop-Auslösung. 🟢 &lt;6% / 🟡 6-10% / 🔴 &gt;10%"><div class="acct-label">OER / Open Heat</div><div class="acct-value neg" id="openHeatPercent">-0.0%</div></div>
+  <div class="acct-card" id="nerCard" title="New Exposure Risk: Kumuliertes Risiko aller noch unfinanzierten Positionen. 🟢 &lt;1% / 🟡 1-2% / 🔴 &gt;2%"><div class="acct-label">NER (unfin.)</div><div class="acct-value neg" id="nerPercent">-0.0%</div></div>
   <div class="acct-card" title="New Exposure Profit: Unrealisierter Gewinn aller unfinanzierten Positionen. Positiv = Traction vorhanden."><div class="acct-label">NEP (unfin.)</div><div class="acct-value" id="nepPercent">0.0%</div></div>
   <div class="acct-card" title="OEP / Cushion: Kumulativer Gesamtpuffer = unrealisierter Gewinn (offene Trades) + realisierter Gewinn (alle geschlossenen Trades + Trims). Basis für neue Exposure."><div class="acct-label">OEP / Cushion</div><div class="acct-value" id="oepPercent">0.0%</div></div>
   <div class="acct-card" title="Delta = OEP minus OER. Positiv = Portfolio im Gewinn nach Absicherung."><div class="acct-label">Delta %</div><div class="acct-value" id="deltaPercent">0.0%</div></div>
@@ -810,14 +813,21 @@ function updateHeaderStats() {
   const unrealizedEl = document.getElementById('unrealizedPL');
   unrealizedEl.textContent = formatCurrency(unrealized); unrealizedEl.className = 'acct-value ' + (unrealized >= 0 ? 'pos' : 'neg');
 
-  // OER / Open Heat
+  // OER / Open Heat — Ampel auf Zahl: <6% grün, 6-10% gelb, >10% rot
   const openHeatEl = document.getElementById('openHeatPercent');
-  openHeatEl.textContent = `-${openHeatPercent.toFixed(2)}%`; openHeatEl.className = 'acct-value neg';
+  openHeatEl.textContent = `-${openHeatPercent.toFixed(2)}%`;
+  let oerClass = 'alert-green';
+  if (openHeatPercent > 10) oerClass = 'alert-red';
+  else if (openHeatPercent >= 6) oerClass = 'alert-yellow';
+  openHeatEl.className = 'acct-value ' + oerClass;
 
-  // NER
+  // NER — Ampel auf Zahl: <1% grün, 1-2% gelb, >2% rot
   const nerEl = document.getElementById('nerPercent');
   nerEl.textContent = nerPercent > 0 ? `-${nerPercent.toFixed(2)}%` : '0.00%';
-  nerEl.className = 'acct-value ' + (nerPercent > 0 ? 'neg' : 'pos');
+  let nerClass = 'alert-green';
+  if (nerPercent > 2) nerClass = 'alert-red';
+  else if (nerPercent >= 1) nerClass = 'alert-yellow';
+  nerEl.className = 'acct-value ' + nerClass;
 
   // NEP
   const nepEl = document.getElementById('nepPercent');
