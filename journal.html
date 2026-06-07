@@ -566,6 +566,49 @@ async function deleteClosedTrade(tradeId) {
   catch (error) { console.error('Delete error:', error); }
 }
 
+async function editExitPrice(tradeId) {
+  const trade = closedTrades.find(t => t.id === tradeId);
+  if (!trade) return;
+
+  const tp1Val = (trade.tp1Preis || 0) * (trade.tp1Menge || 0);
+  const tp2Val = (trade.tp2Preis || 0) * (trade.tp2Menge || 0);
+  const tp3Val = (trade.tp3Preis || 0) * (trade.tp3Menge || 0);
+  const currentAvg = trade.kaufmenge > 0 ? (tp1Val + tp2Val + tp3Val) / trade.kaufmenge : 0;
+
+  const newPrice = parseFloat(prompt(
+    `Ausstiegspreis für ${trade.ticker} korrigieren:\n\n` +
+    `Aktuell: $${currentAvg.toFixed(2)}\n` +
+    `Einstieg: $${trade.einstiegspreis.toFixed(2)}\n` +
+    `Menge: ${trade.kaufmenge}\n\n` +
+    `Neuen Ausstiegspreis eingeben:`,
+    currentAvg.toFixed(2)
+  ));
+
+  if (!newPrice || isNaN(newPrice) || newPrice <= 0) return;
+
+  const updateData = {};
+  const usedSlots = [];
+  if (trade.tp1Menge > 0) usedSlots.push({ slot: 1, menge: trade.tp1Menge, preis: trade.tp1Preis });
+  if (trade.tp2Menge > 0) usedSlots.push({ slot: 2, menge: trade.tp2Menge, preis: trade.tp2Preis });
+  if (trade.tp3Menge > 0) usedSlots.push({ slot: 3, menge: trade.tp3Menge, preis: trade.tp3Preis });
+
+  if (usedSlots.length === 1) {
+    updateData[`tp${usedSlots[0].slot}_preis`] = newPrice;
+  } else if (usedSlots.length > 1) {
+    const lastSlot = usedSlots[usedSlots.length - 1];
+    const otherValue = usedSlots.slice(0, -1).reduce((sum, s) => sum + s.preis * s.menge, 0);
+    const targetTotal = newPrice * trade.kaufmenge;
+    const lastPrice = (targetTotal - otherValue) / lastSlot.menge;
+    updateData[`tp${lastSlot.slot}_preis`] = Math.max(0, lastPrice);
+  }
+
+  try {
+    await supabaseClient.from('closed_trades').update(updateData).eq('id', tradeId);
+    await loadData();
+    updateUI();
+  } catch(e) { alert('Fehler: ' + e.message); }
+}
+
 async function updateStopLoss(tradeId, newStopLoss) {
   try { await supabaseClient.from('trades').update({ stop_loss: newStopLoss || null }).eq('id', tradeId); await loadData(); updateUI(); }
   catch (error) { console.error('Update stop loss error:', error); }
@@ -754,7 +797,7 @@ function renderHistorieTable() {
       <td onclick="editClosedDate('${t.id}', 'tp3_datum')" style="cursor:pointer;">${formatDate(t.tp3Datum)}</td>
       <td onclick="editClosedDate('${t.id}', 'exit_datum')" style="cursor:pointer;">${formatDate(t.exitDatum)}</td>
       <td class="text-right">$${t.einstiegspreis.toFixed(2)}</td>
-      <td class="text-right">$${avgExit.toFixed(2)}</td>
+      <td class="text-right" style="cursor:pointer;text-decoration:underline dotted;" onclick="editExitPrice('${t.id}')" title="Klicken um Ausstiegspreis zu korrigieren">$${avgExit.toFixed(2)}</td>
       <td class="text-right">${t.kaufmenge.toFixed(2)}</td>
       <td class="text-right ${plClass}">$${pl.toFixed(2)}</td>
       <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
