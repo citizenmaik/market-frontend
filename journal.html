@@ -573,14 +573,16 @@ async function editExitPrice(tradeId) {
   const tp1Val = (trade.tp1Preis || 0) * (trade.tp1Menge || 0);
   const tp2Val = (trade.tp2Preis || 0) * (trade.tp2Menge || 0);
   const tp3Val = (trade.tp3Preis || 0) * (trade.tp3Menge || 0);
-  const currentAvg = trade.kaufmenge > 0 ? (tp1Val + tp2Val + tp3Val) / trade.kaufmenge : 0;
+  const tpTotal = tp1Val + tp2Val + tp3Val;
+  const tpMengeTotal = (trade.tp1Menge || 0) + (trade.tp2Menge || 0) + (trade.tp3Menge || 0);
+  const currentAvg = trade.kaufmenge > 0 ? tpTotal / trade.kaufmenge : 0;
 
   const newPrice = parseFloat(prompt(
     `Ausstiegspreis für ${trade.ticker} korrigieren:\n\n` +
     `Aktuell: $${currentAvg.toFixed(2)}\n` +
     `Einstieg: $${trade.einstiegspreis.toFixed(2)}\n` +
     `Menge: ${trade.kaufmenge}\n\n` +
-    `Neuen Ausstiegspreis eingeben:`,
+    `Neuen Durchschnitts-Ausstiegspreis eingeben:`,
     currentAvg.toFixed(2)
   ));
 
@@ -592,9 +594,24 @@ async function editExitPrice(tradeId) {
   if (trade.tp2Menge > 0) usedSlots.push({ slot: 2, menge: trade.tp2Menge, preis: trade.tp2Preis });
   if (trade.tp3Menge > 0) usedSlots.push({ slot: 3, menge: trade.tp3Menge, preis: trade.tp3Preis });
 
-  if (usedSlots.length === 1) {
-    updateData[`tp${usedSlots[0].slot}_preis`] = newPrice;
-  } else if (usedSlots.length > 1) {
+  if (usedSlots.length === 0) {
+    // Kein TP-Slot belegt — setze alles auf TP1 mit vollem Durchschnitt
+    updateData.tp1_preis = newPrice;
+    updateData.tp1_menge = trade.kaufmenge;
+  } else if (usedSlots.length === 1) {
+    // Nur ein Slot — wenn Menge < Kaufmenge, Restmenge in nächsten freien Slot
+    if (usedSlots[0].menge < trade.kaufmenge) {
+      const restMenge = trade.kaufmenge - usedSlots[0].menge;
+      const targetTotal = newPrice * trade.kaufmenge;
+      const restPrice = (targetTotal - usedSlots[0].preis * usedSlots[0].menge) / restMenge;
+      const nextSlot = usedSlots[0].slot + 1;
+      updateData[`tp${nextSlot}_preis`] = Math.max(0, restPrice);
+      updateData[`tp${nextSlot}_menge`] = restMenge;
+    } else {
+      updateData[`tp${usedSlots[0].slot}_preis`] = newPrice;
+    }
+  } else {
+    // Mehrere Slots: letzten Slot anpassen damit Durchschnitt stimmt
     const lastSlot = usedSlots[usedSlots.length - 1];
     const otherValue = usedSlots.slice(0, -1).reduce((sum, s) => sum + s.preis * s.menge, 0);
     const targetTotal = newPrice * trade.kaufmenge;
