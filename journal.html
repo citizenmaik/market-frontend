@@ -573,56 +573,89 @@ async function editExitPrice(tradeId) {
   const tp1Val = (trade.tp1Preis || 0) * (trade.tp1Menge || 0);
   const tp2Val = (trade.tp2Preis || 0) * (trade.tp2Menge || 0);
   const tp3Val = (trade.tp3Preis || 0) * (trade.tp3Menge || 0);
-  const tpTotal = tp1Val + tp2Val + tp3Val;
-  const tpMengeTotal = (trade.tp1Menge || 0) + (trade.tp2Menge || 0) + (trade.tp3Menge || 0);
-  const currentAvg = trade.kaufmenge > 0 ? tpTotal / trade.kaufmenge : 0;
+  const currentAvg = trade.kaufmenge > 0 ? (tp1Val + tp2Val + tp3Val) / trade.kaufmenge : 0;
 
-  const newPrice = parseFloat(prompt(
-    `Ausstiegspreis für ${trade.ticker} korrigieren:\n\n` +
-    `Aktuell: $${currentAvg.toFixed(2)}\n` +
-    `Einstieg: $${trade.einstiegspreis.toFixed(2)}\n` +
-    `Menge: ${trade.kaufmenge}\n\n` +
-    `Neuen Durchschnitts-Ausstiegspreis eingeben:`,
-    currentAvg.toFixed(2)
-  ));
+  // Populate modal fields
+  document.getElementById('exitEditTradeId').value = tradeId;
+  document.getElementById('exitEditTicker').textContent = trade.ticker;
+  document.getElementById('exitEditEntry').textContent = '$' + trade.einstiegspreis.toFixed(2);
+  document.getElementById('exitEditMenge').textContent = trade.kaufmenge.toFixed(1);
+  document.getElementById('exitEditAvg').textContent = '$' + currentAvg.toFixed(2);
 
-  if (!newPrice || isNaN(newPrice) || newPrice <= 0) return;
+  document.getElementById('exitTp1Preis').value = trade.tp1Preis > 0 ? trade.tp1Preis.toFixed(4) : '';
+  document.getElementById('exitTp1Menge').value = trade.tp1Menge > 0 ? trade.tp1Menge.toFixed(1) : '';
+  document.getElementById('exitTp2Preis').value = trade.tp2Preis > 0 ? trade.tp2Preis.toFixed(4) : '';
+  document.getElementById('exitTp2Menge').value = trade.tp2Menge > 0 ? trade.tp2Menge.toFixed(1) : '';
+  document.getElementById('exitTp3Preis').value = trade.tp3Preis > 0 ? trade.tp3Preis.toFixed(4) : '';
+  document.getElementById('exitTp3Menge').value = trade.tp3Menge > 0 ? trade.tp3Menge.toFixed(1) : '';
 
-  const updateData = {};
-  const usedSlots = [];
-  if (trade.tp1Menge > 0) usedSlots.push({ slot: 1, menge: trade.tp1Menge, preis: trade.tp1Preis });
-  if (trade.tp2Menge > 0) usedSlots.push({ slot: 2, menge: trade.tp2Menge, preis: trade.tp2Preis });
-  if (trade.tp3Menge > 0) usedSlots.push({ slot: 3, menge: trade.tp3Menge, preis: trade.tp3Preis });
+  updateExitEditSummary(trade);
+  document.getElementById('exitEditModal').classList.add('active');
+}
 
-  if (usedSlots.length === 0) {
-    // Kein TP-Slot belegt — setze alles auf TP1 mit vollem Durchschnitt
-    updateData.tp1_preis = newPrice;
-    updateData.tp1_menge = trade.kaufmenge;
-  } else if (usedSlots.length === 1) {
-    // Nur ein Slot — wenn Menge < Kaufmenge, Restmenge in nächsten freien Slot
-    if (usedSlots[0].menge < trade.kaufmenge) {
-      const restMenge = trade.kaufmenge - usedSlots[0].menge;
-      const targetTotal = newPrice * trade.kaufmenge;
-      const restPrice = (targetTotal - usedSlots[0].preis * usedSlots[0].menge) / restMenge;
-      const nextSlot = usedSlots[0].slot + 1;
-      updateData[`tp${nextSlot}_preis`] = Math.max(0, restPrice);
-      updateData[`tp${nextSlot}_menge`] = restMenge;
-    } else {
-      updateData[`tp${usedSlots[0].slot}_preis`] = newPrice;
-    }
-  } else {
-    // Mehrere Slots: letzten Slot anpassen damit Durchschnitt stimmt
-    const lastSlot = usedSlots[usedSlots.length - 1];
-    const otherValue = usedSlots.slice(0, -1).reduce((sum, s) => sum + s.preis * s.menge, 0);
-    const targetTotal = newPrice * trade.kaufmenge;
-    const lastPrice = (targetTotal - otherValue) / lastSlot.menge;
-    updateData[`tp${lastSlot.slot}_preis`] = Math.max(0, lastPrice);
+function updateExitEditSummary(trade) {
+  const tp1P = parseFloat(document.getElementById('exitTp1Preis').value) || 0;
+  const tp1M = parseFloat(document.getElementById('exitTp1Menge').value) || 0;
+  const tp2P = parseFloat(document.getElementById('exitTp2Preis').value) || 0;
+  const tp2M = parseFloat(document.getElementById('exitTp2Menge').value) || 0;
+  const tp3P = parseFloat(document.getElementById('exitTp3Preis').value) || 0;
+  const tp3M = parseFloat(document.getElementById('exitTp3Menge').value) || 0;
+
+  const totalVal = tp1P * tp1M + tp2P * tp2M + tp3P * tp3M;
+  const totalMenge = tp1M + tp2M + tp3M;
+
+  // Get trade from closedTrades if not passed
+  if (!trade) {
+    const tradeId = document.getElementById('exitEditTradeId').value;
+    trade = closedTrades.find(t => t.id === tradeId);
+  }
+  const kaufmenge = trade ? trade.kaufmenge : 0;
+  const entry = trade ? trade.einstiegspreis : 0;
+  const avg = kaufmenge > 0 ? totalVal / kaufmenge : 0;
+  const pl = totalVal - (entry * kaufmenge);
+  const mengeOk = Math.abs(totalMenge - kaufmenge) < 0.01;
+
+  document.getElementById('exitEditAvg').textContent = '$' + avg.toFixed(2);
+  const plEl = document.getElementById('exitEditPL');
+  plEl.textContent = (pl >= 0 ? '+' : '') + '$' + pl.toFixed(2);
+  plEl.className = pl >= 0 ? 'pos' : 'neg';
+
+  const mengeEl = document.getElementById('exitEditMengeCheck');
+  mengeEl.textContent = totalMenge.toFixed(1) + ' / ' + kaufmenge.toFixed(1);
+  mengeEl.style.color = mengeOk ? 'var(--green)' : 'var(--red)';
+}
+
+function closeExitEditModal() { document.getElementById('exitEditModal').classList.remove('active'); }
+
+async function saveExitEdits() {
+  const tradeId = document.getElementById('exitEditTradeId').value;
+  const trade = closedTrades.find(t => t.id === tradeId);
+  if (!trade) return;
+
+  const tp1P = parseFloat(document.getElementById('exitTp1Preis').value) || 0;
+  const tp1M = parseFloat(document.getElementById('exitTp1Menge').value) || 0;
+  const tp2P = parseFloat(document.getElementById('exitTp2Preis').value) || 0;
+  const tp2M = parseFloat(document.getElementById('exitTp2Menge').value) || 0;
+  const tp3P = parseFloat(document.getElementById('exitTp3Preis').value) || 0;
+  const tp3M = parseFloat(document.getElementById('exitTp3Menge').value) || 0;
+
+  const totalMenge = tp1M + tp2M + tp3M;
+  if (Math.abs(totalMenge - trade.kaufmenge) > 0.1) {
+    if (!confirm(`Menge stimmt nicht: ${totalMenge.toFixed(1)} vs ${trade.kaufmenge.toFixed(1)} Kaufmenge. Trotzdem speichern?`)) return;
   }
 
   try {
-    await supabaseClient.from('closed_trades').update(updateData).eq('id', tradeId);
+    await supabaseClient.from('closed_trades').update({
+      tp1_preis: tp1P > 0 ? tp1P : null,
+      tp1_menge: tp1M > 0 ? tp1M : 0,
+      tp2_preis: tp2P > 0 ? tp2P : null,
+      tp2_menge: tp2M > 0 ? tp2M : 0,
+      tp3_preis: tp3P > 0 ? tp3P : null,
+      tp3_menge: tp3M > 0 ? tp3M : 0,
+    }).eq('id', tradeId);
     await loadData();
     updateUI();
+    closeExitEditModal();
   } catch(e) { alert('Fehler: ' + e.message); }
 }
 
@@ -800,11 +833,13 @@ function renderHistorieTable() {
   const sortedClosed = [...closedTrades].sort((a, b) => (b.kaufdatum || '').localeCompare(a.kaufdatum || ''));
   tbody.innerHTML = sortedClosed.map(t => {
     const pl = calcPL(t), plPercent = calcPLPercent(t), plClass = pl >= 0 ? 'pos' : 'neg';
-    const liveRRR = calcInitialRRR(t.einstiegspreis, t.stopLoss, t.tp1Preis, t.tp2Preis, t.tp3Preis);
-    const rrrVal = (t.initialRRR !== null && t.initialRRR !== undefined) ? t.initialRRR : liveRRR;
-    const rrrDisplay = rrrVal !== null ? rrrVal.toFixed(2) + ' R' : 'N/A';
     const tp1Value = t.tp1Preis * t.tp1Menge, tp2Value = t.tp2Preis * t.tp2Menge, tp3Value = t.tp3Preis * t.tp3Menge;
-    const avgExit = (tp1Value + tp2Value + tp3Value) / t.kaufmenge;
+    const avgExit = t.kaufmenge > 0 ? (tp1Value + tp2Value + tp3Value) / t.kaufmenge : 0;
+    // Realisiertes R-Multiple: (Ø Ausstieg - Entry) / (Entry - Stop)
+    const risk = t.stopLoss > 0 ? t.einstiegspreis - t.stopLoss : 0;
+    const realizedR = (risk > 0 && avgExit > 0) ? (avgExit - t.einstiegspreis) / risk : null;
+    const rrrDisplay = realizedR !== null ? realizedR.toFixed(2) + ' R' : 'N/A';
+    const rrrClass = realizedR !== null ? (realizedR >= 0 ? 'pos' : 'neg') : '';
     return `<tr>
       <td><span class="badge geschlossen">Geschlossen</span></td>
       <td class="ticker"><a href="https://www.tradingview.com/chart/?symbol=${t.ticker}" target="_blank" rel="noopener noreferrer" class="ticker-link">${t.ticker}</a></td>
@@ -818,7 +853,7 @@ function renderHistorieTable() {
       <td class="text-right">${t.kaufmenge.toFixed(2)}</td>
       <td class="text-right ${plClass}">$${pl.toFixed(2)}</td>
       <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
-      <td class="text-right">${rrrDisplay}</td>
+      <td class="text-right ${rrrClass}">${rrrDisplay}</td>
       <td><div class="action-cell">
         <button class="action-btn ${t.screenshotEntry ? 'has-screenshot' : 'upload'}" onclick="uploadClosedScreenshot('${t.id}', 'entry')">📸E</button>
         <button class="action-btn ${t.screenshotTp1 ? 'has-screenshot' : 'upload'}" onclick="uploadClosedScreenshot('${t.id}', 'tp1')">📸₁</button>
@@ -1481,6 +1516,53 @@ if (_formContent && _formIcon) {
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeEditModal()">Abbrechen</button>
       <button class="btn btn-primary" onclick="saveTradeEdits()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Exit Price Edit Modal -->
+<div id="exitEditModal" class="modal" onclick="if(event.target === this) closeExitEditModal()">
+  <div class="modal-content" style="max-width:480px;" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>Ausstiegspreise korrigieren — <span id="exitEditTicker"></span></h3><span class="modal-close" onclick="closeExitEditModal()">&times;</span></div>
+    <div class="modal-body">
+      <input type="hidden" id="exitEditTradeId">
+      <div style="display:flex;gap:16px;margin-bottom:16px;font-size:12px;color:var(--muted);">
+        <div>Einstieg: <span id="exitEditEntry" style="color:var(--text);">—</span></div>
+        <div>Kaufmenge: <span id="exitEditMenge" style="color:var(--text);">—</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Preis ($)</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Menge (Stk)</div>
+      </div>
+      <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;align-items:center;">
+        <div style="font-size:12px;color:var(--muted);width:30px;">TP1</div>
+        <input type="number" step="0.0001" id="exitTp1Preis" class="inline-input" style="width:100%;" oninput="updateExitEditSummary()">
+        <input type="number" step="0.1" id="exitTp1Menge" class="inline-input" style="width:100%;" oninput="updateExitEditSummary()">
+        <div style="font-size:12px;color:var(--muted);">TP2</div>
+        <input type="number" step="0.0001" id="exitTp2Preis" class="inline-input" style="width:100%;" oninput="updateExitEditSummary()">
+        <input type="number" step="0.1" id="exitTp2Menge" class="inline-input" style="width:100%;" oninput="updateExitEditSummary()">
+        <div style="font-size:12px;color:var(--muted);">TP3</div>
+        <input type="number" step="0.0001" id="exitTp3Preis" class="inline-input" style="width:100%;" oninput="updateExitEditSummary()">
+        <input type="number" step="0.1" id="exitTp3Menge" class="inline-input" style="width:100%;" oninput="updateExitEditSummary()">
+      </div>
+      <div style="margin-top:16px;padding:12px;background:var(--surface);border-radius:6px;font-size:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="color:var(--muted);">Menge-Check:</span>
+          <span id="exitEditMengeCheck">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="color:var(--muted);">Ø Ausstieg:</span>
+          <span id="exitEditAvg" style="color:var(--text);">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--muted);">P/L:</span>
+          <span id="exitEditPL">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeExitEditModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveExitEdits()">Speichern</button>
     </div>
   </div>
 </div>
