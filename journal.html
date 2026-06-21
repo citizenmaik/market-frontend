@@ -747,6 +747,15 @@ function calcOEPSingle(t) {
   return (t.livePreis - t.einstiegspreis) * calcRestmenge(t);
 }
 function calcPL(t) {
+  const filledQty = (t.tp1Menge || 0) + (t.tp2Menge || 0) + (t.tp3Menge || 0);
+  // ── FIX: Bei GESCHLOSSENEN Trades mit inkonsistenten TP-Mengen (Summe
+  // weicht von kaufmenge ab — typischerweise Altdaten aus einem fehlerhaften
+  // Import, siehe closeTradeFromImport) auf live_preis als kompletten,
+  // verifizierten Avg-Exit-Preis zurückfallen statt TP-Werte + falsche
+  // Restmenge zu mischen, was zu stark verfälschtem P/L führen würde.
+  if (t.status === 'geschlossen' && t.kaufmenge > 0 && Math.abs(filledQty - t.kaufmenge) > 0.01) {
+    return (t.livePreis - t.einstiegspreis) * t.kaufmenge;
+  }
   const tp1Value = t.tp1Menge * t.tp1Preis, tp2Value = t.tp2Menge * t.tp2Preis, tp3Value = t.tp3Menge * t.tp3Preis;
   const restValue = calcRestmenge(t) * t.livePreis;
   return (tp1Value + tp2Value + tp3Value + restValue) - (t.kaufmenge * t.einstiegspreis);
@@ -834,12 +843,24 @@ function renderHistorieTable() {
   tbody.innerHTML = sortedClosed.map(t => {
     const pl = calcPL(t), plPercent = calcPLPercent(t), plClass = pl >= 0 ? 'pos' : 'neg';
     const tp1Value = t.tp1Preis * t.tp1Menge, tp2Value = t.tp2Preis * t.tp2Menge, tp3Value = t.tp3Preis * t.tp3Menge;
-    const avgExit = t.kaufmenge > 0 ? (tp1Value + tp2Value + tp3Value) / t.kaufmenge : 0;
+    const filledQty = (t.tp1Menge || 0) + (t.tp2Menge || 0) + (t.tp3Menge || 0);
+    // ── FIX: TP-Slot-basierter Ausstieg ist nur korrekt, wenn die Summe der
+    // TP-Mengen exakt der Kaufmenge entspricht (vollständig geschlossener
+    // Trade). Weicht die Summe ab — z.B. weil beim Import ein alter
+    // Planwert in tp1_preis hängen blieb ohne passende tp1_menge — wird auf
+    // den verifizierten Avg-Exit-Preis (live_preis, der reale Broker-Fill
+    // beim Schließen) zurückgefallen, statt einen irreführenden Wert zu zeigen.
+    const qtyMismatch = t.kaufmenge > 0 && Math.abs(filledQty - t.kaufmenge) > 0.01;
+    const avgExit = qtyMismatch
+      ? (t.livePreis || 0)
+      : (t.kaufmenge > 0 ? (tp1Value + tp2Value + tp3Value) / t.kaufmenge : 0);
     // Realisiertes R-Multiple: (Ø Ausstieg - Entry) / (Entry - Stop)
     const risk = t.stopLoss > 0 ? t.einstiegspreis - t.stopLoss : 0;
     const realizedR = (risk > 0 && avgExit > 0) ? (avgExit - t.einstiegspreis) / risk : null;
     const rrrDisplay = realizedR !== null ? realizedR.toFixed(2) + ' R' : 'N/A';
     const rrrClass = realizedR !== null ? (realizedR >= 0 ? 'pos' : 'neg') : '';
+    const exitWarning = qtyMismatch ? ' title="⚠ TP-Mengen ergaben nicht die Kaufmenge — realer Avg-Exit-Preis (live_preis) angezeigt. Bitte prüfen."' : ' title="Klicken um Ausstiegspreis zu korrigieren"';
+    const exitFlag = qtyMismatch ? ' style="cursor:pointer;text-decoration:underline dotted;color:var(--yellow);"' : ' style="cursor:pointer;text-decoration:underline dotted;"';
     return `<tr>
       <td><span class="badge geschlossen">Geschlossen</span></td>
       <td class="ticker"><a href="https://www.tradingview.com/chart/?symbol=${t.ticker}" target="_blank" rel="noopener noreferrer" class="ticker-link">${t.ticker}</a></td>
@@ -849,7 +870,7 @@ function renderHistorieTable() {
       <td onclick="editClosedDate('${t.id}', 'tp3_datum')" style="cursor:pointer;">${formatDate(t.tp3Datum)}</td>
       <td onclick="editClosedDate('${t.id}', 'exit_datum')" style="cursor:pointer;">${formatDate(t.exitDatum)}</td>
       <td class="text-right">$${t.einstiegspreis.toFixed(2)}</td>
-      <td class="text-right" style="cursor:pointer;text-decoration:underline dotted;" onclick="editExitPrice('${t.id}')" title="Klicken um Ausstiegspreis zu korrigieren">$${avgExit.toFixed(2)}</td>
+      <td class="text-right"${exitFlag} onclick="editExitPrice('${t.id}')"${exitWarning}>${qtyMismatch ? '⚠ ' : ''}$${avgExit.toFixed(2)}</td>
       <td class="text-right">${t.kaufmenge.toFixed(2)}</td>
       <td class="text-right ${plClass}">$${pl.toFixed(2)}</td>
       <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
@@ -1430,33 +1451,100 @@ async function updateExistingTrade(existing, symSells, ord) {
 async function closeTradeFromImport(existing, symSells) {
   const lastSell = symSells.length > 0 ? symSells[symSells.length - 1] : null;
   const totalSold = symSells.reduce((s, x) => s + x.qty, 0);
+  // avgExit = Gesamt-Avg über ALLE Sells dieses Imports — bleibt als
+  // unabhängige Wahrheitsquelle in live_preis erhalten (Plausibilitätscheck).
   const avgExit = totalSold > 0 ? symSells.reduce((s, x) => s + x.qty * x.price, 0) / totalSold : existing.livePreis || 0;
+
+  // ── FIX (root cause): Beim Schließen einer Position MUSS die Summe aus
+  // tp1_menge + tp2_menge + tp3_menge exakt der kaufmenge entsprechen, sonst
+  // berechnen renderHistorieTable()/calcPL() einen falschen Ausstiegspreis
+  // (Mischung aus altem geplanten TP-Zielkurs + falscher Restmenge).
+  // Vorher wurde mapSellsToTPs() nur auf bereits BEFÜLLTE TP-Slots geprüft
+  // (existing.tp1Preis || tpFromSells.tp1_preis), wodurch ein ursprünglich
+  // geplanter TP1-Zielkurs (z.B. aus dem Order-Setup) stehen blieb, obwohl
+  // der Trade tatsächlich per Stop-Loss zu einem ANDEREN Kurs verkauft wurde.
+  const kaufmenge = parseFloat(existing.kaufmenge) || 0;
+
   const tpFromSells = mapSellsToTPs(symSells, existing);
+
+  let tp1Preis = existing.tp1Preis || tpFromSells.tp1_preis || null;
+  let tp2Preis = existing.tp2Preis || tpFromSells.tp2_preis || null;
+  let tp3Preis = existing.tp3Preis || tpFromSells.tp3_preis || null;
+  let tp1M = existing.tp1Menge || tpFromSells.tp1_menge || 0;
+  let tp2M = existing.tp2Menge || tpFromSells.tp2_menge || 0;
+  let tp3M = existing.tp3Menge || tpFromSells.tp3_menge || 0;
+  let tp1D = (existing.tp1Datum || '').substring(0,10) || tpFromSells.tp1_datum || null;
+  let tp2D = (existing.tp2Datum || '').substring(0,10) || tpFromSells.tp2_datum || null;
+  let tp3D = (existing.tp3Datum || '').substring(0,10) || tpFromSells.tp3_datum || null;
+
+  const filledQtyAfterMerge = tp1M + tp2M + tp3M;
+  const unaccountedQty = parseFloat((kaufmenge - filledQtyAfterMerge).toFixed(4));
+
+  if (unaccountedQty > 0.0001) {
+    // Restmenge ohne zugeordneten realen Verkaufspreis. Den Avg-Preis dafür
+    // NUR aus den tatsächlich noch nicht zugeordneten Sells berechnen
+    // (mapSellsToTPs() verwendet bereits einen Offset, der bekannte TPs
+    // überspringt) — nicht aus dem Gesamt-avgExit, das ggf. bereits erfasste
+    // Teilverkäufe mit anderem Preis enthält.
+    const hasTp1 = (existing.tp1Menge || 0) > 0;
+    const hasTp2 = (existing.tp2Menge || 0) > 0;
+    const hasTp3 = (existing.tp3Menge || 0) > 0;
+    const offset = hasTp1 ? (hasTp2 ? (hasTp3 ? 3 : 2) : 1) : 0;
+    const unmappedSells = symSells.slice(offset);
+    const unmappedQty = unmappedSells.reduce((s, x) => s + x.qty, 0);
+    const unmappedAvgPrice = unmappedQty > 0
+      ? unmappedSells.reduce((s, x) => s + x.qty * x.price, 0) / unmappedQty
+      : avgExit; // Fallback falls keine Sell-Daten vorliegen (z.B. Restmenge ohne CSV-Eintrag)
+
+    if (tp1M === 0) { tp1Preis = unmappedAvgPrice; tp1M = unaccountedQty; tp1D = lastSell?.date || tp1D; }
+    else if (tp2M === 0) { tp2Preis = unmappedAvgPrice; tp2M = unaccountedQty; tp2D = lastSell?.date || tp2D; }
+    else if (tp3M === 0) { tp3Preis = unmappedAvgPrice; tp3M = unaccountedQty; tp3D = lastSell?.date || tp3D; }
+    else {
+      // Alle 3 Slots belegt, Menge passt trotzdem nicht (Edge Case) →
+      // letzten Slot mit dem realen Mengen-/Preis-Mix verschmelzen, damit
+      // Summe(Menge) konsistent mit kaufmenge bleibt.
+      tp3Preis = ((tp3Preis || 0) * tp3M + unmappedAvgPrice * unaccountedQty) / (tp3M + unaccountedQty);
+      tp3M = tp3M + unaccountedQty;
+    }
+  }
+
+  const tpFinalValue = (tp1Preis || 0) * tp1M + (tp2Preis || 0) * tp2M + (tp3Preis || 0) * tp3M;
+  const verifiedAvgExit = kaufmenge > 0 ? tpFinalValue / kaufmenge : avgExit;
+
   await supabaseClient.from('closed_trades').insert({
     user_id: USER_ID, ticker: existing.ticker,
     einstiegspreis: parseFloat(parseFloat(existing.einstiegspreis).toFixed(4)),
-    kaufmenge: parseFloat(parseFloat(existing.kaufmenge).toFixed(4)),
+    kaufmenge: parseFloat(kaufmenge.toFixed(4)),
     kaufdatum: (existing.kaufdatum || '').substring(0, 10),
     exit_datum: lastSell?.date || null,
+    // live_preis bleibt der reale Avg-Exit-Preis aus dem Broker-Import —
+    // unabhängige zweite Wahrheitsquelle für Plausibilitätschecks.
     live_preis: parseFloat(avgExit.toFixed(4)),
     status: 'geschlossen',
     stop_loss: existing.stopLoss || null,
     initial_rrr: existing.initialRrr || null,
-    tp1_preis: existing.tp1Preis || tpFromSells.tp1_preis || null,
-    tp1_menge: existing.tp1Menge || tpFromSells.tp1_menge || null,
-    tp1_datum: (existing.tp1Datum || '').substring(0,10) || tpFromSells.tp1_datum || null,
-    tp2_preis: existing.tp2Preis || tpFromSells.tp2_preis || null,
-    tp2_menge: existing.tp2Menge || tpFromSells.tp2_menge || null,
-    tp2_datum: (existing.tp2Datum || '').substring(0,10) || tpFromSells.tp2_datum || null,
-    tp3_preis: existing.tp3Preis || tpFromSells.tp3_preis || null,
-    tp3_menge: existing.tp3Menge || tpFromSells.tp3_menge || null,
-    tp3_datum: (existing.tp3Datum || '').substring(0,10) || tpFromSells.tp3_datum || null,
+    tp1_preis: tp1Preis !== null ? parseFloat(parseFloat(tp1Preis).toFixed(4)) : null,
+    tp1_menge: tp1M > 0 ? parseFloat(tp1M.toFixed(4)) : null,
+    tp1_datum: tp1D,
+    tp2_preis: tp2Preis !== null ? parseFloat(parseFloat(tp2Preis).toFixed(4)) : null,
+    tp2_menge: tp2M > 0 ? parseFloat(tp2M.toFixed(4)) : null,
+    tp2_datum: tp2D,
+    tp3_preis: tp3Preis !== null ? parseFloat(parseFloat(tp3Preis).toFixed(4)) : null,
+    tp3_menge: tp3M > 0 ? parseFloat(tp3M.toFixed(4)) : null,
+    tp3_datum: tp3D,
     screenshot_entry: existing.screenshotEntry || null,
     screenshot_tp1: existing.screenshotTp1 || null,
     screenshot_tp2: existing.screenshotTp2 || null,
     screenshot_tp3: existing.screenshotTp3 || null,
     screenshot_exit: existing.screenshotExit || null
   });
+
+  // Plausibilitäts-Warnung im Browser-Log, falls TP-Slot-Ausstieg vom realen
+  // Broker-Avg-Exit abweicht — erleichtert künftiges Debugging.
+  if (Math.abs(verifiedAvgExit - avgExit) > 0.01) {
+    console.warn(`[Import-Check] ${existing.ticker}: TP-Slot-Ausstieg ($${verifiedAvgExit.toFixed(2)}) weicht vom realen Broker-Avg-Exit ($${avgExit.toFixed(2)}) ab. Bitte mit "Ausstiegspreise korrigieren" prüfen.`);
+  }
+
   await supabaseClient.from('trades').delete().eq('id', existing.id);
 }
 
