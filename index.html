@@ -842,7 +842,7 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
   // Perf windows
   const day  = (price / c[c.length-2] - 1) * 100;
   const wk   = c.length > 6  ? (price / c[c.length-6]  - 1) * 100 : 0;
-  const w2   = c.length > 14 ? (price / c[c.length-14] - 1) * 100 : 0;
+  const w2   = c.length > 11 ? (price / c[c.length-11] - 1) * 100 : 0;
   const mth  = c.length > 21 ? (price / c[c.length-21] - 1) * 100 : 0;
 
   // RS Ratio
@@ -1026,7 +1026,7 @@ async function refreshAll() {
     const spyPrice = spyC[spyC.length-1] || 0;
     const spyDay = spyC.length > 1  ? (spyPrice / spyC[spyC.length-2]  - 1) * 100 : 0;
     const spyWk  = spyC.length > 6  ? (spyPrice / spyC[spyC.length-6]  - 1) * 100 : 0;
-    const spy2w  = spyC.length > 14 ? (spyPrice / spyC[spyC.length-14] - 1) * 100 : 0;
+    const spy2w  = spyC.length > 11 ? (spyPrice / spyC[spyC.length-11] - 1) * 100 : 0;
     const spyMth = spyC.length > 21 ? (spyPrice / spyC[spyC.length-21] - 1) * 100 : 0;
 
     const [trend, pt, yields, sectors, industries, factors] = await Promise.all([
