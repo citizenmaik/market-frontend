@@ -849,7 +849,7 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
   const rs_ratio = +(100 * (1 + (mth - spyMth) / 100)).toFixed(2);
   const rs_1m    = +(mth - spyMth).toFixed(2);
 
-  // RS score: 1D×0.10 + 1W×0.20 + 2W×0.30 + 1M×0.40, Multiplikator ×3.5
+  // RS score: 1D×0.10 + 1W×0.20 + 2W×0.30 + 1M×0.40, Multiplikator ×4.5
   const rs_day_v = day - spyDay;
   const rs_wk_v  = wk  - spyWk;
   const rs_2w_v  = w2  - spy2w;
