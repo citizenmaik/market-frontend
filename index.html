@@ -308,6 +308,11 @@ body {
             <span>BEARISH</span><span>NEUTRAL</span><span>BULLISH</span>
           </div>
           <div id="gaugeLbl" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);margin-top:10px;letter-spacing:.12em;">—</div>
+          <div style="width:150px;height:1px;background:var(--border);margin:12px 0 9px;"></div>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);letter-spacing:.14em;">INVEST-EXPOSURE</div>
+          <div id="gaugeExpVal" style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--muted);margin-top:3px;">—</div>
+          <div id="gaugeExpTier" style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.06em;margin-top:3px;text-align:center;">—</div>
+          <div id="gaugeExpDist" style="font-family:var(--mono);font-size:8.5px;color:var(--muted);letter-spacing:.04em;margin-top:5px;text-align:center;">—</div>
         </div>
         <div class="omi-table">
           <table style="width:100%;border-collapse:collapse;">
@@ -553,8 +558,107 @@ const IND_NAMES = {IGV:'Software',SKYY:'Cloud Computing',HACK:'Cybersecurity',SO
 const FAC_SYMS = ['IVW','IVE','HDV','OEF','IJH','IJR','MTUM','IPO'];
 const FAC_LBLS = {IVW:'Growth',IVE:'Value',HDV:'High Dividend',OEF:'Large-Cap',IJH:'Mid-Cap',IJR:'Small-Cap',MTUM:'Momentum',IPO:'IPOs'};
 
+// ── Invest-Exposure Regime (abgeleitet vom GESAMT-Composite, −100…+100) ──
+const EXP_CFG = {
+  DIST_WINDOW:      25,   // Sessions-Fenster für Distribution Days
+  DIST_DOWN_PCT:    0.2,  // Mindest-Tagesverlust % für einen Distribution Day
+  DIST_WASHOUT_PCT: 5,    // Rally % ab Dist-Day-Close lässt ihn verfallen
+  DIST_CLUSTER:     5,    // ab so vielen Dist Days = Cluster → Tier −1
+  CB_DRAWDOWN_PCT:  10,   // Drawdown % vom Rally-High → Circuit-Breaker
+  CB_RALLY_LOOKBACK:60,   // Sessions für Rally-High-Bestimmung
+  HYST:             3,    // Composite-Punkte-Puffer gegen Tier-Whipsaw
+  LS_KEY: 'omiExpTierV1', // localStorage-Schlüssel für Tier-Persistenz
+};
+
+// Distribution Days auf Index-Close/Volume-Array (IBD-Logik)
+function countDistributionDays(c, v) {
+  if (!Array.isArray(c) || !Array.isArray(v) || c.length < 2 || v.length !== c.length) return null;
+  const n = c.length, start = Math.max(1, n - EXP_CFG.DIST_WINDOW);
+  let count = 0;
+  for (let i = start; i < n; i++) {
+    const chg = (c[i] - c[i-1]) / c[i-1] * 100;
+    if (chg <= -EXP_CFG.DIST_DOWN_PCT && v[i] > v[i-1]) {
+      const maxSince = Math.max(...c.slice(i));      // Washout-Regel
+      if (maxSince < c[i] * (1 + EXP_CFG.DIST_WASHOUT_PCT/100)) count++;
+    }
+  }
+  return count;
+}
+
+// Circuit-Breaker: ≥ CB_DRAWDOWN_PCT unter Rally-High ODER unter 200 EMA
+function circuitBreakerState(c, below200) {
+  let ddCB = false, dd = null;
+  if (Array.isArray(c) && c.length >= 5) {
+    const rallyHigh = Math.max(...c.slice(-EXP_CFG.CB_RALLY_LOOKBACK));
+    dd = (c[c.length-1] - rallyHigh) / rallyHigh * 100;
+    ddCB = dd <= -EXP_CFG.CB_DRAWDOWN_PCT;
+  }
+  const active = ddCB || !!below200;
+  const reason = ddCB && below200 ? `${dd.toFixed(0)}% + 200EMA`
+               : ddCB             ? `${dd.toFixed(0)}% v. High`
+               : below200         ? 'QQQ<200EMA' : '';
+  return { active, reason, drawdown: dd };
+}
+
+// Aggregiert Candle-abgeleitete Signale (QQQ als Leit-Index)
+function computeExposureSignals(candleData) {
+  const q = (candleData && candleData['QQQ']) || {};
+  const cRaw = q.c || [], vRaw = q.v || [];
+  const c = [], v = [];
+  for (let i = 0; i < cRaw.length; i++) {
+    if (cRaw[i] == null || isNaN(cRaw[i])) continue;
+    c.push(cRaw[i]);
+    v.push((vRaw[i] == null || isNaN(vRaw[i])) ? null : vRaw[i]);
+  }
+  const hasVol = v.length === c.length && v.length > 1 && v.every(x => x != null) && v.some(x => x > 0);
+  const distDays = hasVol ? countDistributionDays(c, v) : null;
+  const below200 = c.length >= 2 ? (c[c.length-1] - emaCalc(c, 200)) < 0 : false;
+  return {
+    distDays,
+    cluster: distDays != null && distDays >= EXP_CFG.DIST_CLUSTER,
+    cb: circuitBreakerState(c, below200),
+  };
+}
+
+// Hysterese-Tier (persistiert, um Whipsaw an Tier-Grenzen zu dämpfen)
+function rawTier(g){ if(g>=60)return 5; if(g>=30)return 4; if(g>=0)return 3; if(g>=-30)return 2; return 1; }
+const TIER_BOUNDS = [-30, 0, 30, 60]; // Grenzen 1|2, 2|3, 3|4, 4|5
+function hysteresisTier(g, prev) {
+  const raw = rawTier(g);
+  if (prev == null || raw === prev) return raw;
+  if (raw > prev) { const b = TIER_BOUNDS[prev-1]; return g >= b + EXP_CFG.HYST ? raw : prev; }
+  const b = TIER_BOUNDS[prev-2];  return g <= b - EXP_CFG.HYST ? raw : prev;
+}
+function loadPrevTier(){ try { const x = localStorage.getItem(EXP_CFG.LS_KEY); return x ? parseInt(x,10) : null; } catch(e){ return null; } }
+function savePrevTier(t){ try { localStorage.setItem(EXP_CFG.LS_KEY, String(t)); } catch(e){} }
+
+function calcExposure(gesamt, trendData, signals) {
+  signals = signals || {};
+  const qqq = (trendData && trendData['QQQ']) || {};
+  const below50 = typeof qqq.ema50 === 'number' ? qqq.ema50 < 0 : false;
+
+  // Basis-Tier mit Hysterese, VOR den transienten Overrides persistieren
+  const tierBase = hysteresisTier(gesamt, loadPrevTier());
+  savePrevTier(tierBase);
+
+  const BANDS  = {5:'80–100%',4:'60–80%',3:'40–60%',2:'20–40%',1:'0–20%'};
+  const LABELS = {5:'Strong Bull',4:'Bullish',3:'Neutral+',2:'Neutral−',1:'Bearish'};
+  let tier = tierBase, band = BANDS[tier], label = LABELS[tier], flag = '', cb = false;
+
+  // Tier 4 — Cap auf 60% wenn QQQ unter 50 EMA
+  if (tier === 4 && below50) { band = '≤60%'; flag = 'QQQ<50EMA'; }
+
+  // Tier 2 — Distribution-Cluster zieht eine Tier runter
+  if (tier === 2 && signals.cluster) { tier = 1; band = BANDS[1]; label = LABELS[1]; flag = `Distrib. ×${signals.distDays}`; }
+
+  // Circuit-Breaker (global): Rally-High-Drawdown ODER 200-EMA-Bruch → Cash
+  if (signals.cb && signals.cb.active) { band = '0% · CASH'; label = 'Bearish'; flag = 'CB: ' + signals.cb.reason; cb = true; }
+
+  return { tier, tierBase, band, label, flag, cb, distDays: (signals.distDays != null ? signals.distDays : null) };
+}
+
 // ── Overall Market Indicator ─────────────────────────
-function calcOverall(secData, indData, trendData, vix, mcScores) {
+function calcOverall(secData, indData, trendData, vix, mcScores, expSignals) {
   const secs = Object.values(secData);
   const n_sec = secs.length;
   const pct_sec_50 = secs.filter(s=>s.above50).length / n_sec;
@@ -588,6 +692,7 @@ function calcOverall(secData, indData, trendData, vix, mcScores) {
   const gesamt = Math.max(-100, Math.min(100, score_sec+score_ind+score_trend+score_vix+score_mc));
   return {
     gesamt,
+    exposure: calcExposure(gesamt, trendData, expSignals),
     rows: [
       {lbl:`Sektor-Breadth`,          score:score_sec,   weight:'20%', detail:`${Math.round(pct_sec_50*100)}% >50SMA, ${Math.round(pct_sec_rs*100)}% RS≥60`},
       {lbl:`Industry-Breadth`,        score:score_ind,   weight:'20%', detail:`${Math.round(pct_ind_50*100)}% >50SMA, ${Math.round(pct_ind_rs*100)}% RS≥60`},
@@ -610,6 +715,21 @@ function renderOverall(result) {
   if(arc){ arc.style.strokeDashoffset=offset; arc.style.stroke=color; }
   if(val){ val.textContent=(gesamt>=0?'+':'')+gesamt.toFixed(1); val.setAttribute('fill',color); }
   if(lbl){ lbl.textContent=zone; lbl.style.color=color; }
+
+  const exp = result.exposure;
+  if(exp){
+    const expColor = exp.cb ? 'var(--red)' : exp.tier>=4 ? 'var(--green)' : exp.tier<=1 ? 'var(--red)' : 'var(--yellow)';
+    const ev = document.getElementById('gaugeExpVal');
+    const et = document.getElementById('gaugeExpTier');
+    const ed = document.getElementById('gaugeExpDist');
+    if(ev){ ev.textContent = exp.band; ev.style.color = expColor; }
+    if(et){ et.innerHTML = `Tier ${exp.tier} · ${exp.label}` + (exp.flag?` <span style="color:${expColor};">· ${exp.flag}</span>`:''); }
+    if(ed){
+      if(exp.distDays==null){ ed.textContent='Distribution Days: n/a (kein Vol)'; ed.style.color='var(--muted)'; }
+      else { ed.textContent=`Distribution Days: ${exp.distDays} / ${EXP_CFG.DIST_CLUSTER}`;
+             ed.style.color = exp.distDays>=EXP_CFG.DIST_CLUSTER ? 'var(--red)' : exp.distDays>=EXP_CFG.DIST_CLUSTER-2 ? 'var(--yellow)' : 'var(--muted)'; }
+    }
+  }
 
   const tb = document.getElementById('overallTbl');
   if(!tb) return;
@@ -745,7 +865,8 @@ async function loadAllMarketConditions(candleData, breadthData) {
     }
   }
   if (allScores.length) {
-    const ovResult = calcOverall(window._secArr||{}, window._indArr||{}, window._trendData||{}, window._vix||null, allScores);
+    const expSignals = computeExposureSignals(candleData);
+    const ovResult = calcOverall(window._secArr||{}, window._indArr||{}, window._trendData||{}, window._vix||null, allScores, expSignals);
     renderOverall(ovResult);
   }
 }
