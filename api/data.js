@@ -36,11 +36,12 @@ export default async function handler(req, res) {
         const q = json?.chart?.result?.[0];
         if (!q) continue;
         const c = q.indicators?.quote?.[0]?.close || [];
+        const v = q.indicators?.quote?.[0]?.volume || [];
         const t = q.timestamp || [];
-        return { c, t };
+        return { c, v, t };
       } catch(e) { continue; }
     }
-    return { c: [], t: [] };
+    return { c: [], v: [], t: [] };
   }
 
   try {
@@ -73,7 +74,7 @@ export default async function handler(req, res) {
       const data = {};
       syms.forEach((s, i) => {
         const key = s.replace(/\^/g, '__');
-        data[key] = results[i].status === 'fulfilled' ? results[i].value : { c: [], t: [] };
+        data[key] = results[i].status === 'fulfilled' ? results[i].value : { c: [], v: [], t: [] };
       });
       return res.status(200).json(data);
     }
