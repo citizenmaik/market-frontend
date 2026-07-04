@@ -576,9 +576,10 @@ function countDistributionDays(c, v) {
   const n = c.length, start = Math.max(1, n - EXP_CFG.DIST_WINDOW);
   let count = 0;
   for (let i = start; i < n; i++) {
+    if (v[i] == null || v[i-1] == null) continue;          // Lücken überspringen (null≠0)
     const chg = (c[i] - c[i-1]) / c[i-1] * 100;
     if (chg <= -EXP_CFG.DIST_DOWN_PCT && v[i] > v[i-1]) {
-      const maxSince = Math.max(...c.slice(i));      // Washout-Regel
+      const maxSince = Math.max(...c.slice(i));             // Washout-Regel
       if (maxSince < c[i] * (1 + EXP_CFG.DIST_WASHOUT_PCT/100)) count++;
     }
   }
@@ -603,16 +604,31 @@ function circuitBreakerState(c, below200) {
 // Aggregiert Candle-abgeleitete Signale (QQQ als Leit-Index)
 function computeExposureSignals(candleData) {
   const q = (candleData && candleData['QQQ']) || {};
-  const cRaw = q.c || [], vRaw = q.v || [];
+  const cRaw = q.c || [];
+  // Volumen unter verschiedenen möglichen Keys suchen
+  const vRaw = q.v || q.volume || q.vol || q.Volume || q.V || [];
   const c = [], v = [];
   for (let i = 0; i < cRaw.length; i++) {
     if (cRaw[i] == null || isNaN(cRaw[i])) continue;
     c.push(cRaw[i]);
-    v.push((vRaw[i] == null || isNaN(vRaw[i])) ? null : vRaw[i]);
+    const vol = vRaw[i];
+    v.push((vol == null || isNaN(vol)) ? null : +vol);
   }
-  const hasVol = v.length === c.length && v.length > 1 && v.every(x => x != null) && v.some(x => x > 0);
+  // Volumen nutzbar, wenn ≥80% des Fensters gültige Werte hat
+  const nVol = v.filter(x => x != null && x > 0).length;
+  const need = Math.min(c.length, EXP_CFG.DIST_WINDOW) * 0.8;
+  const hasVol = nVol >= need && need > 0;
   const distDays = hasVol ? countDistributionDays(c, v) : null;
   const below200 = c.length >= 2 ? (c[c.length-1] - emaCalc(c, 200)) < 0 : false;
+
+  // Einmalige Diagnose, falls kein Volumen ankommt
+  if (!hasVol && typeof window !== 'undefined' && !window.__volDiagLogged) {
+    window.__volDiagLogged = true;
+    console.warn('[Exposure] Kein nutzbares Volumen in QQQ-Candles.',
+      'Keys:', Object.keys(q),
+      '| gültige Vol-Werte:', nVol, 'von', c.length,
+      '| letzte v-Rohwerte:', (vRaw.slice ? vRaw.slice(-3) : vRaw));
+  }
   return {
     distDays,
     cluster: distDays != null && distDays >= EXP_CFG.DIST_CLUSTER,
