@@ -132,6 +132,8 @@ tbody td{padding:10px;font-family:var(--mono);white-space:nowrap;}
 .action-btn.has-screenshot:hover{background:var(--green);color:#000;}
 .action-btn.edit{background:rgba(124,106,247,.2);color:var(--accent);}
 .action-btn.edit:hover{background:var(--accent);color:#fff;}
+.action-btn.split{background:rgba(245,158,11,.18);color:#f59e0b;}
+.action-btn.split:hover{background:#f59e0b;color:#000;}
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
   gap:var(--gap);margin-bottom:var(--gap);}
 .dash-card{background:var(--surface);border:1px solid var(--border);
@@ -210,20 +212,6 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
   10%,30%,50%,70%,90%{transform:translateX(-5px);}
   20%,40%,60%,80%{transform:translateX(5px);}
 }
-.import-mode-tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg);border-radius:6px;padding:3px;}
-.import-mode-tab{flex:1;padding:8px 12px;border:none;border-radius:4px;font-family:var(--mono);
-  font-size:11px;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.07em;
-  background:transparent;color:var(--muted);}
-.import-mode-tab.mode-tab-active{background:var(--accent);color:#fff;}
-.import-preview{background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  padding:12px;margin-top:12px;font-family:var(--mono);font-size:11px;max-height:180px;
-  overflow-y:auto;color:var(--muted);}
-.import-preview-row{display:flex;justify-content:space-between;padding:4px 0;
-  border-bottom:1px solid var(--border);}
-.import-preview-row:last-child{border-bottom:none;}
-.import-preview-row .sym{color:var(--text);font-weight:600;}
-.import-preview-row .open-tag{color:var(--blue);}
-.import-preview-row .closed-tag{color:var(--green);}
 
 /* ── Mobile Header ── */
 @media (max-width: 600px) {
@@ -255,7 +243,6 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
   <h1>Trading Journal <span style="font-size:9px;color:var(--green);">☁ Cloud</span></h1>
   <div class="hdr-right">
     <a href="index.html" class="nav-link">← Dashboard</a>
-    <button class="sync-btn mobile-hide" onclick="openIBKRSync()">📥 <span class="sync-btn-text">IBKR Sync</span></button>
     <button class="sync-btn mobile-hide" onclick="exportTrades()">📤 <span class="sync-btn-text">Export</span></button>
     <button class="logout-btn" onclick="logout()">Logout</button>
     <button class="th-btn" style="margin-left:auto;" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
@@ -749,8 +736,8 @@ function calcOEPSingle(t) {
 function calcPL(t) {
   const filledQty = (t.tp1Menge || 0) + (t.tp2Menge || 0) + (t.tp3Menge || 0);
   // ── FIX: Bei GESCHLOSSENEN Trades mit inkonsistenten TP-Mengen (Summe
-  // weicht von kaufmenge ab — typischerweise Altdaten aus einem fehlerhaften
-  // Import, siehe closeTradeFromImport) auf live_preis als kompletten,
+  // weicht von kaufmenge ab — typischerweise Altdaten aus einem früheren
+  // fehlerhaften Import) auf live_preis als kompletten,
   // verifizierten Avg-Exit-Preis zurückfallen statt TP-Werte + falsche
   // Restmenge zu mischen, was zu stark verfälschtem P/L führen würde.
   if (t.status === 'geschlossen' && t.kaufmenge > 0 && Math.abs(filledQty - t.kaufmenge) > 0.01) {
@@ -829,6 +816,7 @@ function renderTradesTable() {
         <button class="action-btn ${t.screenshotTp2 ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'tp2')" title="TP2 Chart">📸₂</button>
         <button class="action-btn ${t.screenshotTp3 ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'tp3')" title="TP3 Chart">📸₃</button>
         <button class="action-btn ${t.screenshotExit ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'exit')" title="Exit Chart">📸X</button>
+        <button class="action-btn split" onclick="openSplitModal('${t.id}')" title="Aktiensplit anwenden">Split</button>
         <button class="action-btn close" onclick="closeTrade('${t.id}')">Close</button>
         <button class="action-btn delete" onclick="deleteTrade('${t.id}')">×</button>
       </div></td>
@@ -1243,332 +1231,116 @@ function exportTrades() {
   link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
 
-// ── IBKR IMPORT ───────────────────────────────────────
-// ── IBKR IMPORT ──────────────────────────────────────
+// ── AKTIENSPLIT ───────────────────────────────────────
+// Passt eine bestehende offene Position an einen Aktiensplit an.
+// Preise werden durch den Faktor geteilt, Stückzahlen multipliziert.
+// Kostenbasis und R:R bleiben unveraendert. Forward (4:1) und Reverse (1:10).
+let splitTradeId = null;
 
-function openIBKRSync() {
-  document.getElementById('ibkrSyncModal').style.display = 'flex';
-  document.getElementById('syncStatus').style.display = 'none';
-  document.getElementById('ibkrImportConfirmBtn').style.display = 'none';
-  document.getElementById('ibkrStartBtn').style.display = 'inline-block';
-  document.getElementById('kontoauszugFile').value = '';
-  document.getElementById('ordersFile').value = '';
-  const pv = document.getElementById('importPreview'); if (pv) pv.style.display = 'none';
+function openSplitModal(id) {
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  splitTradeId = id;
+  document.getElementById('splitTicker').textContent = t.ticker;
+  document.getElementById('splitNew').value = 4;
+  document.getElementById('splitOld').value = 1;
+  renderSplitPreview();
+  document.getElementById('splitModal').style.display = 'flex';
+}
+function closeSplitModal() {
+  document.getElementById('splitModal').style.display = 'none';
+  splitTradeId = null;
+}
+function setSplitRatio(n, o) {
+  document.getElementById('splitNew').value = n;
+  document.getElementById('splitOld').value = o;
+  renderSplitPreview();
+}
+function _splitRatio() {
+  const n = parseFloat(document.getElementById('splitNew').value);
+  const o = parseFloat(document.getElementById('splitOld').value);
+  if (!(n > 0) || !(o > 0)) return null;
+  return n / o;
+}
+function _splitPx(v, r) { return v ? Math.round((v / r) * 10000) / 10000 : v; }
+function _splitSh(v, r) {
+  const x = (v || 0) * r;
+  const rounded = Math.round(x);
+  return Math.abs(x - rounded) < 1e-9 ? rounded : Math.round(x * 10000) / 10000;
+}
+function _splitFmtP(v) { return v ? '$' + v.toFixed(v < 1 ? 4 : 2) : '\u2013'; }
+function _splitFmtS(v) { return v ? (Number.isInteger(v) ? v : v.toFixed(2)) : '\u2013'; }
+
+function renderSplitPreview() {
+  const box = document.getElementById('splitPreview');
+  const t = trades.find(x => x.id === splitTradeId);
+  if (!t) { box.innerHTML = ''; return; }
+  const r = _splitRatio();
+  if (!r) { box.innerHTML = '<div style="color:var(--red);font-family:var(--mono);font-size:11px;padding:8px 0;">Ung\u00fcltiges Verh\u00e4ltnis</div>'; return; }
+  const rows = [
+    ['Aktien (Stk)', _splitFmtS(t.kaufmenge), _splitFmtS(_splitSh(t.kaufmenge, r))],
+    ['Einstieg',     _splitFmtP(t.einstiegspreis), _splitFmtP(_splitPx(t.einstiegspreis, r))],
+    ['Stop-Loss',    _splitFmtP(t.stopLoss), _splitFmtP(_splitPx(t.stopLoss, r))],
+    ['TP1 Preis',    _splitFmtP(t.tp1Preis), _splitFmtP(_splitPx(t.tp1Preis, r))],
+    ['TP2 Preis',    _splitFmtP(t.tp2Preis), _splitFmtP(_splitPx(t.tp2Preis, r))],
+    ['TP3 Preis',    _splitFmtP(t.tp3Preis), _splitFmtP(_splitPx(t.tp3Preis, r))],
+    ['Live-Preis',   _splitFmtP(t.livePreis), _splitFmtP(_splitPx(t.livePreis, r))],
+  ];
+  if (t.tp1Menge) rows.push(['TP1 Menge', _splitFmtS(t.tp1Menge), _splitFmtS(_splitSh(t.tp1Menge, r))]);
+  if (t.tp2Menge) rows.push(['TP2 Menge', _splitFmtS(t.tp2Menge), _splitFmtS(_splitSh(t.tp2Menge, r))]);
+  if (t.tp3Menge) rows.push(['TP3 Menge', _splitFmtS(t.tp3Menge), _splitFmtS(_splitSh(t.tp3Menge, r))]);
+
+  const basisOld = t.kaufmenge * t.einstiegspreis;
+  const basisNew = _splitSh(t.kaufmenge, r) * _splitPx(t.einstiegspreis, r);
+
+  let html = '<table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;">';
+  html += '<tr style="color:var(--muted);"><th style="text-align:left;padding:4px 0;">Feld</th><th style="text-align:right;">Alt</th><th style="text-align:right;">Neu</th></tr>';
+  rows.forEach(function (row) {
+    html += '<tr style="border-top:1px solid var(--border);"><td style="padding:4px 0;color:var(--muted);">' + row[0] +
+            '</td><td style="text-align:right;color:var(--text);">' + row[1] +
+            '</td><td style="text-align:right;color:var(--green);font-weight:600;">' + row[2] + '</td></tr>';
+  });
+  html += '</table>';
+  html += '<div style="margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.7;">' +
+          'Kostenbasis: $' + basisOld.toFixed(2) + ' \u2192 $' + basisNew.toFixed(2) + '<br>' +
+          (r >= 1 ? 'Forward-Split' : 'Reverse-Split') + ' \u00b7 Faktor \u00d7' + (Math.round(r * 10000) / 10000) +
+          ' \u00b7 R:R unver\u00e4ndert</div>';
+  box.innerHTML = html;
 }
 
-function closeIBKRSync() { document.getElementById('ibkrSyncModal').style.display = 'none'; }
-
-function showSyncStatus(msg, type) {
-  const el = document.getElementById('syncStatus');
-  el.textContent = msg; el.style.display = 'block';
-  el.style.background = type === 'error' ? 'rgba(255,68,102,.15)' : type === 'success' ? 'rgba(0,208,132,.15)' : 'rgba(90,96,112,.15)';
-  el.style.color = type === 'error' ? 'var(--red)' : type === 'success' ? 'var(--green)' : 'var(--muted)';
-  el.style.border = `1px solid ${type === 'error' ? 'rgba(255,68,102,.3)' : type === 'success' ? 'rgba(0,208,132,.3)' : 'rgba(90,96,112,.3)'}`;
-}
-
-// ── PARSE FUNCTIONS ───────────────────────────────────
-
-function parseCSVLine(line) {
-  const result = []; let cur = '', inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') inQuotes = !inQuotes;
-    else if (c === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
-    else cur += c;
-  }
-  result.push(cur.trim()); return result;
-}
-
-function parseKontoauszugCSV(csvText) {
-  // Returns: { positions: {sym: {menge, einstieg, aktuell}}, sells: {sym: [{date, qty, price}]} }
-  const lines = csvText.split('\n');
-  const positions = {}, sells = {};
-  for (const raw of lines) {
-    const line = raw.trim(); if (!line) continue;
-    const parts = parseCSVLine(line); if (parts.length < 6) continue;
-    // Offene Positionen
-    if (parts[0] === 'Offene Positionen' && parts[1] === 'Data' && parts[2] === 'Summary') {
-      const sym = parts[5], menge = parseFloat(parts[6]), einstieg = parseFloat(parts[8]), aktuell = parseFloat(parts[10]);
-      if (sym && !isNaN(menge) && menge > 0) positions[sym] = { menge, einstieg, aktuell };
-    }
-    // Transaktionen: nur Sells (menge < 0)
-    if ((parts[0] === 'Transaktionen' || parts[0] === 'Trades') && parts[1] === 'Data' && parts[2] === 'Order') {
-      const sym = parts[5]; if (!sym) continue;
-      const datetime = parts[6] || '', qty = parseFloat(parts[7]), price = parseFloat(parts[8]);
-      if (isNaN(qty) || isNaN(price) || qty >= 0) continue; // only sells
-      const date = datetime.replace(/"/g,'').split(',')[0].trim();
-      if (!sells[sym]) sells[sym] = [];
-      sells[sym].push({ date, qty: Math.abs(qty), price });
-    }
-  }
-  return { positions, sells };
-}
-
-function parseOffeneOrders(csvText) {
-  const lines = csvText.split('\n'), orders = {};
-  for (const line of lines) {
-    if (!line.includes('@NASDAQ') && !line.includes('@NYSE') && !line.includes('@ARCA') && !line.includes('@BATS')) continue;
-    const match = line.match(/(\w+)\s+@[A-Z.]+\s+Sell\s+([\d.]+)\s+\w+\s+(Limit|Stop)\s+([\d.]+)/);
-    if (!match) continue;
-    const symbol = match[1], menge = parseFloat(match[2]), typ = match[3], preis = parseFloat(match[4]);
-    if (!orders[symbol]) orders[symbol] = { limits: [], stops: [] };
-    if (typ === 'Limit') orders[symbol].limits.push({ menge, preis });
-    else if (typ === 'Stop') orders[symbol].stops.push({ menge, preis });
-  }
-  Object.values(orders).forEach(o => o.limits.sort((a, b) => b.preis - a.preis));
-  return orders;
-}
-
-// ── PREVIEW ───────────────────────────────────────────
-
-async function startIBKRSync() {
-  const kontoFile = document.getElementById('kontoauszugFile').files[0];
-  const ordersFile = document.getElementById('ordersFile').files[0];
-  if (!kontoFile) { showSyncStatus('Bitte Kontoauszug CSV auswählen!', 'error'); return; }
-  showSyncStatus('Lese CSVs…', 'loading');
+async function applySplit() {
+  const t = trades.find(x => x.id === splitTradeId);
+  const r = _splitRatio();
+  if (!t || !r) { alert('Ung\u00fcltiges Split-Verh\u00e4ltnis'); return; }
+  const nVal = document.getElementById('splitNew').value;
+  const oVal = document.getElementById('splitOld').value;
+  const upd = {
+    einstiegspreis: _splitPx(t.einstiegspreis, r),
+    kaufmenge:      _splitSh(t.kaufmenge, r),
+    live_preis:     _splitPx(t.livePreis, r),
+    stop_loss:      t.stopLoss ? _splitPx(t.stopLoss, r) : null,
+    tp1_preis:      t.tp1Preis ? _splitPx(t.tp1Preis, r) : null,
+    tp2_preis:      t.tp2Preis ? _splitPx(t.tp2Preis, r) : null,
+    tp3_preis:      t.tp3Preis ? _splitPx(t.tp3Preis, r) : null,
+    tp1_menge:      _splitSh(t.tp1Menge, r),
+    tp2_menge:      _splitSh(t.tp2Menge, r),
+    tp3_menge:      _splitSh(t.tp3Menge, r)
+  };
+  const msg = t.ticker + ' \u2014 Split ' + nVal + ':' + oVal + ' anwenden?\n\n' +
+              'Aktien: ' + _splitFmtS(t.kaufmenge) + ' \u2192 ' + _splitFmtS(upd.kaufmenge) + '\n' +
+              'Einstieg: ' + _splitFmtP(t.einstiegspreis) + ' \u2192 ' + _splitFmtP(upd.einstiegspreis) + '\n\n' +
+              'Kostenbasis & R:R bleiben unver\u00e4ndert.';
+  if (!confirm(msg)) return;
   try {
-    const kontoText = await kontoFile.text();
-    const ordersText = ordersFile ? await ordersFile.text() : '';
-    const { positions, sells } = parseKontoauszugCSV(kontoText);
-    const orders = ordersText ? parseOffeneOrders(ordersText) : {};
-    // Build preview: all tickers from positions + sells
-    const allSyms = new Set([...Object.keys(positions), ...Object.keys(sells)]);
-    if (allSyms.size === 0) { showSyncStatus('Keine Positionen/Transaktionen gefunden.', 'error'); return; }
-    window._pendingImport = { positions, sells, orders };
-    showImportPreview(positions, sells);
-    showSyncStatus(`${allSyms.size} Symbole erkannt — bereit zum Import.`, 'loading');
-    document.getElementById('ibkrImportConfirmBtn').style.display = 'inline-block';
-    document.getElementById('ibkrStartBtn').style.display = 'none';
-  } catch(e) { console.error(e); showSyncStatus('Fehler: ' + e.message, 'error'); }
-}
-
-function showImportPreview(positions, sells) {
-  const pv = document.getElementById('importPreview'); if (!pv) return;
-  pv.innerHTML = ''; pv.style.display = 'block';
-  const allSyms = new Set([...Object.keys(positions), ...Object.keys(sells)]);
-  [...allSyms].sort().forEach(sym => {
-    const isOpen = !!positions[sym];
-    const pos = positions[sym];
-    const symSells = sells[sym] || [];
-    const row = document.createElement('div'); row.className = 'import-preview-row';
-    const info = isOpen
-      ? `${pos.menge.toFixed(2)} Stk @ $${pos.einstieg.toFixed(2)}`
-      : `${symSells.reduce((s,x) => s+x.qty,0).toFixed(2)} Stk @ $–`;
-    const sellInfo = symSells.length > 0 ? ` · ${symSells.length} Sell(s)` : '';
-    row.innerHTML = `<span class="sym">${sym}</span><span style="color:var(--muted)">${info}${sellInfo}</span><span class="${isOpen ? 'open-tag' : 'closed-tag'}">${isOpen ? '● Offen' : '✓ Geschlossen'}</span>`;
-    pv.appendChild(row);
-  });
-}
-
-// ── CONFIRM IMPORT ────────────────────────────────────
-
-async function confirmUmsatzImport() {
-  const { positions, sells, orders } = window._pendingImport || {};
-  if (!positions) return;
-  document.getElementById('ibkrImportConfirmBtn').style.display = 'none';
-  document.getElementById('ibkrStartBtn').style.display = 'inline-block';
-  showSyncStatus('Importiere…', 'loading');
-  try {
-    const result = await runImport(positions, sells, orders);
-    showSyncStatus(`✓ Fertig — ${result.created} aktualisiert, ${result.closed} geschlossen, ${result.skipped} übersprungen.`, 'success');
-    window._pendingImport = null;
-    const pv = document.getElementById('importPreview'); if (pv) pv.style.display = 'none';
-    setTimeout(() => { closeIBKRSync(); loadData(); updateDashboard(); }, 2000);
-  } catch(e) { console.error(e); showSyncStatus('Fehler: ' + e.message, 'error'); }
-}
-
-// ── CORE IMPORT LOGIC ─────────────────────────────────
-
-async function runImport(positions, sells, orders) {
-  const result = { created: 0, closed: 0, skipped: 0 };
-
-  // All symbols: from open positions + from sells
-  const allSyms = new Set([...Object.keys(positions), ...Object.keys(sells)]);
-
-  for (const sym of allSyms) {
-    const isOpen = !!positions[sym];
-    const pos = positions[sym] || null;
-    const symSells = (sells[sym] || []).slice().sort((a,b) => a.date.localeCompare(b.date));
-    const ord = orders[sym] || { limits: [], stops: [] };
-
-    const existingTrade = trades.find(t => t.ticker === sym);
-
-    if (isOpen && !existingTrade) {
-      // New trade: insert with stop/tp from orders
-      await createNewTrade(sym, pos, symSells, ord);
-      result.created++;
-
-    } else if (isOpen && existingTrade) {
-      // Existing open trade: update TPs from sells + update stop/tp prices from orders
-      const updated = await updateExistingTrade(existingTrade, symSells, ord);
-      if (updated) result.created++; else result.skipped++;
-
-    } else if (!isOpen && existingTrade) {
-      // Position gone from depot → close trade
-      await closeTradeFromImport(existingTrade, symSells);
-      result.closed++;
-
-    } else {
-      // Not open, no existing trade → skip (already closed or irrelevant)
-      result.skipped++;
-    }
+    const { error } = await supabaseClient.from('trades').update(upd).eq('id', t.id);
+    if (error) throw error;
+    closeSplitModal();
+    await loadData();
+    updateUI();
+  } catch (e) {
+    console.error('Split error:', e);
+    alert('Fehler beim Anwenden des Splits: ' + e.message);
   }
-  return result;
-}
-
-async function createNewTrade(sym, pos, symSells, ord) {
-  const stopLoss = ord.stops[0]?.preis || null;
-  const tp1 = ord.limits[0]?.preis || null, tp2 = ord.limits[1]?.preis || null, tp3 = ord.limits[2]?.preis || null;
-  const tpFromSells = mapSellsToTPs(symSells, { tp1Menge: 0, tp2Menge: 0, tp3Menge: 0 });
-  await supabaseClient.from('trades').insert({
-    user_id: USER_ID, ticker: sym,
-    einstiegspreis: parseFloat(pos.einstieg.toFixed(4)),
-    kaufmenge: parseFloat(pos.menge.toFixed(4)),
-    kaufdatum: new Date().toISOString().split('T')[0],
-    live_preis: pos.aktuell || 0, status: 'offen',
-    stop_loss: stopLoss, tp1_preis: tp1, tp2_preis: tp2, tp3_preis: tp3,
-    initial_rrr: null, ...tpFromSells
-  });
-}
-
-async function updateExistingTrade(existing, symSells, ord) {
-  const updates = {};
-  // Update stop/tp prices from orders if changed
-  const newStop = ord.stops[0]?.preis || null;
-  if (newStop && Math.abs(newStop - (existing.stopLoss || 0)) > 0.01) updates.stop_loss = newStop;
-  const tp1p = ord.limits[0]?.preis || null, tp2p = ord.limits[1]?.preis || null, tp3p = ord.limits[2]?.preis || null;
-  if (tp1p && Math.abs(tp1p - (existing.tp1Preis || 0)) > 0.01) updates.tp1_preis = tp1p;
-  if (tp2p && Math.abs(tp2p - (existing.tp2Preis || 0)) > 0.01) updates.tp2_preis = tp2p;
-  if (tp3p && Math.abs(tp3p - (existing.tp3Preis || 0)) > 0.01) updates.tp3_preis = tp3p;
-  // Update TP dates/qty from sells (offset-aware: skip already-recorded TPs)
-  const tpUpdates = mapSellsToTPs(symSells, existing);
-  Object.assign(updates, tpUpdates);
-  if (Object.keys(updates).length === 0) return false;
-  await supabaseClient.from('trades').update(updates).eq('id', existing.id);
-  return true;
-}
-
-async function closeTradeFromImport(existing, symSells) {
-  const lastSell = symSells.length > 0 ? symSells[symSells.length - 1] : null;
-  const totalSold = symSells.reduce((s, x) => s + x.qty, 0);
-  // avgExit = Gesamt-Avg über ALLE Sells dieses Imports — bleibt als
-  // unabhängige Wahrheitsquelle in live_preis erhalten (Plausibilitätscheck).
-  const avgExit = totalSold > 0 ? symSells.reduce((s, x) => s + x.qty * x.price, 0) / totalSold : existing.livePreis || 0;
-
-  // ── FIX (root cause): Beim Schließen einer Position MUSS die Summe aus
-  // tp1_menge + tp2_menge + tp3_menge exakt der kaufmenge entsprechen, sonst
-  // berechnen renderHistorieTable()/calcPL() einen falschen Ausstiegspreis
-  // (Mischung aus altem geplanten TP-Zielkurs + falscher Restmenge).
-  // Vorher wurde mapSellsToTPs() nur auf bereits BEFÜLLTE TP-Slots geprüft
-  // (existing.tp1Preis || tpFromSells.tp1_preis), wodurch ein ursprünglich
-  // geplanter TP1-Zielkurs (z.B. aus dem Order-Setup) stehen blieb, obwohl
-  // der Trade tatsächlich per Stop-Loss zu einem ANDEREN Kurs verkauft wurde.
-  const kaufmenge = parseFloat(existing.kaufmenge) || 0;
-
-  const tpFromSells = mapSellsToTPs(symSells, existing);
-
-  let tp1Preis = existing.tp1Preis || tpFromSells.tp1_preis || null;
-  let tp2Preis = existing.tp2Preis || tpFromSells.tp2_preis || null;
-  let tp3Preis = existing.tp3Preis || tpFromSells.tp3_preis || null;
-  let tp1M = existing.tp1Menge || tpFromSells.tp1_menge || 0;
-  let tp2M = existing.tp2Menge || tpFromSells.tp2_menge || 0;
-  let tp3M = existing.tp3Menge || tpFromSells.tp3_menge || 0;
-  let tp1D = (existing.tp1Datum || '').substring(0,10) || tpFromSells.tp1_datum || null;
-  let tp2D = (existing.tp2Datum || '').substring(0,10) || tpFromSells.tp2_datum || null;
-  let tp3D = (existing.tp3Datum || '').substring(0,10) || tpFromSells.tp3_datum || null;
-
-  const filledQtyAfterMerge = tp1M + tp2M + tp3M;
-  const unaccountedQty = parseFloat((kaufmenge - filledQtyAfterMerge).toFixed(4));
-
-  if (unaccountedQty > 0.0001) {
-    // Restmenge ohne zugeordneten realen Verkaufspreis. Den Avg-Preis dafür
-    // NUR aus den tatsächlich noch nicht zugeordneten Sells berechnen
-    // (mapSellsToTPs() verwendet bereits einen Offset, der bekannte TPs
-    // überspringt) — nicht aus dem Gesamt-avgExit, das ggf. bereits erfasste
-    // Teilverkäufe mit anderem Preis enthält.
-    const hasTp1 = (existing.tp1Menge || 0) > 0;
-    const hasTp2 = (existing.tp2Menge || 0) > 0;
-    const hasTp3 = (existing.tp3Menge || 0) > 0;
-    const offset = hasTp1 ? (hasTp2 ? (hasTp3 ? 3 : 2) : 1) : 0;
-    const unmappedSells = symSells.slice(offset);
-    const unmappedQty = unmappedSells.reduce((s, x) => s + x.qty, 0);
-    const unmappedAvgPrice = unmappedQty > 0
-      ? unmappedSells.reduce((s, x) => s + x.qty * x.price, 0) / unmappedQty
-      : avgExit; // Fallback falls keine Sell-Daten vorliegen (z.B. Restmenge ohne CSV-Eintrag)
-
-    if (tp1M === 0) { tp1Preis = unmappedAvgPrice; tp1M = unaccountedQty; tp1D = lastSell?.date || tp1D; }
-    else if (tp2M === 0) { tp2Preis = unmappedAvgPrice; tp2M = unaccountedQty; tp2D = lastSell?.date || tp2D; }
-    else if (tp3M === 0) { tp3Preis = unmappedAvgPrice; tp3M = unaccountedQty; tp3D = lastSell?.date || tp3D; }
-    else {
-      // Alle 3 Slots belegt, Menge passt trotzdem nicht (Edge Case) →
-      // letzten Slot mit dem realen Mengen-/Preis-Mix verschmelzen, damit
-      // Summe(Menge) konsistent mit kaufmenge bleibt.
-      tp3Preis = ((tp3Preis || 0) * tp3M + unmappedAvgPrice * unaccountedQty) / (tp3M + unaccountedQty);
-      tp3M = tp3M + unaccountedQty;
-    }
-  }
-
-  const tpFinalValue = (tp1Preis || 0) * tp1M + (tp2Preis || 0) * tp2M + (tp3Preis || 0) * tp3M;
-  const verifiedAvgExit = kaufmenge > 0 ? tpFinalValue / kaufmenge : avgExit;
-
-  await supabaseClient.from('closed_trades').insert({
-    user_id: USER_ID, ticker: existing.ticker,
-    einstiegspreis: parseFloat(parseFloat(existing.einstiegspreis).toFixed(4)),
-    kaufmenge: parseFloat(kaufmenge.toFixed(4)),
-    kaufdatum: (existing.kaufdatum || '').substring(0, 10),
-    exit_datum: lastSell?.date || null,
-    // live_preis bleibt der reale Avg-Exit-Preis aus dem Broker-Import —
-    // unabhängige zweite Wahrheitsquelle für Plausibilitätschecks.
-    live_preis: parseFloat(avgExit.toFixed(4)),
-    status: 'geschlossen',
-    stop_loss: existing.stopLoss || null,
-    initial_rrr: existing.initialRrr || null,
-    tp1_preis: tp1Preis !== null ? parseFloat(parseFloat(tp1Preis).toFixed(4)) : null,
-    tp1_menge: tp1M > 0 ? parseFloat(tp1M.toFixed(4)) : null,
-    tp1_datum: tp1D,
-    tp2_preis: tp2Preis !== null ? parseFloat(parseFloat(tp2Preis).toFixed(4)) : null,
-    tp2_menge: tp2M > 0 ? parseFloat(tp2M.toFixed(4)) : null,
-    tp2_datum: tp2D,
-    tp3_preis: tp3Preis !== null ? parseFloat(parseFloat(tp3Preis).toFixed(4)) : null,
-    tp3_menge: tp3M > 0 ? parseFloat(tp3M.toFixed(4)) : null,
-    tp3_datum: tp3D,
-    screenshot_entry: existing.screenshotEntry || null,
-    screenshot_tp1: existing.screenshotTp1 || null,
-    screenshot_tp2: existing.screenshotTp2 || null,
-    screenshot_tp3: existing.screenshotTp3 || null,
-    screenshot_exit: existing.screenshotExit || null
-  });
-
-  // Plausibilitäts-Warnung im Browser-Log, falls TP-Slot-Ausstieg vom realen
-  // Broker-Avg-Exit abweicht — erleichtert künftiges Debugging.
-  if (Math.abs(verifiedAvgExit - avgExit) > 0.01) {
-    console.warn(`[Import-Check] ${existing.ticker}: TP-Slot-Ausstieg ($${verifiedAvgExit.toFixed(2)}) weicht vom realen Broker-Avg-Exit ($${avgExit.toFixed(2)}) ab. Bitte mit "Ausstiegspreise korrigieren" prüfen.`);
-  }
-
-  await supabaseClient.from('trades').delete().eq('id', existing.id);
-}
-
-// Maps new sells to TP slots, skipping already-recorded TPs
-function mapSellsToTPs(sells, existing) {
-  if (!sells || sells.length === 0) return {};
-  const hasTp1 = (existing.tp1Menge || 0) > 0;
-  const hasTp2 = (existing.tp2Menge || 0) > 0;
-  const hasTp3 = (existing.tp3Menge || 0) > 0;
-  // Only take sells that haven't been recorded yet
-  const offset = hasTp1 ? (hasTp2 ? (hasTp3 ? 3 : 2) : 1) : 0;
-  const newSells = sells.slice(offset);
-  if (newSells.length === 0) return {};
-  const updates = {};
-  if (!hasTp1 && newSells[0]) { updates.tp1_preis = newSells[0].price; updates.tp1_menge = newSells[0].qty; updates.tp1_datum = newSells[0].date; }
-  if (!hasTp2 && newSells[hasTp1 ? 0 : 1]) {
-    const s = newSells[hasTp1 ? 0 : 1];
-    updates.tp2_preis = s.price; updates.tp2_menge = s.qty; updates.tp2_datum = s.date;
-  }
-  if (!hasTp3 && newSells[hasTp1 ? (hasTp2 ? 0 : 1) : 2]) {
-    const s = newSells[hasTp1 ? (hasTp2 ? 0 : 1) : 2];
-    updates.tp3_preis = s.price; updates.tp3_menge = s.qty; updates.tp3_datum = s.date;
-  }
-  return updates;
 }
 
 // ── START ─────────────────────────────────────────────
@@ -1655,30 +1427,35 @@ if (_formContent && _formIcon) {
   </div>
 </div>
 
-<!-- IBKR Import Modal -->
-<div id="ibkrSyncModal" class="modal" onclick="if(event.target === this) closeIBKRSync()">
-  <div class="modal-content" style="max-width:520px;" onclick="event.stopPropagation()">
+<!-- Aktiensplit Modal -->
+<div id="splitModal" class="modal" onclick="if(event.target === this) closeSplitModal()">
+  <div class="modal-content" style="max-width:460px;" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <h2 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:0;">📥 IBKR Import</h2>
-      <button onclick="closeIBKRSync()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1;">×</button>
+      <h2 style="font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:0;">⑃ Aktiensplit · <span id="splitTicker" style="color:var(--text);"></span></h2>
+      <button onclick="closeSplitModal()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1;">×</button>
     </div>
     <div class="modal-body" style="padding:20px;">
-      <p style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.6;">Exportiere aus CapTrader:<br><strong style="color:var(--text);">1. Activity Statement (Kontoauszug)</strong><br><strong style="color:var(--text);">2. Orders &amp; Trades (offene Orders)</strong></p>
-      <div class="fg">
-        <label for="kontoauszugFile" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.06em;">Kontoauszug CSV *</label>
-        <input type="file" id="kontoauszugFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);width:100%;box-sizing:border-box;">
+      <p style="font-family:var(--mono);font-size:11px;color:var(--muted);margin:0 0 14px;line-height:1.6;">
+        Verhältnis <strong style="color:var(--text);">neue : alte</strong> Aktien.<br>
+        Forward z.B. 4:1 (mehr Aktien, niedrigerer Kurs) · Reverse z.B. 1:10.
+      </p>
+      <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:12px;">
+        <div class="fg" style="flex:1;"><label>Neue Aktien</label><input type="number" id="splitNew" value="4" min="0" step="0.0001" oninput="renderSplitPreview()"></div>
+        <div style="font-family:var(--mono);font-size:18px;color:var(--muted);padding-bottom:8px;">:</div>
+        <div class="fg" style="flex:1;"><label>Alte Aktien</label><input type="number" id="splitOld" value="1" min="0" step="0.0001" oninput="renderSplitPreview()"></div>
       </div>
-      <div class="fg" style="margin-top:12px;">
-        <label for="ordersFile" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.06em;">Offene Orders CSV (optional)</label>
-        <input type="file" id="ordersFile" accept=".csv" style="font-family:var(--mono);font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);width:100%;box-sizing:border-box;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="setSplitRatio(2,1)">2:1</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="setSplitRatio(3,1)">3:1</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="setSplitRatio(4,1)">4:1</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="setSplitRatio(10,1)">10:1</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="setSplitRatio(1,10)">1:10</button>
       </div>
-      <div id="importPreview" class="import-preview" style="display:none;margin-top:16px;"></div>
-      <div id="syncStatus" style="font-family:var(--mono);font-size:11px;margin-top:15px;padding:10px;border-radius:var(--radius);display:none;"></div>
+      <div id="splitPreview"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeIBKRSync()">Abbrechen</button>
-      <button id="ibkrStartBtn" class="btn btn-primary" onclick="startIBKRSync()">Analysieren</button>
-      <button id="ibkrImportConfirmBtn" class="btn btn-primary" onclick="confirmUmsatzImport()" style="display:none;background:var(--green);color:#000;">✓ Import bestätigen</button>
+      <button class="btn btn-secondary" onclick="closeSplitModal()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="applySplit()" style="background:#f59e0b;color:#000;">✓ Split anwenden</button>
     </div>
   </div>
 </div>
