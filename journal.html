@@ -767,7 +767,7 @@ function calcInitialRRR(einstiegspreis, stopLoss, tp1Preis, tp2Preis, tp3Preis) 
 function calcStatusDetail(t) { const r = calcRestmenge(t); if (r === 0) return 'Beendet'; if (r < t.kaufmenge) return 'Teil-Ausstieg'; return 'Läuft'; }
 
 // ── RENDERING ─────────────────────────────────────────
-function updateUI() { renderTradesTable(); renderHistorieTable(); updateHeaderStats(); }
+function updateUI() { renderTradesTable(); renderHistorieTable(); updateHeaderStats(); updateDashboard(); }
 
 function renderTradesTable() {
   const tbody = document.getElementById('tradesTable');
@@ -959,9 +959,13 @@ function updateDashboard() {
   const available = portfolioValue - invested;
   const totalRisk = trades.reduce((sum, t) => sum + calcRisiko(t), 0);
   const riskPercent = (totalRisk / portfolioValue) * 100;
-  const wins = closedTrades.filter(t => calcPL(t) > 0);
-  const losses = closedTrades.filter(t => calcPL(t) < 0);
-  const winRate = closedTrades.length > 0 ? (wins.length / closedTrades.length) * 100 : 0;
+  // Breakeven-Toleranz: Trades mit |P/L| < 1 Cent zaehlen weder als Gewinner
+  // noch als Verlierer und verwaessern die Win-Rate nicht.
+  const BE_EPS = 0.005;
+  const wins = closedTrades.filter(t => calcPL(t) > BE_EPS);
+  const losses = closedTrades.filter(t => calcPL(t) < -BE_EPS);
+  const decided = wins.length + losses.length;
+  const winRate = decided > 0 ? (wins.length / decided) * 100 : 0;
   const avgWin = wins.length > 0 ? wins.reduce((sum, t) => sum + calcPL(t), 0) / wins.length : 0;
   const avgLoss = losses.length > 0 ? losses.reduce((sum, t) => sum + calcPL(t), 0) / losses.length : 0;
   document.getElementById('dashBudget').textContent = formatCurrency(portfolioValue);
