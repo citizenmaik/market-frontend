@@ -408,7 +408,7 @@ body {
           <th>RS</th><th>Ticker</th><th>Name</th>
           <th>1D%</th><th>1W%</th><th>2W%</th><th>1M%</th>
           <th>1M Chart</th>
-          <th>RS Ratio</th><th>RS 1M%</th><th>VARS</th><th>ATR Mult.</th>
+          <th>RS 1M%</th><th>VARS</th><th>ATR Mult.</th>
         </tr></thead>
         <tbody id="secTbl"></tbody>
       </table></div>
@@ -434,7 +434,7 @@ body {
           <th>RS</th><th>Ticker</th><th>Name</th>
           <th>1D%</th><th>1W%</th><th>2W%</th><th>1M%</th>
           <th>1M Chart</th>
-          <th>RS Ratio</th><th>RS 1M%</th><th>VARS</th><th>ATR Mult.</th>
+          <th>RS 1M%</th><th>VARS</th><th>ATR Mult.</th>
         </tr></thead>
         <tbody id="indTbl"></tbody>
       </table></div>
@@ -1071,11 +1071,6 @@ function renderTable(tbodyId, data) {
   sorted.forEach(([sym, s]) => {
     const tr2 = document.createElement('tr');
 
-    // RS Ratio coloring: >100 green, <100 red
-    const rrColor = s.rs_ratio >= 100 ? 'var(--green)' : 'var(--red)';
-    const rrSign  = s.rs_ratio >= 100 ? '+' : '';
-    const rrDelta = (s.rs_ratio - 100).toFixed(2);
-
     // VARS color
     const varsColor = s.vars >= 0 ? 'var(--green)' : 'var(--red)';
 
@@ -1094,7 +1089,6 @@ function renderTable(tbodyId, data) {
       <td>${pct(s.w2,  1)}</td>
       <td>${pct(s.mth, 1)}</td>
       <td>${miniSpark(s.closes22, s.mth)}</td>
-      <td style="color:${rrColor};font-weight:600;">${s.rs_ratio.toFixed(2)}</td>
       <td>${pct(s.rs_1m, 2)}</td>
       <td style="color:${varsColor};font-size:11px;">${s.vars >= 0 ? '+' : ''}${s.vars.toFixed(3)}</td>
       <td style="color:${atrColor};font-size:11px;">${s.atr_mult >= 0 ? '+' : ''}${s.atr_mult.toFixed(2)}x</td>
