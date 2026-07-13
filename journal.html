@@ -317,7 +317,7 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
           <select id="score"><option value="">–</option><option value="6">6/6</option><option value="5">5/6</option><option value="4">4/6</option><option value="3">3/6</option><option value="2">2/6</option><option value="1">1/6</option><option value="0">0/6</option></select></div>
         <div class="fg"><label for="regime">Regime</label>
           <select id="regime"><option value="">–</option><option value="Risk-On">Risk-On (BUY ≥4/6)</option><option value="NEUTRAL/VORSICHT">NEUTRAL/VORSICHT (≥5/6)</option><option value="Risk-Off">Risk-Off (K.O.)</option></select></div>
-        <div class="fg"><label for="atrEinstieg">ATR Einstieg ($)</label><input type="number" id="atrEinstieg" step="0.0001" placeholder="2.4000" oninput="calcMindestabstand()"></div>
+        <div class="fg"><label for="atrPctEinstieg">ATR% Einstieg</label><input type="number" id="atrPctEinstieg" step="0.01" placeholder="3.5" oninput="calcMindestabstand()"></div>
         <div class="fg"><label for="stop0">Initialer Stop $ (Stop0)</label><input type="number" id="stop0" step="0.0001" placeholder="fix, nicht trailen" oninput="calcMindestabstand()"></div>
         <div class="fg"><label for="bandEinstieg">21EMA Low Band $</label><input type="number" id="bandEinstieg" step="0.0001" placeholder="47.8000"></div>
       </div>
@@ -490,7 +490,7 @@ function dbToTrade(t) {
     livePreis: parseFloat(t.live_preis || t.einstiegspreis), status: t.status,
     initialRRR: t.initial_rrr ? parseFloat(t.initial_rrr) : null,
     score: (t.score !== null && t.score !== undefined) ? parseInt(t.score) : null,
-    regime: t.regime || null, atrEinstieg: t.atr_einstieg ? parseFloat(t.atr_einstieg) : null,
+    regime: t.regime || null, atrPctEinstieg: t.atr_pct_einstieg ? parseFloat(t.atr_pct_einstieg) : null,
     stop0: t.stop0 ? parseFloat(t.stop0) : null, bandEinstieg: t.band_einstieg ? parseFloat(t.band_einstieg) : null,
     exitGrund: t.exit_grund || null, exitPreis: t.exit_preis ? parseFloat(t.exit_preis) : null,
     screenshotEntry: t.screenshot_entry, screenshotTp1: t.screenshot_tp1,
@@ -513,17 +513,17 @@ async function addTrade() {
   const initialRRR = calcInitialRRR(einstiegspreis, stopLoss, tp1Preis, tp2Preis, tp3Preis);
   const score = document.getElementById('score').value !== '' ? parseInt(document.getElementById('score').value) : null;
   const regime = document.getElementById('regime').value || null;
-  const atrEinstieg = parseFloat(document.getElementById('atrEinstieg').value) || null;
+  const atrPctEinstieg = parseFloat(document.getElementById('atrPctEinstieg').value) || null;
   const stop0 = parseFloat(document.getElementById('stop0').value) || null;
   const bandEinstieg = parseFloat(document.getElementById('bandEinstieg').value) || null;
   try {
-    await supabaseClient.from('trades').insert({ user_id: USER_ID, ticker, einstiegspreis, kaufmenge, kaufdatum, stop_loss: stopLoss || null, tp1_preis: tp1Preis || null, tp2_preis: tp2Preis || null, tp3_preis: tp3Preis || null, live_preis: einstiegspreis, status: 'offen', initial_rrr: initialRRR, score, regime, atr_einstieg: atrEinstieg, stop0, band_einstieg: bandEinstieg });
+    await supabaseClient.from('trades').insert({ user_id: USER_ID, ticker, einstiegspreis, kaufmenge, kaufdatum, stop_loss: stopLoss || null, tp1_preis: tp1Preis || null, tp2_preis: tp2Preis || null, tp3_preis: tp3Preis || null, live_preis: einstiegspreis, status: 'offen', initial_rrr: initialRRR, score, regime, atr_pct_einstieg: atrPctEinstieg, stop0, band_einstieg: bandEinstieg });
     await loadData(); updateUI(); resetForm();
   } catch (error) { console.error('Add trade error:', error); alert('Fehler beim Hinzufügen!'); }
 }
 
 function resetForm() {
-  ['ticker','einstiegspreis','kaufmenge','stopLoss','tp1Preis','tp2Preis','tp3Preis','kaufdatum','score','regime','atrEinstieg','stop0','bandEinstieg'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['ticker','einstiegspreis','kaufmenge','stopLoss','tp1Preis','tp2Preis','tp3Preis','kaufdatum','score','regime','atrPctEinstieg','stop0','bandEinstieg'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const mh = document.getElementById('mindestabstandHinweis'); if (mh) { mh.textContent = '1R / Stop-Abstand — Entry + Stop0 eingeben'; mh.className = 'fg-r'; }
   document.getElementById('kaufdatum').value = getTodayISO();
 }
@@ -733,7 +733,7 @@ async function closeTrade(tradeId) {
     else if (trade.tp1Menge === 0) { trade.tp1Preis = ausstiegspreis; trade.tp1Menge = restmenge; }
   }
   try {
-    await supabaseClient.from('closed_trades').insert({ user_id: USER_ID, ticker: trade.ticker, einstiegspreis: trade.einstiegspreis, kaufmenge: trade.kaufmenge, kaufdatum: trade.kaufdatum || null, stop_loss: trade.stopLoss || null, tp1_preis: trade.tp1Preis || null, tp2_preis: trade.tp2Preis || null, tp3_preis: trade.tp3Preis || null, tp1_menge: trade.tp1Menge || 0, tp2_menge: trade.tp2Menge || 0, tp3_menge: trade.tp3Menge || 0, tp1_datum: trade.tp1Datum || null, tp2_datum: trade.tp2Datum || null, tp3_datum: trade.tp3Datum || null, exit_datum: exitDatum, live_preis: trade.livePreis, status: 'geschlossen', initial_rrr: trade.initialRRR || null, score: trade.score ?? null, regime: trade.regime || null, atr_einstieg: trade.atrEinstieg ?? null, stop0: trade.stop0 ?? null, band_einstieg: trade.bandEinstieg ?? null, exit_grund: trade.exitGrund || null, exit_preis: trade.exitPreis ?? null, screenshot_entry: trade.screenshotEntry || null, screenshot_tp1: trade.screenshotTp1 || null, screenshot_tp2: trade.screenshotTp2 || null, screenshot_tp3: trade.screenshotTp3 || null, screenshot_exit: trade.screenshotExit || null });
+    await supabaseClient.from('closed_trades').insert({ user_id: USER_ID, ticker: trade.ticker, einstiegspreis: trade.einstiegspreis, kaufmenge: trade.kaufmenge, kaufdatum: trade.kaufdatum || null, stop_loss: trade.stopLoss || null, tp1_preis: trade.tp1Preis || null, tp2_preis: trade.tp2Preis || null, tp3_preis: trade.tp3Preis || null, tp1_menge: trade.tp1Menge || 0, tp2_menge: trade.tp2Menge || 0, tp3_menge: trade.tp3Menge || 0, tp1_datum: trade.tp1Datum || null, tp2_datum: trade.tp2Datum || null, tp3_datum: trade.tp3Datum || null, exit_datum: exitDatum, live_preis: trade.livePreis, status: 'geschlossen', initial_rrr: trade.initialRRR || null, score: trade.score ?? null, regime: trade.regime || null, atr_pct_einstieg: trade.atrPctEinstieg ?? null, stop0: trade.stop0 ?? null, band_einstieg: trade.bandEinstieg ?? null, exit_grund: trade.exitGrund || null, exit_preis: trade.exitPreis ?? null, screenshot_entry: trade.screenshotEntry || null, screenshot_tp1: trade.screenshotTp1 || null, screenshot_tp2: trade.screenshotTp2 || null, screenshot_tp3: trade.screenshotTp3 || null, screenshot_exit: trade.screenshotExit || null });
     await supabaseClient.from('trades').delete().eq('id', tradeId);
     await loadData(); updateUI();
   } catch (error) { console.error('Close trade error:', error); alert('Fehler beim Schließen!'); }
@@ -1398,13 +1398,18 @@ if (_formContent && _formIcon) {
 function calcMindestabstand(){
   const entry = parseFloat((document.getElementById('einstiegspreis')||{}).value);
   const stop0 = parseFloat((document.getElementById('stop0')||{}).value);
-  const atr   = parseFloat((document.getElementById('atrEinstieg')||{}).value);
+  const atrPct = parseFloat((document.getElementById('atrPctEinstieg')||{}).value);
   const box = document.getElementById('mindestabstandHinweis');
   if(!box) return;
   if(isNaN(entry)||isNaN(stop0)||entry<=0){ box.textContent='1R / Stop-Abstand — Entry + Stop0 eingeben'; box.className='fg-r'; return; }
   const R = entry - stop0; const stopPct=(R/entry)*100;
   let txt='1R = $'+R.toFixed(2)+'  ·  Stop-Abstand '+stopPct.toFixed(2)+'%'; let warn=false;
-  if(!isNaN(atr)&&atr>0){ const ratio=R/atr; txt+='  ·  1R = '+ratio.toFixed(2)+'x ATR'; if(ratio<0.5){ txt+='  ⚠ Stop im Rauschen (<0.5x ATR)'; warn=true; } }
+  // Mindestabstand-Kandidat (§21, im Freeze): Stop-Abstand% >= 0.5 x ATR%
+  if(!isNaN(atrPct)&&atrPct>0){
+    const ratio = stopPct/atrPct;
+    txt+='  ·  Stop = '+ratio.toFixed(2)+'x ATR%';
+    if(ratio<0.5){ txt+='  ⚠ Stop im Rauschen (<0.5x ATR%)'; warn=true; }
+  }
   box.textContent=txt; box.className=warn?'fg-r warn':'fg-r';
 }
 document.addEventListener('DOMContentLoaded',function(){ const e=document.getElementById('einstiegspreis'); if(e) e.addEventListener('input',calcMindestabstand); });
