@@ -223,6 +223,15 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
 @media (max-width: 400px) {
   .sync-btn-text, .logout-btn-text { display:none; }
 }
+
+    /* 21DMA v2.33 Journal-Erweiterung */
+    .fg-cat{grid-column:1/-1;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#60a5fa;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #232c3a;}
+    .fg-cat-w{color:#f0b94f;}
+    .fg select{width:100%;background:#161d28;border:1px solid #232c3a;border-radius:8px;color:#e7edf5;font-size:14px;padding:9px 10px;font-family:inherit;}
+    .fg select:focus{outline:1px solid #60a5fa;border-color:#60a5fa;}
+    .fg-r{grid-column:1/-1;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#3ddc97;background:#11161f;border:1px solid #232c3a;border-radius:8px;padding:8px 10px;margin-top:10px;}
+    .fg-r.warn{color:#f0b94f;}
+    .exit-x select{width:100%;background:#161d28;border:1px solid #232c3a;border-radius:6px;color:#e7edf5;font-size:13px;padding:8px;font-family:inherit;}
 </style>
 </head>
 <body>
@@ -298,9 +307,22 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
         <div class="fg"><label for="stopLoss">Stop-Loss ($)</label><input type="number" id="stopLoss" step="0.01" placeholder="0.00"></div>
         <div class="fg"><label for="tp1Preis">TP1 Preis ($)</label><input type="number" id="tp1Preis" step="0.01" placeholder="0.00"></div>
         <div class="fg"><label for="tp2Preis">TP2 Preis ($)</label><input type="number" id="tp2Preis" step="0.01" placeholder="0.00"></div>
-        <div class="fg"><label for="tp3Preis">TP3 Preis ($)</label><input type="number" id="tp3Preis" step="0.01" placeholder="0.00"></div>
+        <div class="fg"><label for="tp3Preis">Runner-Exit ($)</label><input type="number" id="tp3Preis" step="0.01" placeholder="0.00"></div>
         <div class="fg"><label for="kaufdatum">Kaufdatum</label><input type="date" id="kaufdatum"></div>
       </div>
+
+      <div class="fg-cat">Einstieg — 21DMA v2.33</div>
+      <div class="form-grid">
+        <div class="fg"><label for="score">Score /6</label>
+          <select id="score"><option value="">–</option><option value="6">6/6</option><option value="5">5/6</option><option value="4">4/6</option><option value="3">3/6</option><option value="2">2/6</option><option value="1">1/6</option><option value="0">0/6</option></select></div>
+        <div class="fg"><label for="regime">Regime</label>
+          <select id="regime"><option value="">–</option><option value="Risk-On">Risk-On (BUY ≥4/6)</option><option value="NEUTRAL/VORSICHT">NEUTRAL/VORSICHT (≥5/6)</option><option value="Risk-Off">Risk-Off (K.O.)</option></select></div>
+        <div class="fg"><label for="atrEinstieg">ATR Einstieg ($)</label><input type="number" id="atrEinstieg" step="0.0001" placeholder="2.4000" oninput="calcMindestabstand()"></div>
+        <div class="fg"><label for="stop0">Initialer Stop $ (Stop0)</label><input type="number" id="stop0" step="0.0001" placeholder="fix, nicht trailen" oninput="calcMindestabstand()"></div>
+        <div class="fg"><label for="bandEinstieg">21EMA Low Band $</label><input type="number" id="bandEinstieg" step="0.0001" placeholder="47.8000"></div>
+      </div>
+      <div class="fg-r" id="mindestabstandHinweis">1R / Stop-Abstand — Entry + Stop0 eingeben</div>
+
       <div class="form-actions">
         <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
         <button class="btn btn-primary" onclick="addTrade()">Trade Hinzufügen</button>
@@ -315,7 +337,7 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
         <th class="text-right">Menge</th><th class="text-right">Pos. Größe</th><th class="text-right">Stop-Loss</th>
         <th class="text-right">Risiko</th><th class="text-right">Risiko %</th><th class="text-right">Live-Preis</th>
         <th>Status Detail</th><th class="text-right">Rest (Stk)</th>
-        <th>TP1 Datum</th><th>TP2 Datum</th><th>TP3 Datum</th><th>Aktionen</th>
+        <th>TP1 Datum</th><th>TP2 Datum</th><th>Runner Datum</th><th>Aktionen</th>
       </tr></thead>
       <tbody id="tradesTable"></tbody>
     </table>
@@ -328,7 +350,7 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
     <table>
       <thead><tr>
         <th>Status</th><th>Ticker</th><th>Kaufdatum</th><th>TP1 Datum</th><th>TP2 Datum</th>
-        <th>TP3 Datum</th><th>Exit Datum</th><th class="text-right">Einstieg</th>
+        <th>Runner Datum</th><th>Exit Datum</th><th class="text-right">Einstieg</th>
         <th class="text-right">Ausstieg</th><th class="text-right">Menge</th>
         <th class="text-right">P/L ($)</th><th class="text-right">P/L (%)</th>
         <th class="text-right">RRR</th><th>Aktionen</th>
@@ -467,6 +489,10 @@ function dbToTrade(t) {
     tp1Datum: t.tp1_datum, tp2Datum: t.tp2_datum, tp3Datum: t.tp3_datum, exitDatum: t.exit_datum,
     livePreis: parseFloat(t.live_preis || t.einstiegspreis), status: t.status,
     initialRRR: t.initial_rrr ? parseFloat(t.initial_rrr) : null,
+    score: (t.score !== null && t.score !== undefined) ? parseInt(t.score) : null,
+    regime: t.regime || null, atrEinstieg: t.atr_einstieg ? parseFloat(t.atr_einstieg) : null,
+    stop0: t.stop0 ? parseFloat(t.stop0) : null, bandEinstieg: t.band_einstieg ? parseFloat(t.band_einstieg) : null,
+    exitGrund: t.exit_grund || null, exitPreis: t.exit_preis ? parseFloat(t.exit_preis) : null,
     screenshotEntry: t.screenshot_entry, screenshotTp1: t.screenshot_tp1,
     screenshotTp2: t.screenshot_tp2, screenshotTp3: t.screenshot_tp3, screenshotExit: t.screenshot_exit
   };
@@ -485,14 +511,20 @@ async function addTrade() {
   const kaufdatum = document.getElementById('kaufdatum').value || getTodayISO();
   if (!ticker || !einstiegspreis || !kaufmenge) { alert('Bitte fülle alle Pflichtfelder aus!'); return; }
   const initialRRR = calcInitialRRR(einstiegspreis, stopLoss, tp1Preis, tp2Preis, tp3Preis);
+  const score = document.getElementById('score').value !== '' ? parseInt(document.getElementById('score').value) : null;
+  const regime = document.getElementById('regime').value || null;
+  const atrEinstieg = parseFloat(document.getElementById('atrEinstieg').value) || null;
+  const stop0 = parseFloat(document.getElementById('stop0').value) || null;
+  const bandEinstieg = parseFloat(document.getElementById('bandEinstieg').value) || null;
   try {
-    await supabaseClient.from('trades').insert({ user_id: USER_ID, ticker, einstiegspreis, kaufmenge, kaufdatum, stop_loss: stopLoss || null, tp1_preis: tp1Preis || null, tp2_preis: tp2Preis || null, tp3_preis: tp3Preis || null, live_preis: einstiegspreis, status: 'offen', initial_rrr: initialRRR });
+    await supabaseClient.from('trades').insert({ user_id: USER_ID, ticker, einstiegspreis, kaufmenge, kaufdatum, stop_loss: stopLoss || null, tp1_preis: tp1Preis || null, tp2_preis: tp2Preis || null, tp3_preis: tp3Preis || null, live_preis: einstiegspreis, status: 'offen', initial_rrr: initialRRR, score, regime, atr_einstieg: atrEinstieg, stop0, band_einstieg: bandEinstieg });
     await loadData(); updateUI(); resetForm();
   } catch (error) { console.error('Add trade error:', error); alert('Fehler beim Hinzufügen!'); }
 }
 
 function resetForm() {
-  ['ticker','einstiegspreis','kaufmenge','stopLoss','tp1Preis','tp2Preis','tp3Preis','kaufdatum'].forEach(id => document.getElementById(id).value = '');
+  ['ticker','einstiegspreis','kaufmenge','stopLoss','tp1Preis','tp2Preis','tp3Preis','kaufdatum','score','regime','atrEinstieg','stop0','bandEinstieg'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const mh = document.getElementById('mindestabstandHinweis'); if (mh) { mh.textContent = '1R / Stop-Abstand — Entry + Stop0 eingeben'; mh.className = 'fg-r'; }
   document.getElementById('kaufdatum').value = getTodayISO();
 }
 
@@ -575,6 +607,8 @@ async function editExitPrice(tradeId) {
   document.getElementById('exitTp2Menge').value = trade.tp2Menge > 0 ? trade.tp2Menge.toFixed(1) : '';
   document.getElementById('exitTp3Preis').value = trade.tp3Preis > 0 ? trade.tp3Preis.toFixed(4) : '';
   document.getElementById('exitTp3Menge').value = trade.tp3Menge > 0 ? trade.tp3Menge.toFixed(1) : '';
+  document.getElementById('exitGrund').value = trade.exitGrund || '';
+  document.getElementById('exitPreis').value = trade.exitPreis > 0 ? trade.exitPreis.toFixed(4) : '';
 
   updateExitEditSummary(trade);
   document.getElementById('exitEditModal').classList.add('active');
@@ -639,6 +673,8 @@ async function saveExitEdits() {
       tp2_menge: tp2M > 0 ? tp2M : 0,
       tp3_preis: tp3P > 0 ? tp3P : null,
       tp3_menge: tp3M > 0 ? tp3M : 0,
+      exit_grund: document.getElementById('exitGrund').value || null,
+      exit_preis: parseFloat(document.getElementById('exitPreis').value) || null,
     }).eq('id', tradeId);
     await loadData();
     updateUI();
@@ -697,7 +733,7 @@ async function closeTrade(tradeId) {
     else if (trade.tp1Menge === 0) { trade.tp1Preis = ausstiegspreis; trade.tp1Menge = restmenge; }
   }
   try {
-    await supabaseClient.from('closed_trades').insert({ user_id: USER_ID, ticker: trade.ticker, einstiegspreis: trade.einstiegspreis, kaufmenge: trade.kaufmenge, kaufdatum: trade.kaufdatum || null, stop_loss: trade.stopLoss || null, tp1_preis: trade.tp1Preis || null, tp2_preis: trade.tp2Preis || null, tp3_preis: trade.tp3Preis || null, tp1_menge: trade.tp1Menge || 0, tp2_menge: trade.tp2Menge || 0, tp3_menge: trade.tp3Menge || 0, tp1_datum: trade.tp1Datum || null, tp2_datum: trade.tp2Datum || null, tp3_datum: trade.tp3Datum || null, exit_datum: exitDatum, live_preis: trade.livePreis, status: 'geschlossen', initial_rrr: trade.initialRRR || null, screenshot_entry: trade.screenshotEntry || null, screenshot_tp1: trade.screenshotTp1 || null, screenshot_tp2: trade.screenshotTp2 || null, screenshot_tp3: trade.screenshotTp3 || null, screenshot_exit: trade.screenshotExit || null });
+    await supabaseClient.from('closed_trades').insert({ user_id: USER_ID, ticker: trade.ticker, einstiegspreis: trade.einstiegspreis, kaufmenge: trade.kaufmenge, kaufdatum: trade.kaufdatum || null, stop_loss: trade.stopLoss || null, tp1_preis: trade.tp1Preis || null, tp2_preis: trade.tp2Preis || null, tp3_preis: trade.tp3Preis || null, tp1_menge: trade.tp1Menge || 0, tp2_menge: trade.tp2Menge || 0, tp3_menge: trade.tp3Menge || 0, tp1_datum: trade.tp1Datum || null, tp2_datum: trade.tp2Datum || null, tp3_datum: trade.tp3Datum || null, exit_datum: exitDatum, live_preis: trade.livePreis, status: 'geschlossen', initial_rrr: trade.initialRRR || null, score: trade.score ?? null, regime: trade.regime || null, atr_einstieg: trade.atrEinstieg ?? null, stop0: trade.stop0 ?? null, band_einstieg: trade.bandEinstieg ?? null, exit_grund: trade.exitGrund || null, exit_preis: trade.exitPreis ?? null, screenshot_entry: trade.screenshotEntry || null, screenshot_tp1: trade.screenshotTp1 || null, screenshot_tp2: trade.screenshotTp2 || null, screenshot_tp3: trade.screenshotTp3 || null, screenshot_exit: trade.screenshotExit || null });
     await supabaseClient.from('trades').delete().eq('id', tradeId);
     await loadData(); updateUI();
   } catch (error) { console.error('Close trade error:', error); alert('Fehler beim Schließen!'); }
@@ -1358,6 +1394,20 @@ if (_formContent && _formIcon) {
   _formIcon.classList.add('collapsed');
   _formIcon.textContent = '▶';
 }
+
+function calcMindestabstand(){
+  const entry = parseFloat((document.getElementById('einstiegspreis')||{}).value);
+  const stop0 = parseFloat((document.getElementById('stop0')||{}).value);
+  const atr   = parseFloat((document.getElementById('atrEinstieg')||{}).value);
+  const box = document.getElementById('mindestabstandHinweis');
+  if(!box) return;
+  if(isNaN(entry)||isNaN(stop0)||entry<=0){ box.textContent='1R / Stop-Abstand — Entry + Stop0 eingeben'; box.className='fg-r'; return; }
+  const R = entry - stop0; const stopPct=(R/entry)*100;
+  let txt='1R = $'+R.toFixed(2)+'  ·  Stop-Abstand '+stopPct.toFixed(2)+'%'; let warn=false;
+  if(!isNaN(atr)&&atr>0){ const ratio=R/atr; txt+='  ·  1R = '+ratio.toFixed(2)+'x ATR'; if(ratio<0.5){ txt+='  ⚠ Stop im Rauschen (<0.5x ATR)'; warn=true; } }
+  box.textContent=txt; box.className=warn?'fg-r warn':'fg-r';
+}
+document.addEventListener('DOMContentLoaded',function(){ const e=document.getElementById('einstiegspreis'); if(e) e.addEventListener('input',calcMindestabstand); });
 </script>
 
 <!-- Edit Trade Modal -->
@@ -1374,7 +1424,7 @@ if (_formContent && _formIcon) {
         <div class="fg"><label for="editStopLoss">Stop-Loss ($)</label><input type="number" id="editStopLoss" step="0.01"></div>
         <div class="fg"><label for="editTp1Preis">TP1 Preis ($)</label><input type="number" id="editTp1Preis" step="0.01"></div>
         <div class="fg"><label for="editTp2Preis">TP2 Preis ($)</label><input type="number" id="editTp2Preis" step="0.01"></div>
-        <div class="fg"><label for="editTp3Preis">TP3 Preis ($)</label><input type="number" id="editTp3Preis" step="0.01"></div>
+        <div class="fg"><label for="editTp3Preis">Runner-Exit ($)</label><input type="number" id="editTp3Preis" step="0.01"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1405,9 +1455,27 @@ if (_formContent && _formIcon) {
         <div style="font-size:12px;color:var(--muted);">TP2</div>
         <input type="number" step="0.0001" id="exitTp2Preis" class="inline-input" style="width:100%;" oninput="updateExitEditSummary()">
         <input type="number" step="0.1" id="exitTp2Menge" class="inline-input" style="width:100%;" oninput="updateExitEditSummary()">
-        <div style="font-size:12px;color:var(--muted);">TP3</div>
+        <div style="font-size:12px;color:var(--muted);">Run</div>
         <input type="number" step="0.0001" id="exitTp3Preis" class="inline-input" style="width:100%;" oninput="updateExitEditSummary()">
         <input type="number" step="0.1" id="exitTp3Menge" class="inline-input" style="width:100%;" oninput="updateExitEditSummary()">
+      </div>
+      <div class="exit-x" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Exit-Grund (§11/§12)</div>
+          <select id="exitGrund">
+            <option value="">–</option>
+            <option value="Ziel">Ziel (Gewinnexit)</option>
+            <option value="Trim-Runner">Trim-Runner (2R/4R)</option>
+            <option value="Stufe1-kein-Reclaim">Stufe1 – kein Reclaim</option>
+            <option value="Sofortausstieg">Sofortausstieg (&gt;0.5x ATR)</option>
+            <option value="Rennpferd">Rennpferd (Schluss &lt; Entry)</option>
+            <option value="MaxPain">Max-Pain (Gap, intraday)</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Exit-Preis ($) — optional</div>
+          <input type="number" step="0.0001" id="exitPreis" class="inline-input" style="width:100%;" placeholder="leer = Ø-Ausstieg">
+        </div>
       </div>
       <div style="margin-top:16px;padding:12px;background:var(--surface);border-radius:6px;font-size:12px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
