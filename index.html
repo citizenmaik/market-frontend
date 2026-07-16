@@ -104,12 +104,23 @@ body {
 
 .r1  {display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .rtd {display:block;margin-bottom:var(--gap);}
-.r1b {display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.r1b {display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .rsec{display:block;margin-bottom:var(--gap);}
 .rrs {display:block;margin-bottom:var(--gap);}
 
 .pnl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
   overflow:visible;transition:var(--transition);}
+.bsnap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:var(--pad);}
+.bsnap table{width:100%;border-collapse:collapse;}
+.bsnap thead th{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:right;padding:4px 8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.bsnap thead th:first-child{text-align:left;}
+.bsnap td{padding:9px 8px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;text-align:right;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.bsnap td:first-child{text-align:left;font-weight:600;letter-spacing:.03em;}
+.bsnap tr:last-child td{border-bottom:none;}
+.bsnap tr:hover td{background:var(--surface2);}
+.bsnap .rank{font-weight:600;}
+.bsnap .rank.up{color:var(--green);} .bsnap .rank.dn{color:var(--red);}
+.bstamp{font-family:var(--mono);font-size:9px;letter-spacing:.05em;color:var(--muted);margin-left:auto;padding-right:2px;}
 .ph{padding:12px var(--pad);border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:7px;}
 .ph h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text);}
@@ -140,7 +151,7 @@ body {
 .ty{color:var(--green);font-weight:600;}
 .tn{color:var(--red);font-weight:600;}
 
-.ptb,.fb{padding:var(--pad);}
+.ptb{padding:var(--pad);}
 .ptr,.fr{display:flex;justify-content:space-between;align-items:center;
   padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
 .ptr:last-child,.fr:last-child{border-bottom:none;}
@@ -199,25 +210,16 @@ body {
 .ind-best{color:var(--green);}
 .ind-worst{color:var(--red);}
 
-/* RS Gainers */
-.slbl{font-family:var(--mono);font-size:10px;color:var(--muted);
-  letter-spacing:.1em;text-transform:uppercase;padding:10px var(--pad) 6px;}
-.rss{border-right:1px solid var(--border);}
-.rss:last-child{border-right:none;}
-.rsi{display:flex;align-items:center;gap:10px;padding:8px var(--pad);
-  border-radius:5px;transition:background .15s;cursor:pointer;}
-.rsi:hover{background:var(--surface2);}
-.rsb{font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 7px;
-  border-radius:4px;white-space:nowrap;min-width:52px;text-align:center;}
-.r100{background:rgba(0,208,132,.2);color:var(--green);}
-.r65{background:rgba(245,200,66,.15);color:var(--yellow);}
-.r50{background:rgba(255,68,102,.15);color:var(--red);}
-.ri{flex:1;min-width:0;}
-.tn2{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);}
-.sc{font-size:11px;color:var(--muted);}
-.rr{text-align:right;flex-shrink:0;}
-.rp{font-family:var(--mono);font-size:13px;font-weight:600;margin-bottom:2px;}
-.rc{font-family:var(--mono);font-size:12px;font-weight:600;}
+/* RS Rotation */
+th.rot-s{cursor:pointer;user-select:none;}
+th.rot-s:hover{color:var(--text);}
+th.rot-s.sorted{color:var(--text);}
+th.rot-s.sorted::after{content:" ↓";opacity:.7;}
+th.rot-s.sorted.asc::after{content:" ↑";}
+.rot-lg{font-family:var(--mono);font-size:10px;color:var(--muted);
+  padding:8px var(--pad);border-top:1px solid var(--border);line-height:1.7;}
+.rnk{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;}
+
 
 .sk{display:inline-block;background:var(--surface2);border-radius:3px;
   animation:shimmer 1.5s infinite;}
@@ -254,11 +256,9 @@ body {
   .th-btn { width:28px; height:28px; font-size:14px; }
   .ic .pr { font-size:17px; }
   .ic { padding:12px; min-height:80px; }
-  .ph, .mc, .ptb, .fb { padding:12px; }
+  .ph, .mc, .ptb { padding:12px; }
   .mc-bitem .bv { font-size:11px; }
   .mc-bitem .bl { font-size:9px; }
-  #rsEl, #rsIndEl { grid-template-columns: 1fr !important; }
-  .rss { border-right:none; border-bottom:1px solid var(--border); }
 }
 
 .omi-wrap { display:grid; grid-template-columns: 220px 1fr; align-items:stretch; }
@@ -387,15 +387,24 @@ body {
     </div>
   </div>
 
-  <!-- Zeile 3: Power Trend | Factors -->
+  <!-- Zeile 3: Power Trend -->
   <div class="r1b">
     <div class="pnl">
       <div class="ph"><h3>Power Trend (QQQ)</h3></div>
       <div class="ptb" id="ptEl"></div>
     </div>
+  </div>
+
+  <!-- Zeile 3b: Breadth Snapshot (Multi-Universe) -->
+  <div class="r1b">
     <div class="pnl">
-      <div class="ph"><h3>Factors vs SP500</h3></div>
-      <div class="fb" id="facEl"></div>
+      <div class="ph"><h3>Breadth Snapshot</h3></div>
+      <div class="bsnap"><table>
+        <thead><tr>
+          <th>Universe</th><th>A/D</th><th>52w H/L</th><th>Up/Dn 4%</th><th>%&gt;50d</th><th>%&gt;200d</th><th>Rank</th>
+        </tr></thead>
+        <tbody id="breadthTbl"></tbody>
+      </table></div>
     </div>
   </div>
 
@@ -406,20 +415,12 @@ body {
       <div class="tw"><table>
         <thead><tr>
           <th>RS</th><th>Ticker</th><th>Name</th>
-          <th>1D%</th><th>1W%</th><th>2W%</th><th>1M%</th>
+          <th>1D%</th><th>1W%</th><th>1M%</th><th>3M%</th>
           <th>1M Chart</th>
-          <th>RS 1M%</th><th>VARS</th><th>ATR Mult.</th>
+          <th>VARS</th><th>ATR Mult.</th>
         </tr></thead>
         <tbody id="secTbl"></tbody>
       </table></div>
-    </div>
-  </div>
-
-  <!-- Zeile 5: RS Gainers Sector -->
-  <div class="rrs">
-    <div class="pnl">
-      <div class="ph"><h3>RS Gainers — Sector</h3></div>
-      <div id="rsEl"></div>
     </div>
   </div>
 
@@ -432,20 +433,50 @@ body {
       <div class="tw"><table>
         <thead><tr>
           <th>RS</th><th>Ticker</th><th>Name</th>
-          <th>1D%</th><th>1W%</th><th>2W%</th><th>1M%</th>
+          <th>1D%</th><th>1W%</th><th>1M%</th><th>3M%</th>
           <th>1M Chart</th>
-          <th>RS 1M%</th><th>VARS</th><th>ATR Mult.</th>
+          <th>VARS</th><th>ATR Mult.</th>
         </tr></thead>
         <tbody id="indTbl"></tbody>
       </table></div>
     </div>
   </div>
 
-  <!-- Zeile 7: RS Gainers Industry -->
+  <!-- Zeile 7: RS Rotation — drei getrennte Boxen, je eigene Rangliste -->
   <div class="rrs">
     <div class="pnl">
-      <div class="ph"><h3>RS Gainers — Industry</h3></div>
-      <div id="rsIndEl"></div>
+      <div class="ph"><h3>RS Rotation — Sectors</h3></div>
+      <div class="tw"><table>
+        <thead id="rotHeadSEC"></thead>
+        <tbody id="rotBodySEC"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="rrs">
+    <div class="pnl">
+      <div class="ph"><h3>RS Rotation — Industries</h3></div>
+      <div class="tw"><table>
+        <thead id="rotHeadIND"></thead>
+        <tbody id="rotBodyIND"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="rrs">
+    <div class="pnl">
+      <div class="ph"><h3>RS Rotation — Themes</h3></div>
+      <div class="tw"><table>
+        <thead id="rotHeadTHM"></thead>
+        <tbody id="rotBodyTHM"></tbody>
+      </table></div>
+      <div class="rot-lg">
+        Rotation = RS&nbsp;1W − RS&nbsp;1M×0.25 (1M auf Wochen-Pace normiert) ·
+        <span class="up">positiv</span> = beschleunigt, Kapital dreht rein ·
+        <span class="dn">negativ</span> = verlangsamt, dreht raus ·
+        Drift = RS-Tempo/Tag über 1W→1M→3M · Spalten je Box sortierbar ·
+        Default: Rotation ↓ · Rang # je Box getrennt
+      </div>
     </div>
   </div>
 
@@ -454,7 +485,7 @@ body {
 <script>
 const REFRESH = 5 * 60 * 1000;
 const API     = '/api/data';
-var FKEY = new URLSearchParams(location.search).get('key') || localStorage.getItem('fh_key') || 'd6f1101r01qvn4o1e6bgd6f1101r01qvn4o1e6c0';
+var FKEY = new URLSearchParams(location.search).get('key') || localStorage.getItem('fh_key') || '';  // Key liegt serverseitig (Vercel env FINNHUB_KEY)
 if (new URLSearchParams(location.search).get('key')) {
   localStorage.setItem('fh_key', new URLSearchParams(location.search).get('key'));
   history.replaceState({}, '', location.pathname);
@@ -481,7 +512,6 @@ function bdg(v) {
   return v>0?'<span class="bdg bp">Positive</span>':v<0?'<span class="bdg bn">Negative</span>':'<span class="bdg bu">Neutral</span>';
 }
 function rsClass(rs){ return rs>=80?'rh':rs>=60?'rm':rs>=40?'rl':'rvl'; }
-function rsGB(rs)   { return rs>=80?'r100':rs>=60?'r65':'r50'; }
 
 // ── Mini sparkbar (22 Bars, letzte 22 Candles) ──────
 function miniSpark(closes22, m1pct) {
@@ -545,8 +575,10 @@ async function getCandles(symbols, range='1y') {
 }
 
 // ── Constants ─────────────────────────────────────────
-const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','IWM','BINANCE:BTCUSDT','GLD'];
-const IDX_META = {SPY:'S&P 500',RSP:'S&P 500 EQ WT',QQQ:'NASDAQ 100',QQQE:'NASDAQ 100 EQ WT',IWM:'RUSSELL 2000','BINANCE:BTCUSDT':'BITCOIN',GLD:'GOLD ETF'};
+// Index-Karten. 'CL=F' = Crude Oil Front-Month-Future (Yahoo-Notation,
+// Benchmark WTI). IWM bleibt in Trend/Breadth/Market-Conditions.
+const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','CL=F','BINANCE:BTCUSDT','GLD'];
+const IDX_META = {SPY:'S&P 500',RSP:'S&P 500 EQ WT',QQQ:'NASDAQ 100',QQQE:'NASDAQ 100 EQ WT','CL=F':'CRUDE OIL','BINANCE:BTCUSDT':'BITCOIN',GLD:'GOLD ETF'};
 
 const SEC_SYMS  = ['XLK','XLF','XLV','XLE','XLI','XLC','XLY','XLP','XLRE','XLU','XLB'];
 const SEC_NAMES = {XLK:'Technology',XLF:'Financials',XLV:'Health Care',XLE:'Energy',
@@ -555,8 +587,17 @@ const SEC_NAMES = {XLK:'Technology',XLF:'Financials',XLV:'Health Care',XLE:'Ener
 const IND_SYMS = ['IGV','SKYY','HACK','SOXX','IBB','IHI','PPH','KRE','KBE','ITA','ITB','IYT','JETS','XOP','OIH','ICLN','TAN','URNM','GDX','GDXJ','XME','XRT','IYZ'];
 const IND_NAMES = {IGV:'Software',SKYY:'Cloud Computing',HACK:'Cybersecurity',SOXX:'Semiconductors',IBB:'Biotech',IHI:'Medical Devices',PPH:'Pharmaceuticals',KRE:'Regional Banks',KBE:'Banks',ITA:'Aerospace & Defense',ITB:'Home Construction',IYT:'Transportation',JETS:'Airlines',XOP:'Oil & Gas E&P',OIH:'Oil Services',ICLN:'Clean Energy',TAN:'Solar Energy',URNM:'Uranium Miners',GDX:'Gold Miners',GDXJ:'Jr. Gold Miners',XME:'Metals & Mining',XRT:'Retail',IYZ:'Telecom'};
 
-const FAC_SYMS = ['IVW','IVE','HDV','OEF','IJH','IJR','MTUM','IPO'];
-const FAC_LBLS = {IVW:'Growth',IVE:'Value',HDV:'High Dividend',OEF:'Large-Cap',IJH:'Mid-Cap',IJR:'Small-Cap',MTUM:'Momentum',IPO:'IPOs'};
+// Themes — Narrativ-Cluster, orthogonal zu GICS. Nur Exposures, die
+// SEC_SYMS/IND_SYMS strukturell NICHT abbilden. Eigene Rangliste.
+// Nah-Dubletten bleiben bewusst: CIBR~HACK, XBI~IBB, SMH~SOXX,
+// URA~URNM, SHLD~ITA, XTL~IYZ — anderer Wrapper, anderer Index.
+const THEME_SYMS = ['ARKG','CIBR','XBI','IBIT','SOCL','KWEB','SMH','AIQ','ROBO','IWF',
+  'SIL','XTL','QTUM','SLX','WGMI','URA','SHLD'];
+const THEME_NAMES = {ARKG:'Genomics',CIBR:'Cybersecurity',XBI:'Biotechnology',IBIT:'Bitcoin',
+  SOCL:'Social Media',KWEB:'China Internet',SMH:'Semiconductors',AIQ:'AI',ROBO:'Robotics',
+  IWF:'Growth Stocks',SIL:'Silver Miners',XTL:'Telecom',QTUM:'Quantum',SLX:'Steel',
+  WGMI:'Bitcoin Miners',URA:'Uranium',SHLD:'Defense'};
+
 
 // ── Invest-Exposure Regime (abgeleitet vom GESAMT-Composite, −100…+100) ──
 const EXP_CFG = {
@@ -773,11 +814,11 @@ async function loadIndices() {
     fetch(`${API}?type=vix&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({vix:null}))
   ]);
   const row = document.getElementById('idxRow'); row.innerHTML='';
-  const YF_MAP = {'BINANCE:BTCUSDT':'BTC-USD','GLD':'GLD','SPY':'SPY','RSP':'RSP','QQQ':'QQQ','QQQE':'QQQE','IWM':'IWM'};
+  const YF_MAP = {'BINANCE:BTCUSDT':'BTC-USD','GLD':'GLD','SPY':'SPY','RSP':'RSP','QQQ':'QQQ','QQQE':'QQQE','CL=F':'CL=F'};
   IDX_SYMS.forEach((sym) => {
     const q=quotesData[sym]; const price=q?.c||0, prev=q?.pc||0;
     const chg=prev>0?(price-prev)/prev*100:0;
-    const disp=sym==='BINANCE:BTCUSDT'?'BTC':sym;
+    const disp=sym==='BINANCE:BTCUSDT'?'BTC':sym==='CL=F'?'CRUDE':sym;
     const pstr=sym==='BINANCE:BTCUSDT'?'$'+Math.round(price).toLocaleString():'$'+price.toFixed(2);
     const yfTicker=YF_MAP[sym]||sym;
     const yfUrl=`https://finance.yahoo.com/quote/${yfTicker}`;
@@ -919,6 +960,44 @@ function renderTrend(data) {
   });
 }
 
+// ── Breadth Snapshot (Multi-Universe) ─────────────────
+// Daten kommen aus /breadth.json (GitHub Action: scripts/breadth_scan.py).
+// BREADTH_DATA dient nur als Fallback, falls der Fetch fehlschlaegt.
+const BREADTH_DATA = [
+  { u:'NYSE', ad:'—', hl:'—', updn:'—', d50:'—', d200:'—', rank:0 },
+  { u:'RSP',  ad:'—', hl:'—', updn:'—', d50:'—', d200:'—', rank:0 },
+  { u:'QQQE', ad:'—', hl:'—', updn:'—', d50:'—', d200:'—', rank:0 },
+  { u:'IWM',  ad:'—', hl:'—', updn:'—', d50:'—', d200:'—', rank:0 },
+];
+
+function renderBreadthSnapshot(data = BREADTH_DATA) {
+  const el = document.getElementById('breadthTbl'); if(!el) return;
+  el.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.u}</td><td>${r.ad}</td><td>${r.hl}</td><td>${r.updn}</td>
+      <td>${r.d50}</td><td>${r.d200}</td>
+      <td class="rank ${r.rank>=0?'up':'dn'}">${r.rank>=0?'+':''}${Number(r.rank).toFixed(1)}</td>
+    </tr>`).join('');
+}
+
+async function loadBreadthSnapshot() {
+  try {
+    const j = await fetch('/breadth.json', {cache:'no-store'}).then(r => r.ok ? r.json() : Promise.reject());
+    renderBreadthSnapshot(j.universes || BREADTH_DATA);
+    if (j.updated) {
+      const h = document.querySelector('#breadthTbl')?.closest('.pnl')?.querySelector('.ph h3');
+      if (h && !h.dataset.stamped) {
+        const t = new Date(j.updated).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
+        h.insertAdjacentHTML('afterend', `<span class="bstamp">as of ${t}</span>`);
+        h.dataset.stamped = '1';
+      }
+    }
+  } catch(e) {
+    console.warn('breadth.json nicht verfuegbar:', e);
+    renderBreadthSnapshot();
+  }
+}
+
 // ── Power Trend ───────────────────────────────────────
 async function loadPT(candleData) {
   const c=clean(candleData['QQQ']?.c||[]); if(c.length<50) return null;
@@ -927,13 +1006,7 @@ async function loadPT(candleData) {
   return {sma3d20:avg3>s20,sma3d50:avg3>s50,sma3d200:avg3>s200,sma20_50:s20>s50,sma20_200:s20>s200,sma50_200:s50>s200};
 }
 
-async function loadYields() {
-  try{const data=await getCandles(['^TNX','^IRX'],'5d');
-  const getLast=sym=>{const c=clean(data[sym]?.c||[]);return c.length?c[c.length-1]:null;};
-  return{y10:getLast('^TNX'),y2:getLast('^IRX')};}catch(e){return{};}
-}
-
-function renderPT(data,yields) {
+function renderPT(data) {
   const el=document.getElementById('ptEl'); el.innerHTML='';
   [['sma3d20','3D > 20 SMA'],['sma3d50','3D > 50 SMA'],['sma3d200','3D > 200 SMA'],
    ['sma20_50','20 > 50 SMA'],['sma20_200','20 > 200 SMA'],['sma50_200','50 > 200 SMA']].forEach(([k,l])=>{
@@ -942,57 +1015,36 @@ function renderPT(data,yields) {
     d2.innerHTML=`<span class="lbl">${l}</span><span class="val ${v==null?'vnum':v?'vyes':'vno'}">${v==null?'—':v?'Yes':'No'}</span>`;
     el.appendChild(d2);
   });
-  [['y10','US 10Y Yield'],['y2','US 02Y Yield']].forEach(([k,l])=>{
-    const d2=document.createElement('div');d2.className='ptr';
-    const v=yields?.[k];
-    d2.innerHTML=`<span class="lbl">${l}</span><span class="val vnum">${v!=null?v.toFixed(2):'—'}</span>`;
-    el.appendChild(d2);
-  });
-}
-
-// ── Factors ───────────────────────────────────────────
-async function loadFactors(candleData, spyMth) {
-  return FAC_SYMS.map(sym=>{
-    const c=clean(candleData[sym]?.c||[]);
-    if(c.length<2) return{label:FAC_LBLS[sym],val:0};
-    return{label:FAC_LBLS[sym],val:+((c[c.length-1]/c[0]-1)*100-spyMth).toFixed(2)};
-  });
-}
-
-function renderFac(data) {
-  const el=document.getElementById('facEl'); el.innerHTML='';
-  data.forEach(r=>{
-    const d2=document.createElement('div');d2.className='fr';
-    d2.innerHTML=`<span class="lbl">${r.label}</span><span class="val ${r.val>=0?'up':'dn'}">${r.val>=0?'+':''}${r.val.toFixed(2)}%</span>`;
-    el.appendChild(d2);
-  });
 }
 
 // ══════════════════════════════════════════════════════
 // TWEEVEST-ALIGNED: calcSectorData
-// Neue Felder: w2 (rolling 14d), rs_ratio, rs_1m, vars, atr_mult, closes22
+// Felder: w2 (intern), m3, rs_d/rs_w/rs_m/rs_q, rot, vars, atr_mult, closes22
 // ══════════════════════════════════════════════════════
-function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
+function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, nameMap) {
   if(c.length < 5) return null;
   const price = c[c.length-1];
 
   // Perf windows
   const day  = (price / c[c.length-2] - 1) * 100;
   const wk   = c.length > 6  ? (price / c[c.length-6]  - 1) * 100 : 0;
-  const w2   = c.length > 11 ? (price / c[c.length-11] - 1) * 100 : 0;
+  const w2   = c.length > 11 ? (price / c[c.length-11] - 1) * 100 : 0;   // intern: RS-Score + VARS
   const mth  = c.length > 21 ? (price / c[c.length-21] - 1) * 100 : 0;
+  const m3   = c.length > 64 ? (price / c[c.length-64] - 1) * 100 : 0;
 
   // RS Ratio
-  const rs_ratio = +(100 * (1 + (mth - spyMth) / 100)).toFixed(2);
-  const rs_1m    = +(mth - spyMth).toFixed(2);
 
-  // RS score: 1D×0.10 + 1W×0.20 + 2W×0.30 + 1M×0.40, Multiplikator ×6
+  // RS score: 1D×0.05 + 1W×0.15 + 2W×0.20 + 1M×0.35 + 3M×0.25, Multiplikator ×4.5
+  // Multiplikator von 6 -> 4.5 reduziert: 3M-RS streut ~sqrt(3)x breiter als 1M,
+  // sonst saettigt der Score an 0/100.
   const rs_day_v = day - spyDay;
   const rs_wk_v  = wk  - spyWk;
   const rs_2w_v  = w2  - spy2w;
   const rs_mth_v = mth - spyMth;
-  const rsComposite = rs_day_v * 0.10 + rs_wk_v * 0.20 + rs_2w_v * 0.30 + rs_mth_v * 0.40;
-  const rs = Math.min(100, Math.max(0, Math.round(50 + rsComposite * 6)));
+  const rs_3m_v  = m3  - spy3m;
+  const rsComposite = rs_day_v * 0.05 + rs_wk_v * 0.15 + rs_2w_v * 0.20
+                    + rs_mth_v * 0.35 + rs_3m_v * 0.25;
+  const rs = Math.min(100, Math.max(0, Math.round(50 + rsComposite * 4.5)));
 
   // VARS: RS-Momentum — non-overlapping Wochen-RS-Delta, normiert /100
   // RS_week1 = letzte 5 Tage RS vs SPY
@@ -1024,6 +1076,12 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
   // Last 22 closes for sparkbar
   const closes22 = c.slice(-22);
 
+  // Rotation: tatsaechliche 1W-RS minus der 1W-RS, die bei Fortschreibung
+  // des 1M-Tempos zu erwarten waere. rs_m wird dafuer auf Wochen-Pace
+  // normiert (5/20 = 0.25) — sonst misst die Differenz nur Fensterlaenge.
+  // > 0 = beschleunigt (Kapital dreht rein), < 0 = verlangsamt (dreht raus).
+  const rot = +(rs_wk_v - rs_mth_v * 0.25).toFixed(2);
+
   return {
     name: nameMap[sym] || sym,
     price: price.toFixed(2),
@@ -1031,8 +1089,12 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
     wk:   +wk.toFixed(2),
     w2:   +w2.toFixed(2),
     mth:  +mth.toFixed(2),
-    rs_ratio,
-    rs_1m,
+    m3:   +m3.toFixed(2),
+    rs_d: +rs_day_v.toFixed(2),
+    rs_w: +rs_wk_v.toFixed(2),
+    rs_m: +rs_mth_v.toFixed(2),
+    rs_q: +rs_3m_v.toFixed(2),
+    rot,
     vars,
     atr_mult: atr_mult_signed,
     rs,
@@ -1041,21 +1103,31 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, nameMap) {
   };
 }
 
-async function loadSectors(candleData, spyDay, spyWk, spy2w, spyMth) {
+async function loadSectors(candleData, spyDay, spyWk, spy2w, spyMth, spy3m) {
   const result = {};
   SEC_SYMS.forEach(sym => {
     const c = clean(candleData[sym]?.c || []);
-    const d = calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, SEC_NAMES);
+    const d = calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, SEC_NAMES);
     if(d) result[sym] = d;
   });
   return result;
 }
 
-async function loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth) {
+async function loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth, spy3m) {
   const result = {};
   IND_SYMS.forEach(sym => {
     const c = clean(candleData[sym]?.c || []);
-    const d = calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, IND_NAMES);
+    const d = calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, IND_NAMES);
+    if(d) result[sym] = d;
+  });
+  return result;
+}
+
+async function loadThemes(candleData, spyDay, spyWk, spy2w, spyMth, spy3m) {
+  const result = {};
+  THEME_SYMS.forEach(sym => {
+    const c = clean(candleData[sym]?.c || []);
+    const d = calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, THEME_NAMES);
     if(d) result[sym] = d;
   });
   return result;
@@ -1086,10 +1158,9 @@ function renderTable(tbodyId, data) {
       <td class="tname">${s.name}</td>
       <td>${pct(s.day, 1)}</td>
       <td>${pct(s.wk,  1)}</td>
-      <td>${pct(s.w2,  1)}</td>
       <td>${pct(s.mth, 1)}</td>
+      <td>${pct(s.m3,  1)}</td>
       <td>${miniSpark(s.closes22, s.mth)}</td>
-      <td>${pct(s.rs_1m, 2)}</td>
       <td style="color:${varsColor};font-size:11px;">${s.vars >= 0 ? '+' : ''}${s.vars.toFixed(3)}</td>
       <td style="color:${atrColor};font-size:11px;">${s.atr_mult >= 0 ? '+' : ''}${s.atr_mult.toFixed(2)}x</td>
     `;
@@ -1119,21 +1190,94 @@ function renderIndustrySummary(sortedData) {
   `;
 }
 
-function renderRSGainers(elId, sortedData) {
-  const el = document.getElementById(elId);
-  const topD = [...sortedData].sort((a,b) => b[1].day - a[1].day).slice(0,3);
-  const topW = [...sortedData].sort((a,b) => b[1].wk  - a[1].wk ).slice(0,3);
-  const topM = [...sortedData].sort((a,b) => b[1].mth  - a[1].mth).slice(0,3);
-  const card = (sym,s,val,cls) => `<div class="rsi">
-    <div class="rsb ${rsGB(s.rs)}">RS:${s.rs}</div>
-    <div class="ri"><a class="tn2" href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--muted);cursor:pointer;">${sym}</a><div class="sc">${s.name}</div></div>
-    <div class="rr"><div class="rp">$${s.price}</div>
-    <div class="rc ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div></div>`;
-  el.style.display = 'grid'; el.style.gridTemplateColumns = '1fr 1fr 1fr'; el.style.gap = '0';
-  el.innerHTML =
-    '<div class="rss"><div class="slbl">Daily</div>'   + topD.map(([s,v])=>card(s,v,v.day,v.day>=0?'up':'dn')).join('') + '</div>' +
-    '<div class="rss"><div class="slbl">Weekly</div>'  + topW.map(([s,v])=>card(s,v,v.wk, v.wk >=0?'up':'dn')).join('') + '</div>' +
-    '<div class="rss"><div class="slbl">Monthly</div>' + topM.map(([s,v])=>card(s,v,v.mth,v.mth>=0?'up':'dn')).join('') + '</div>';
+// ── RS Rotation (drei Boxen, je eigene Rangliste) ─────
+const ROT_GROUPS = ['SEC','IND','THM'];
+
+// Sortierzustand pro Box — jede Box sortiert unabhaengig.
+const _rotSort = {
+  SEC: {key:'rot', dir:-1},
+  IND: {key:'rot', dir:-1},
+  THM: {key:'rot', dir:-1},
+};
+
+// [Sortier-Key | null = nicht sortierbar, Label]
+const ROT_COLS = [
+  [null,  '#'],
+  ['rs',  'RS'],
+  [null,  'Ticker'],
+  [null,  'Name'],
+  ['rs_d','RS 1D'],
+  ['rs_w','RS 1W'],
+  ['rs_m','RS 1M'],
+  ['rs_q','RS 3M'],
+  ['rot', 'Rotation'],
+  [null,  'Drift'],
+];
+
+function renderRotation(secSorted, indSorted, thmSorted) {
+  window._rotData = {
+    SEC: secSorted.map(([sym,s]) => ({sym, s})),
+    IND: indSorted.map(([sym,s]) => ({sym, s})),
+    THM: thmSorted.map(([sym,s]) => ({sym, s})),
+  };
+  ROT_GROUPS.forEach(drawRotGroup);
+}
+
+function drawRotGroup(g) {
+  const head = document.getElementById('rotHead'+g);
+  const body = document.getElementById('rotBody'+g);
+  if(!head || !body || !window._rotData?.[g]) return;
+  const {key, dir} = _rotSort[g];
+
+  head.innerHTML = '<tr>' + ROT_COLS.map(([k,lbl]) => k
+    ? `<th class="rot-s${k===key?' sorted':''}${dir>0?' asc':''}" data-g="${g}" data-k="${k}">${lbl}</th>`
+    : `<th>${lbl}</th>`).join('') + '</tr>';
+
+  const view = [...window._rotData[g]].sort((a,b) => (a.s[key] - b.s[key]) * dir);
+  body.innerHTML = view.map((r,i) => rotRow(r, i+1)).join('');
+}
+
+function rotRow({sym, s}, rank) {
+  const rotCls = s.rot > 0 ? 'up' : s.rot < 0 ? 'dn' : '';
+  // Drift: RS-Tempo (RS pro Tag) ueber 1W / 1M / 3M vergleichen.
+  // Kumulative RS-Werte waeren hier nicht vergleichbar — laengeres Fenster
+  // akkumuliert bei gleichem Tempo automatisch mehr.
+  const vW = s.rs_w / 5, vM = s.rs_m / 20, vQ = s.rs_q / 63;
+  const drift = vW >= vM && vM >= vQ ? ['▲▲','up','beschleunigt über alle Fenster']
+              : vW <= vM && vM <= vQ ? ['▼▼','dn','verliert über alle Fenster']
+              : s.rot > 0            ? ['▲','up','dreht rein']
+              : s.rot < 0            ? ['▼','dn','dreht raus']
+              :                        ['—','','flach'];
+  return `<tr>
+    <td class="rnk">${rank}</td>
+    <td><div class="rsc ${rsClass(s.rs)}">${s.rs}</div></td>
+    <td class="tck">
+      <a href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener noreferrer"
+         style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--muted);">${sym}</a>
+    </td>
+    <td class="tname">${s.name}</td>
+    <td>${pct(s.rs_d, 1)}</td>
+    <td>${pct(s.rs_w, 1)}</td>
+    <td>${pct(s.rs_m, 1)}</td>
+    <td>${pct(s.rs_q, 1)}</td>
+    <td class="${rotCls}" style="font-weight:700;">${s.rot>=0?'+':''}${s.rot.toFixed(2)}</td>
+    <td class="${drift[1]}" title="${drift[2]}" style="font-size:11px;letter-spacing:-1px;">${drift[0]}</td>
+  </tr>`;
+}
+
+function initRotationCtl() {
+  // Delegiert: thead wird bei jedem Draw neu gebaut, feste Listener wuerden verwaisen.
+  ROT_GROUPS.forEach(g => {
+    const head = document.getElementById('rotHead'+g);
+    if(!head) return;
+    head.addEventListener('click', e => {
+      const th = e.target.closest('th.rot-s'); if(!th) return;
+      const k = th.dataset.k, st = _rotSort[g];
+      st.dir = (st.key === k) ? -st.dir : -1;
+      st.key = k;
+      drawRotGroup(g);
+    });
+  });
 }
 
 // ── Main Refresh ──────────────────────────────────────
@@ -1142,7 +1286,10 @@ async function refreshAll() {
   document.getElementById('errBanner').classList.remove('show');
 
   try {
-    const mainSyms = ['SPY','RSP','QQQ','QQQE','IWM',...SEC_SYMS,...IND_SYMS,...FAC_SYMS,'^TNX','^IRX'];
+    // Set als Guard: THEME_SYMS ist aktuell dublettenfrei ggü. SEC/IND,
+    // faengt aber kuenftige Ueberschneidungen beim Erweitern ab.
+    const mainSyms = [...new Set(['SPY','RSP','QQQ','QQQE','IWM',
+      ...SEC_SYMS, ...IND_SYMS, ...THEME_SYMS])];
 
     const [idxData, candleData, breadthRaw] = await Promise.all([
       loadIndices(),
@@ -1159,14 +1306,14 @@ async function refreshAll() {
     const spyWk  = spyC.length > 6  ? (spyPrice / spyC[spyC.length-6]  - 1) * 100 : 0;
     const spy2w  = spyC.length > 11 ? (spyPrice / spyC[spyC.length-11] - 1) * 100 : 0;
     const spyMth = spyC.length > 21 ? (spyPrice / spyC[spyC.length-21] - 1) * 100 : 0;
+    const spy3m  = spyC.length > 64 ? (spyPrice / spyC[spyC.length-64] - 1) * 100 : 0;
 
-    const [trend, pt, yields, sectors, industries, factors] = await Promise.all([
+    const [trend, pt, sectors, industries, themes] = await Promise.all([
       loadTrend(candleData),
       loadPT(candleData),
-      loadYields(),
-      loadSectors(candleData,    spyDay, spyWk, spy2w, spyMth),
-      loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth),
-      loadFactors(candleData, spyMth),
+      loadSectors(candleData,    spyDay, spyWk, spy2w, spyMth, spy3m),
+      loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth, spy3m),
+      loadThemes(candleData,     spyDay, spyWk, spy2w, spyMth, spy3m),
     ]);
 
     renderTrend(trend);
@@ -1176,16 +1323,16 @@ async function refreshAll() {
     const vixVal = idxData.vix ?? null;
     window._secArr=secArr; window._indArr=indArr; window._trendData=trend; window._vix=vixVal;
 
-    renderPT(pt, yields);
-    renderFac(factors);
+    renderPT(pt);
+
+    loadBreadthSnapshot();   // /breadth.json — laeuft unabhaengig, blockiert nichts
 
     const secSorted = renderTable('secTbl', sectors);
     const indSorted = renderTable('indTbl', industries);
 
     renderIndustrySummary(indSorted);   // NEW: Gainers/Losers bar
 
-    renderRSGainers('rsEl',    secSorted);
-    renderRSGainers('rsIndEl', indSorted);
+    renderRotation(secSorted, indSorted, Object.entries(themes));
 
     await loadAllMarketConditions(candleData, breadthData);
 
@@ -1200,6 +1347,7 @@ async function refreshAll() {
 }
 
 function init() {
+  initRotationCtl();
   refreshAll();
   setInterval(refreshAll, REFRESH);
 }
