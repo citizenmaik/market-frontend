@@ -151,12 +151,11 @@ body {
 .ty{color:var(--green);font-weight:600;}
 .tn{color:var(--red);font-weight:600;}
 
-.ptb{padding:var(--pad);}
-.ptr,.fr{display:flex;justify-content:space-between;align-items:center;
+.fr{display:flex;justify-content:space-between;align-items:center;
   padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
-.ptr:last-child,.fr:last-child{border-bottom:none;}
-.ptr .lbl,.fr .lbl{font-family:var(--mono);font-size:12px;color:var(--muted);}
-.ptr .val,.fr .val{font-family:var(--mono);font-size:13px;font-weight:600;}
+.fr:last-child{border-bottom:none;}
+.fr .lbl{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.fr .val{font-family:var(--mono);font-size:13px;font-weight:600;}
 .vyes{color:var(--green);} .vno{color:var(--red);} .vnum{color:var(--text);}
 
 .ptable{width:100%;border-collapse:collapse;font-size:13px;}
@@ -256,7 +255,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
   .th-btn { width:28px; height:28px; font-size:14px; }
   .ic .pr { font-size:17px; }
   .ic { padding:12px; min-height:80px; }
-  .ph, .mc, .ptb { padding:12px; }
+  .ph, .mc { padding:12px; }
   .mc-bitem .bv { font-size:11px; }
   .mc-bitem .bl { font-size:9px; }
 }
@@ -387,15 +386,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
     </div>
   </div>
 
-  <!-- Zeile 3: Power Trend -->
-  <div class="r1b">
-    <div class="pnl">
-      <div class="ph"><h3>Power Trend (QQQ)</h3></div>
-      <div class="ptb" id="ptEl"></div>
-    </div>
-  </div>
-
-  <!-- Zeile 3b: Breadth Snapshot (Multi-Universe) -->
+  <!-- Zeile 3: Breadth Snapshot (Multi-Universe) -->
   <div class="r1b">
     <div class="pnl">
       <div class="ph"><h3>Breadth Snapshot</h3></div>
@@ -998,25 +989,6 @@ async function loadBreadthSnapshot() {
   }
 }
 
-// ── Power Trend ───────────────────────────────────────
-async function loadPT(candleData) {
-  const c=clean(candleData['QQQ']?.c||[]); if(c.length<50) return null;
-  const avg3=(c[c.length-1]+c[c.length-2]+c[c.length-3])/3;
-  const s20=sma(c,20),s50=sma(c,50),s200=sma(c,200);
-  return {sma3d20:avg3>s20,sma3d50:avg3>s50,sma3d200:avg3>s200,sma20_50:s20>s50,sma20_200:s20>s200,sma50_200:s50>s200};
-}
-
-function renderPT(data) {
-  const el=document.getElementById('ptEl'); el.innerHTML='';
-  [['sma3d20','3D > 20 SMA'],['sma3d50','3D > 50 SMA'],['sma3d200','3D > 200 SMA'],
-   ['sma20_50','20 > 50 SMA'],['sma20_200','20 > 200 SMA'],['sma50_200','50 > 200 SMA']].forEach(([k,l])=>{
-    const d2=document.createElement('div');d2.className='ptr';
-    const v=data?.[k];
-    d2.innerHTML=`<span class="lbl">${l}</span><span class="val ${v==null?'vnum':v?'vyes':'vno'}">${v==null?'—':v?'Yes':'No'}</span>`;
-    el.appendChild(d2);
-  });
-}
-
 // ══════════════════════════════════════════════════════
 // TWEEVEST-ALIGNED: calcSectorData
 // Felder: w2 (intern), m3, rs_d/rs_w/rs_m/rs_q, rot, vars, atr_mult, closes22
@@ -1308,9 +1280,8 @@ async function refreshAll() {
     const spyMth = spyC.length > 21 ? (spyPrice / spyC[spyC.length-21] - 1) * 100 : 0;
     const spy3m  = spyC.length > 64 ? (spyPrice / spyC[spyC.length-64] - 1) * 100 : 0;
 
-    const [trend, pt, sectors, industries, themes] = await Promise.all([
+    const [trend, sectors, industries, themes] = await Promise.all([
       loadTrend(candleData),
-      loadPT(candleData),
       loadSectors(candleData,    spyDay, spyWk, spy2w, spyMth, spy3m),
       loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth, spy3m),
       loadThemes(candleData,     spyDay, spyWk, spy2w, spyMth, spy3m),
@@ -1322,8 +1293,6 @@ async function refreshAll() {
     const indArr = Object.fromEntries(Object.entries(industries).map(([k,v])=>([k,{rs:v.rs,above50:v.above50}])));
     const vixVal = idxData.vix ?? null;
     window._secArr=secArr; window._indArr=indArr; window._trendData=trend; window._vix=vixVal;
-
-    renderPT(pt);
 
     loadBreadthSnapshot();   // /breadth.json — laeuft unabhaengig, blockiert nichts
 
