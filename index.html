@@ -143,10 +143,11 @@ body {
 
 .ts-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .ts{width:100%;border-collapse:collapse;font-size:13px;min-width:480px;}
-.ts th{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:left;
+.ts th{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:right;
   padding:10px var(--pad);border-bottom:1px solid var(--border);letter-spacing:.08em;font-weight:500;}
-.ts td{padding:9px var(--pad);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:13px;}
-.ts td:first-child{font-size:11px;white-space:nowrap;color:var(--muted);}
+.ts th:first-child{text-align:left;}
+.ts td{padding:9px var(--pad);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:13px;text-align:right;font-variant-numeric:tabular-nums;}
+.ts td:first-child{font-size:11px;white-space:nowrap;color:var(--muted);text-align:left;}
 .ts tr:last-child td{border-bottom:none;}
 .ty{color:var(--green);font-weight:600;}
 .tn{color:var(--red);font-weight:600;}
