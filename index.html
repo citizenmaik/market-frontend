@@ -208,6 +208,12 @@ th.rot-s.sorted.asc::after{content:" ↑";}
 .mem{font-family:var(--mono);font-size:11px;color:var(--muted);
   background:var(--surface2);padding:2px 6px;border-radius:3px;}
 .mem-warn{color:var(--yellow);}
+.thm-missing{font-family:var(--mono);font-size:10px;color:var(--muted);
+  padding:8px var(--pad);border-top:1px solid var(--border);line-height:1.8;}
+.thm-missing .warn{color:var(--yellow);}
+.thm-missing .ok{color:var(--green);}
+.thm-missing .dead{background:rgba(255,68,102,.14);color:var(--red);
+  padding:1px 5px;border-radius:3px;margin-right:2px;}
 
 
 .sk{display:inline-block;background:var(--surface2);border-radius:3px;
@@ -405,6 +411,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
         <thead id="rotHeadTHM"></thead>
         <tbody id="rotBodyTHM"></tbody>
       </table></div>
+      <div class="thm-missing" id="thmMissing"></div>
       <div class="rot-lg">
         Rotation = RS&nbsp;1W − RS&nbsp;1M×0.25 (1M auf Wochen-Pace normiert) ·
         <span class="up">positiv</span> = beschleunigt, Kapital dreht rein ·
@@ -1050,9 +1057,14 @@ async function loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth, spy3m) {
 // Vorteil ggü. Normierung-auf-100-und-mitteln: vertraegt unterschiedlich lange
 // Reihen und einzelne Luecken, ohne dass ein Mitglied das Gewicht verschiebt.
 function buildThemeSeries(candleData, syms) {
-  const series = syms
-    .map(s => clean(candleData[s]?.c || []))
-    .filter(c => c.length > 2);
+  const series = [], missing = [];
+  syms.forEach(s => {
+    // > 0 erzwingen: clean() laesst Nullen durch, und eine einzelne 0 erzeugt
+    // eine -100%-Tagesrendite und danach eine Division durch 0 — der ganze
+    // Index waere still vergiftet, waehrend die Mitgliederzahl "vollstaendig" meldet.
+    const c = clean(candleData[s]?.c || []).filter(v => v > 0);
+    if(c.length > 2) series.push(c); else missing.push(s);
+  });
   if(series.length < 3) return null;          // zu duenn -> Theme faellt raus
 
   const n = Math.min(...series.map(s => s.length));
@@ -1067,24 +1079,44 @@ function buildThemeSeries(candleData, syms) {
     }
     out.push(out[i-1] * (1 + (k ? sum / k : 0)));
   }
-  return { c: out, members: series.length, requested: syms.length };
+  return { c: out, members: series.length, requested: syms.length, missing };
 }
+
+// Sammelt Ticker, die keine Daten liefern — wird unter der Themes-Box angezeigt.
+let _thmMissing = {};
 
 async function loadThemes(candleData, spyDay, spyWk, spy2w, spyMth, spy3m) {
   const result = {};
+  _thmMissing = {};
   THEME_SYMS.forEach(key => {
     const built = buildThemeSeries(candleData, THEME_BASKETS[key]);
-    if(!built) { console.warn('Theme uebersprungen (zu wenig Daten):', key); return; }
+    if(!built) { _thmMissing[key] = THEME_BASKETS[key]; return; }
     const d = calcSectorData(key, built.c, spyDay, spyWk, spy2w, spyMth, spy3m, THEME_NAMES);
     if(!d) return;
     d.members   = built.members;
     d.requested = built.requested;
-    // Sichtbar machen, wenn Ticker tot sind: sonst schrumpft ein Korb still.
-    if(built.members < built.requested)
-      console.warn(`Theme ${key}: nur ${built.members}/${built.requested} Mitglieder mit Daten`);
+    d.missing   = built.missing;
+    if(built.missing.length) _thmMissing[key] = built.missing;
     result[key] = d;
   });
+  renderThemeMissing();
   return result;
+}
+
+function renderThemeMissing() {
+  const el = document.getElementById('thmMissing');
+  if(!el) return;
+  const keys = Object.keys(_thmMissing);
+  if(!keys.length) {
+    el.innerHTML = '<span class="ok">Alle Körbe vollständig</span>';
+    return;
+  }
+  const dead = [...new Set(keys.flatMap(k => _thmMissing[k]))].sort();
+  el.innerHTML =
+    `<strong class="warn">${dead.length} Ticker ohne Daten:</strong> ` +
+    dead.map(t => `<span class="dead">${t}</span>`).join(' ') +
+    ' &nbsp;·&nbsp; ' +
+    keys.map(k => `${THEME_NAMES[k]}: ${_thmMissing[k].join('/')}`).join(' &nbsp;·&nbsp; ');
 }
 
 // ══════════════════════════════════════════════════════
@@ -1174,7 +1206,7 @@ function rotRow({sym, s}, rank, g) {
   // Stattdessen Mitgliederzahl; rot markiert, wenn Ticker keine Daten liefern.
   const cell3 = g === 'THM'
     ? `<td class="tck"><span class="mem${s.members < s.requested ? ' mem-warn' : ''}"
-         title="${s.members} von ${s.requested} Mitgliedern mit Daten">${s.members}</span></td>`
+         title="${s.members} von ${s.requested} Mitgliedern mit Daten${s.missing?.length ? ' — fehlt: ' + s.missing.join(', ') : ''}">${s.members}</span></td>`
     : `<td class="tck">
         <a href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener noreferrer"
            style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--muted);">${sym}</a>
