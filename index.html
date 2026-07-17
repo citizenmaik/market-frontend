@@ -109,9 +109,9 @@ body {
 .rrs {display:block;margin-bottom:var(--gap);}
 
 .pnl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  overflow:visible;transition:var(--transition);}
+  overflow:visible;transition:var(--transition);min-width:0;}
 .bsnap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:var(--pad);}
-.bsnap table{width:100%;border-collapse:collapse;}
+.bsnap table{width:100%;border-collapse:collapse;min-width:440px;}
 .bsnap thead th{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:right;padding:4px 8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
 .bsnap thead th:first-child{text-align:left;}
 .bsnap td{padding:9px 8px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;text-align:right;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums;}
@@ -259,6 +259,10 @@ th.rot-s.sorted.asc::after{content:" ↑";}
   .ph, .mc { padding:12px; }
   .mc-bitem .bv { font-size:11px; }
   .mc-bitem .bl { font-size:9px; }
+  .bsnap { padding:12px 12px 4px; }
+  .bsnap table { min-width:380px; }
+  .bsnap thead th { font-size:9px; padding:3px 5px 8px; letter-spacing:.02em; }
+  .bsnap td { font-size:11px; padding:8px 5px; }
 }
 
 .omi-wrap { display:grid; grid-template-columns: 220px 1fr; align-items:stretch; }
