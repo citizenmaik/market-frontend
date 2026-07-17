@@ -104,23 +104,11 @@ body {
 
 .r1  {display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .rtd {display:block;margin-bottom:var(--gap);}
-.r1b {display:grid;grid-template-columns:1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .rsec{display:block;margin-bottom:var(--gap);}
 .rrs {display:block;margin-bottom:var(--gap);}
 
 .pnl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  overflow:visible;transition:var(--transition);min-width:0;}
-.bsnap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:var(--pad);}
-.bsnap table{width:100%;border-collapse:collapse;min-width:440px;}
-.bsnap thead th{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:right;padding:4px 8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
-.bsnap thead th:first-child{text-align:left;}
-.bsnap td{padding:9px 8px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;text-align:right;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums;}
-.bsnap td:first-child{text-align:left;font-weight:600;letter-spacing:.03em;}
-.bsnap tr:last-child td{border-bottom:none;}
-.bsnap tr:hover td{background:var(--surface2);}
-.bsnap .rank{font-weight:600;}
-.bsnap .rank.up{color:var(--green);} .bsnap .rank.dn{color:var(--red);}
-.bstamp{font-family:var(--mono);font-size:9px;letter-spacing:.05em;color:var(--muted);margin-left:auto;padding-right:2px;}
+  overflow:visible;transition:var(--transition);}
 .ph{padding:12px var(--pad);border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:7px;}
 .ph h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text);}
@@ -143,11 +131,10 @@ body {
 
 .ts-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .ts{width:100%;border-collapse:collapse;font-size:13px;min-width:480px;}
-.ts th{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:right;
+.ts th{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:left;
   padding:10px var(--pad);border-bottom:1px solid var(--border);letter-spacing:.08em;font-weight:500;}
-.ts th:first-child{text-align:left;}
-.ts td{padding:9px var(--pad);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:13px;text-align:right;font-variant-numeric:tabular-nums;}
-.ts td:first-child{font-size:11px;white-space:nowrap;color:var(--muted);text-align:left;}
+.ts td{padding:9px var(--pad);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:13px;}
+.ts td:first-child{font-size:11px;white-space:nowrap;color:var(--muted);}
 .ts tr:last-child td{border-bottom:none;}
 .ty{color:var(--green);font-weight:600;}
 .tn{color:var(--red);font-weight:600;}
@@ -157,7 +144,6 @@ body {
 .fr:last-child{border-bottom:none;}
 .fr .lbl{font-family:var(--mono);font-size:12px;color:var(--muted);}
 .fr .val{font-family:var(--mono);font-size:13px;font-weight:600;}
-.vyes{color:var(--green);} .vno{color:var(--red);} .vnum{color:var(--text);}
 
 .ptable{width:100%;border-collapse:collapse;font-size:13px;}
 .ptable th{font-family:var(--mono);font-size:10px;color:var(--muted);
@@ -219,6 +205,9 @@ th.rot-s.sorted.asc::after{content:" ↑";}
 .rot-lg{font-family:var(--mono);font-size:10px;color:var(--muted);
   padding:8px var(--pad);border-top:1px solid var(--border);line-height:1.7;}
 .rnk{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;}
+.mem{font-family:var(--mono);font-size:11px;color:var(--muted);
+  background:var(--surface2);padding:2px 6px;border-radius:3px;}
+.mem-warn{color:var(--yellow);}
 
 
 .sk{display:inline-block;background:var(--surface2);border-radius:3px;
@@ -240,7 +229,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
   .idx { grid-template-columns: repeat(4,1fr); }
 }
 @media (max-width: 768px) {
-  .r1, .r1b { grid-template-columns: 1fr; }
+  .r1 { grid-template-columns: 1fr; }
   .idx { grid-template-columns: repeat(4,1fr); }
 }
 @media (max-width: 500px) {
@@ -259,10 +248,6 @@ th.rot-s.sorted.asc::after{content:" ↑";}
   .ph, .mc { padding:12px; }
   .mc-bitem .bv { font-size:11px; }
   .mc-bitem .bl { font-size:9px; }
-  .bsnap { padding:12px 12px 4px; }
-  .bsnap table { min-width:380px; }
-  .bsnap thead th { font-size:9px; padding:3px 5px 8px; letter-spacing:.02em; }
-  .bsnap td { font-size:11px; padding:8px 5px; }
 }
 
 .omi-wrap { display:grid; grid-template-columns: 220px 1fr; align-items:stretch; }
@@ -391,53 +376,6 @@ th.rot-s.sorted.asc::after{content:" ↑";}
     </div>
   </div>
 
-  <!-- Zeile 3: Breadth Snapshot (Multi-Universe) -->
-  <div class="r1b">
-    <div class="pnl">
-      <div class="ph"><h3>Breadth Snapshot</h3></div>
-      <div class="bsnap"><table>
-        <thead><tr>
-          <th>Universe</th><th>A/D</th><th>52w H/L</th><th>Up/Dn 4%</th><th>%&gt;50d</th><th>%&gt;200d</th><th>Rank</th>
-        </tr></thead>
-        <tbody id="breadthTbl"></tbody>
-      </table></div>
-    </div>
-  </div>
-
-  <!-- Zeile 4: Sector Leaders — Tweevest columns -->
-  <div class="rsec">
-    <div class="pnl">
-      <div class="ph"><h3>Sector Leaders</h3></div>
-      <div class="tw"><table>
-        <thead><tr>
-          <th>RS</th><th>Ticker</th><th>Name</th>
-          <th>1D%</th><th>1W%</th><th>1M%</th><th>3M%</th>
-          <th>1M Chart</th>
-          <th>VARS</th><th>ATR Mult.</th>
-        </tr></thead>
-        <tbody id="secTbl"></tbody>
-      </table></div>
-    </div>
-  </div>
-
-  <!-- Zeile 6: Industry Leaders — Tweevest columns -->
-  <div class="rsec">
-    <div class="pnl">
-      <div class="ph"><h3>Industry Leaders</h3></div>
-      <!-- Gainers/Losers summary bar — wie Tweevest -->
-      <div class="ind-summary" id="indSummary"></div>
-      <div class="tw"><table>
-        <thead><tr>
-          <th>RS</th><th>Ticker</th><th>Name</th>
-          <th>1D%</th><th>1W%</th><th>1M%</th><th>3M%</th>
-          <th>1M Chart</th>
-          <th>VARS</th><th>ATR Mult.</th>
-        </tr></thead>
-        <tbody id="indTbl"></tbody>
-      </table></div>
-    </div>
-  </div>
-
   <!-- Zeile 7: RS Rotation — drei getrennte Boxen, je eigene Rangliste -->
   <div class="rrs">
     <div class="pnl">
@@ -452,6 +390,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
   <div class="rrs">
     <div class="pnl">
       <div class="ph"><h3>RS Rotation — Industries</h3></div>
+      <div class="ind-summary" id="indSummary"></div>
       <div class="tw"><table>
         <thead id="rotHeadIND"></thead>
         <tbody id="rotBodyIND"></tbody>
@@ -481,7 +420,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
 <script>
 const REFRESH = 5 * 60 * 1000;
 const API     = '/api/data';
-var FKEY = new URLSearchParams(location.search).get('key') || localStorage.getItem('fh_key') || '';  // Key liegt serverseitig (Vercel env FINNHUB_KEY)
+var FKEY = new URLSearchParams(location.search).get('key') || localStorage.getItem('fh_key') || 'd6f1101r01qvn4o1e6bgd6f1101r01qvn4o1e6c0';
 if (new URLSearchParams(location.search).get('key')) {
   localStorage.setItem('fh_key', new URLSearchParams(location.search).get('key'));
   history.replaceState({}, '', location.pathname);
@@ -583,16 +522,51 @@ const SEC_NAMES = {XLK:'Technology',XLF:'Financials',XLV:'Health Care',XLE:'Ener
 const IND_SYMS = ['IGV','SKYY','HACK','SOXX','IBB','IHI','PPH','KRE','KBE','ITA','ITB','IYT','JETS','XOP','OIH','ICLN','TAN','URNM','GDX','GDXJ','XME','XRT','IYZ'];
 const IND_NAMES = {IGV:'Software',SKYY:'Cloud Computing',HACK:'Cybersecurity',SOXX:'Semiconductors',IBB:'Biotech',IHI:'Medical Devices',PPH:'Pharmaceuticals',KRE:'Regional Banks',KBE:'Banks',ITA:'Aerospace & Defense',ITB:'Home Construction',IYT:'Transportation',JETS:'Airlines',XOP:'Oil & Gas E&P',OIH:'Oil Services',ICLN:'Clean Energy',TAN:'Solar Energy',URNM:'Uranium Miners',GDX:'Gold Miners',GDXJ:'Jr. Gold Miners',XME:'Metals & Mining',XRT:'Retail',IYZ:'Telecom'};
 
-// Themes — Narrativ-Cluster, orthogonal zu GICS. Nur Exposures, die
-// SEC_SYMS/IND_SYMS strukturell NICHT abbilden. Eigene Rangliste.
-// Nah-Dubletten bleiben bewusst: CIBR~HACK, XBI~IBB, SMH~SOXX,
-// URA~URNM, SHLD~ITA, XTL~IYZ — anderer Wrapper, anderer Index.
-const THEME_SYMS = ['ARKG','CIBR','XBI','IBIT','SOCL','KWEB','SMH','AIQ','ROBO','IWF',
-  'SIL','XTL','QTUM','SLX','WGMI','URA','SHLD'];
-const THEME_NAMES = {ARKG:'Genomics',CIBR:'Cybersecurity',XBI:'Biotechnology',IBIT:'Bitcoin',
-  SOCL:'Social Media',KWEB:'China Internet',SMH:'Semiconductors',AIQ:'AI',ROBO:'Robotics',
-  IWF:'Growth Stocks',SIL:'Silver Miners',XTL:'Telecom',QTUM:'Quantum',SLX:'Steel',
-  WGMI:'Bitcoin Miners',URA:'Uranium',SHLD:'Defense'};
+// Themes — eigene Koerbe aus EINZELAKTIEN, auf Basis der Finnhub-Theme-Namen.
+// Finnhub /stock/investment-theme ist Premium (kein Zugriff), daher statisch hier.
+// Auswahl: liquide US-Listings mit moeglichst reiner Exposure zum Narrativ.
+// Index je Theme = taeglich rebalanciertes EQUAL WEIGHT — cap-weight liesse
+// NVDA das AI-Theme dominieren, dann misst man NVDA statt des Narrativs.
+const THEME_BASKETS = {
+  ai:                     ['NVDA','MSFT','GOOGL','AMD','AVGO','PLTR','SNOW','NOW','META','MRVL','CRM','AI'],
+  bigData:                ['SNOW','PLTR','MDB','DDOG','CFLT','ESTC','TDC','ORCL','IBM'],
+  cloud:                  ['MSFT','AMZN','GOOGL','CRM','NOW','SNOW','DDOG','NET','ORCL','WDAY','TEAM','ZS'],
+  cyberSecurity:          ['PANW','CRWD','FTNT','ZS','OKTA','S','CYBR','QLYS','TENB','VRNS','NET'],
+  digitalisation:         ['ACN','IBM','CTSH','EPAM','INFY','NOW','GLOB','DXC','WIT'],
+  drones:                 ['AVAV','KTOS','TXT','LHX','TDY','RTX','HON','OSIS','RCAT'],
+  fintech:                ['V','MA','PYPL','XYZ','FI','FIS','GPN','AFRM','SOFI','COIN','TOST','NU'],
+  founder:                ['META','NVDA','TSLA','CRM','PLTR','SHOP','ABNB','COIN','SPOT','XYZ','MELI','DELL'],
+  futureEntertainment:    ['NFLX','DIS','SPOT','RBLX','EA','TTWO','WBD','LYV','ROKU'],
+  futureFood:             ['BYND','INGR','DAR','ADM','CALM','HAIN','SMPL','FRPT','LW'],
+  futureVehicles:         ['TSLA','RIVN','LCID','NIO','LI','XPEV','GM','F','MBLY','APTV','QS','ALB'],
+  gaming:                 ['EA','TTWO','RBLX','U','PLTK','DKNG','NTES','SE','HUYA'],
+  globalCleanEnergy:      ['FSLR','ENPH','NEE','BE','PLUG','RUN','NXT','ORA','AMRC','BEP'],
+  globalWater:            ['AWK','WTRG','XYL','ECL','PNR','WMS','VLTO','CWT','SJW','MWA'],
+  healthcareInnovation:   ['ISRG','DXCM','PODD','ILMN','TMO','DHR','VEEV','MDT','ABT','EW','CRSP','TDOC'],
+  hr:                     ['ADP','PAYX','PCTY','WDAY','TNET','RHI','MAN','UPWK','ZIP'],
+  mobilePayment:          ['V','MA','PYPL','XYZ','FI','FIS','GPN','NU','TOST','MELI','AFRM'],
+  organicFood:            ['SFM','UNFI','HAIN','CALM','INGR','THS','SMPL','KR'],
+  robotics:               ['ISRG','ROK','TER','PATH','SYM','NVDA','EMR','HON','ZBRA','FANUY','ABBNY'],
+  '3dPrinting':           ['DDD','SSYS','PRLB','MTLS','NNDM','XMTR'],
+  ageingPopulation:       ['UNH','HUM','ELV','CI','ABBV','AMGN','SYK','ZBH','EW','WELL','VTR','OHI'],
+  financialExchangesData: ['CME','ICE','NDAQ','CBOE','SPGI','MCO','MSCI','FDS','TRU','MORN','COIN','TW'],
+  tobaccoAlcoholGambling: ['MO','PM','BTI','STZ','DEO','TAP','LVS','WYNN','MGM','DKNG','CZR'],
+  windEnergy:             ['GEV','TPIC','AMSC','NEE','BEP','ORA','VWDRY','DNNGY'],
+};
+const THEME_SYMS = Object.keys(THEME_BASKETS);
+const THEME_NAMES = {
+  ai:'AI', bigData:'Big Data', cloud:'Cloud Computing', cyberSecurity:'Cybersecurity',
+  digitalisation:'Digitalisation', drones:'Drones', fintech:'Fintech', founder:'Founder-run',
+  futureEntertainment:'Future of Entertainment', futureFood:'Future of Foods',
+  futureVehicles:'Vehicles of the Future', gaming:'Gaming', globalCleanEnergy:'Global Clean Energy',
+  globalWater:'Global Water', healthcareInnovation:'Healthcare Innovation', hr:'Human Resources',
+  mobilePayment:'Mobile Payment', organicFood:'Organic Food', robotics:'Robotics',
+  '3dPrinting':'3D-Printing', ageingPopulation:'Ageing Population',
+  financialExchangesData:'Financial Exchanges & Data', tobaccoAlcoholGambling:'Tobacco, Alcohol & Gambling',
+  windEnergy:'Wind Energy',
+};
+// Alle eindeutigen Mitglieder — fuer den Candle-Batch.
+const THEME_MEMBERS = [...new Set(Object.values(THEME_BASKETS).flat())];
 
 
 // ── Invest-Exposure Regime (abgeleitet vom GESAMT-Composite, −100…+100) ──
@@ -956,47 +930,10 @@ function renderTrend(data) {
   });
 }
 
-// ── Breadth Snapshot (Multi-Universe) ─────────────────
-// Daten kommen aus /breadth.json (GitHub Action: scripts/breadth_scan.py).
-// BREADTH_DATA dient nur als Fallback, falls der Fetch fehlschlaegt.
-const BREADTH_DATA = [
-  { u:'NYSE', ad:'—', hl:'—', updn:'—', d50:'—', d200:'—', rank:0 },
-  { u:'RSP',  ad:'—', hl:'—', updn:'—', d50:'—', d200:'—', rank:0 },
-  { u:'QQQE', ad:'—', hl:'—', updn:'—', d50:'—', d200:'—', rank:0 },
-  { u:'IWM',  ad:'—', hl:'—', updn:'—', d50:'—', d200:'—', rank:0 },
-];
-
-function renderBreadthSnapshot(data = BREADTH_DATA) {
-  const el = document.getElementById('breadthTbl'); if(!el) return;
-  el.innerHTML = data.map(r => `
-    <tr>
-      <td>${r.u}</td><td>${r.ad}</td><td>${r.hl}</td><td>${r.updn}</td>
-      <td>${r.d50}</td><td>${r.d200}</td>
-      <td class="rank ${r.rank>=0?'up':'dn'}">${r.rank>=0?'+':''}${Number(r.rank).toFixed(1)}</td>
-    </tr>`).join('');
-}
-
-async function loadBreadthSnapshot() {
-  try {
-    const j = await fetch('/breadth.json', {cache:'no-store'}).then(r => r.ok ? r.json() : Promise.reject());
-    renderBreadthSnapshot(j.universes || BREADTH_DATA);
-    if (j.updated) {
-      const h = document.querySelector('#breadthTbl')?.closest('.pnl')?.querySelector('.ph h3');
-      if (h && !h.dataset.stamped) {
-        const t = new Date(j.updated).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
-        h.insertAdjacentHTML('afterend', `<span class="bstamp">as of ${t}</span>`);
-        h.dataset.stamped = '1';
-      }
-    }
-  } catch(e) {
-    console.warn('breadth.json nicht verfuegbar:', e);
-    renderBreadthSnapshot();
-  }
-}
 
 // ══════════════════════════════════════════════════════
 // TWEEVEST-ALIGNED: calcSectorData
-// Felder: w2 (intern), m3, rs_d/rs_w/rs_m/rs_q, rot, vars, atr_mult, closes22
+// Felder: w2 (intern), m3, rs_d/rs_w/rs_m/rs_q (intern fuer rot), rot, atr_mult, closes22
 // ══════════════════════════════════════════════════════
 function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, nameMap) {
   if(c.length < 5) return null;
@@ -1005,7 +942,7 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, nameMap) {
   // Perf windows
   const day  = (price / c[c.length-2] - 1) * 100;
   const wk   = c.length > 6  ? (price / c[c.length-6]  - 1) * 100 : 0;
-  const w2   = c.length > 11 ? (price / c[c.length-11] - 1) * 100 : 0;   // intern: RS-Score + VARS
+  const w2   = c.length > 11 ? (price / c[c.length-11] - 1) * 100 : 0;   // intern: RS-Score
   const mth  = c.length > 21 ? (price / c[c.length-21] - 1) * 100 : 0;
   const m3   = c.length > 64 ? (price / c[c.length-64] - 1) * 100 : 0;
 
@@ -1023,18 +960,7 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, nameMap) {
                     + rs_mth_v * 0.35 + rs_3m_v * 0.25;
   const rs = Math.min(100, Math.max(0, Math.round(50 + rsComposite * 4.5)));
 
-  // VARS: RS-Momentum — non-overlapping Wochen-RS-Delta, normiert /100
-  // RS_week1 = letzte 5 Tage RS vs SPY
-  // RS_week2 = die 5 Tage davor (Tag -10 bis -5) RS vs SPY
-  // VARS = (RS_week1 - RS_week2) / 100
-  const rs_week1 = wk - spyWk;                          // 5d RS (kumulativ)
-  const perf_week2_alone = c.length > 10                 // Perf von Tag-10 bis Tag-5
-    ? (c[c.length-6] / c[c.length-11] - 1) * 100 : 0;
-  const spy_week2_alone  = spy2w - spyWk;                // SPY Perf derselben Woche
-  const rs_week2 = perf_week2_alone - spy_week2_alone;
-  const vars = +((rs_week1 - rs_week2) / 100).toFixed(3);
-
-  // ATR Multiplier: perf_1m% / ATR_pct_daily(21)
+  // ATR Multiplier: |perf_1m%| / ATR_pct_daily(21) / 2.0, Vorzeichen = Richtung
   // Close-to-close ATR ist ~2x kleiner als True Range (H-L) die Tweevest nutzt.
   // Korrekturfaktor: Ergebnis / 2.0
   const slice21 = c.slice(-22);  // 22 closes → 21 changes
@@ -1072,7 +998,6 @@ function calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, nameMap) {
     rs_m: +rs_mth_v.toFixed(2),
     rs_q: +rs_3m_v.toFixed(2),
     rot,
-    vars,
     atr_mult: atr_mult_signed,
     rs,
     above50,
@@ -1100,53 +1025,49 @@ async function loadIndustries(candleData, spyDay, spyWk, spy2w, spyMth, spy3m) {
   return result;
 }
 
+// Baut aus den Mitglieds-Closes einen taeglich rebalancierten Equal-Weight-Index.
+// Tagesrendite des Index = Mittel der Mitglieds-Tagesrenditen, dann kumuliert.
+// Vorteil ggü. Normierung-auf-100-und-mitteln: vertraegt unterschiedlich lange
+// Reihen und einzelne Luecken, ohne dass ein Mitglied das Gewicht verschiebt.
+function buildThemeSeries(candleData, syms) {
+  const series = syms
+    .map(s => clean(candleData[s]?.c || []))
+    .filter(c => c.length > 2);
+  if(series.length < 3) return null;          // zu duenn -> Theme faellt raus
+
+  const n = Math.min(...series.map(s => s.length));
+  const cut = series.map(s => s.slice(-n));
+
+  const out = [100];
+  for(let i = 1; i < n; i++) {
+    let sum = 0, k = 0;
+    for(const s of cut) {
+      const prev = s[i-1];
+      if(prev > 0) { sum += s[i] / prev - 1; k++; }
+    }
+    out.push(out[i-1] * (1 + (k ? sum / k : 0)));
+  }
+  return { c: out, members: series.length, requested: syms.length };
+}
+
 async function loadThemes(candleData, spyDay, spyWk, spy2w, spyMth, spy3m) {
   const result = {};
-  THEME_SYMS.forEach(sym => {
-    const c = clean(candleData[sym]?.c || []);
-    const d = calcSectorData(sym, c, spyDay, spyWk, spy2w, spyMth, spy3m, THEME_NAMES);
-    if(d) result[sym] = d;
+  THEME_SYMS.forEach(key => {
+    const built = buildThemeSeries(candleData, THEME_BASKETS[key]);
+    if(!built) { console.warn('Theme uebersprungen (zu wenig Daten):', key); return; }
+    const d = calcSectorData(key, built.c, spyDay, spyWk, spy2w, spyMth, spy3m, THEME_NAMES);
+    if(!d) return;
+    d.members   = built.members;
+    d.requested = built.requested;
+    // Sichtbar machen, wenn Ticker tot sind: sonst schrumpft ein Korb still.
+    if(built.members < built.requested)
+      console.warn(`Theme ${key}: nur ${built.members}/${built.requested} Mitglieder mit Daten`);
+    result[key] = d;
   });
   return result;
 }
 
 // ══════════════════════════════════════════════════════
-// renderTable — Tweevest columns
-// ══════════════════════════════════════════════════════
-function renderTable(tbodyId, data) {
-  const tb = document.getElementById(tbodyId); tb.innerHTML = '';
-  const sorted = Object.entries(data).sort((a,b) => b[1].rs - a[1].rs);
-
-  sorted.forEach(([sym, s]) => {
-    const tr2 = document.createElement('tr');
-
-    // VARS color
-    const varsColor = s.vars >= 0 ? 'var(--green)' : 'var(--red)';
-
-    // ATR Mult color
-    const atrColor = s.atr_mult >= 0 ? 'var(--green)' : 'var(--red)';
-
-    tr2.innerHTML = `
-      <td><div class="rsc ${rsClass(s.rs)}">${s.rs}</div></td>
-      <td class="tck">
-        <a href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener noreferrer"
-           style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--muted);">${sym}</a>
-      </td>
-      <td class="tname">${s.name}</td>
-      <td>${pct(s.day, 1)}</td>
-      <td>${pct(s.wk,  1)}</td>
-      <td>${pct(s.mth, 1)}</td>
-      <td>${pct(s.m3,  1)}</td>
-      <td>${miniSpark(s.closes22, s.mth)}</td>
-      <td style="color:${varsColor};font-size:11px;">${s.vars >= 0 ? '+' : ''}${s.vars.toFixed(3)}</td>
-      <td style="color:${atrColor};font-size:11px;">${s.atr_mult >= 0 ? '+' : ''}${s.atr_mult.toFixed(2)}x</td>
-    `;
-    tb.appendChild(tr2);
-  });
-
-  return sorted;
-}
-
 // ══════════════════════════════════════════════════════
 // renderIndustrySummary — Gainers/Losers/Best/Worst bar
 // ══════════════════════════════════════════════════════
@@ -1178,17 +1099,21 @@ const _rotSort = {
 };
 
 // [Sortier-Key | null = nicht sortierbar, Label]
-const ROT_COLS = [
-  [null,  '#'],
-  ['rs',  'RS'],
-  [null,  'Ticker'],
-  [null,  'Name'],
-  ['rs_d','RS 1D'],
-  ['rs_w','RS 1W'],
-  ['rs_m','RS 1M'],
-  ['rs_q','RS 3M'],
-  ['rot', 'Rotation'],
-  [null,  'Drift'],
+// Zusammengefuehrt aus Leaders + Rotation. Die RS-1D/1W/1M/3M-Spalten der alten
+// Rotation-Tabelle sind entfallen: RS_x = x% minus einer je Spalte konstanten
+// SPY-Zahl — gleiche Rangfolge, keine zusaetzliche Trennschaerfe.
+// Spalte 3 unterscheidet sich: Themes haben keinen Ticker, sondern Mitglieder.
+const rotCols = g => [
+  [null,      '#'],
+  ['rs',      'RS'],
+  [null,      g === 'THM' ? 'Stocks' : 'Ticker'],
+  [null,      'Name'],
+  ['wk',      '1W%'],
+  ['mth',     '1M%'],
+  [null,      '1M Chart'],
+  ['rot',     'Rotation'],
+  [null,      'Drift'],
+  ['atr_mult','ATR Mult.'],
 ];
 
 function renderRotation(secSorted, indSorted, thmSorted) {
@@ -1206,15 +1131,15 @@ function drawRotGroup(g) {
   if(!head || !body || !window._rotData?.[g]) return;
   const {key, dir} = _rotSort[g];
 
-  head.innerHTML = '<tr>' + ROT_COLS.map(([k,lbl]) => k
+  head.innerHTML = '<tr>' + rotCols(g).map(([k,lbl]) => k
     ? `<th class="rot-s${k===key?' sorted':''}${dir>0?' asc':''}" data-g="${g}" data-k="${k}">${lbl}</th>`
     : `<th>${lbl}</th>`).join('') + '</tr>';
 
   const view = [...window._rotData[g]].sort((a,b) => (a.s[key] - b.s[key]) * dir);
-  body.innerHTML = view.map((r,i) => rotRow(r, i+1)).join('');
+  body.innerHTML = view.map((r,i) => rotRow(r, i+1, g)).join('');
 }
 
-function rotRow({sym, s}, rank) {
+function rotRow({sym, s}, rank, g) {
   const rotCls = s.rot > 0 ? 'up' : s.rot < 0 ? 'dn' : '';
   // Drift: RS-Tempo (RS pro Tag) ueber 1W / 1M / 3M vergleichen.
   // Kumulative RS-Werte waeren hier nicht vergleichbar — laengeres Fenster
@@ -1225,20 +1150,26 @@ function rotRow({sym, s}, rank) {
               : s.rot > 0            ? ['▲','up','dreht rein']
               : s.rot < 0            ? ['▼','dn','dreht raus']
               :                        ['—','','flach'];
+  // Themes haben keinen Ticker — 'ai' wuerde auf C3.ai verlinken.
+  // Stattdessen Mitgliederzahl; rot markiert, wenn Ticker keine Daten liefern.
+  const cell3 = g === 'THM'
+    ? `<td class="tck"><span class="mem${s.members < s.requested ? ' mem-warn' : ''}"
+         title="${s.members} von ${s.requested} Mitgliedern mit Daten">${s.members}</span></td>`
+    : `<td class="tck">
+        <a href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener noreferrer"
+           style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--muted);">${sym}</a>
+      </td>`;
   return `<tr>
     <td class="rnk">${rank}</td>
     <td><div class="rsc ${rsClass(s.rs)}">${s.rs}</div></td>
-    <td class="tck">
-      <a href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener noreferrer"
-         style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--muted);">${sym}</a>
-    </td>
+    ${cell3}
     <td class="tname">${s.name}</td>
-    <td>${pct(s.rs_d, 1)}</td>
-    <td>${pct(s.rs_w, 1)}</td>
-    <td>${pct(s.rs_m, 1)}</td>
-    <td>${pct(s.rs_q, 1)}</td>
+    <td>${pct(s.wk,  1)}</td>
+    <td>${pct(s.mth, 1)}</td>
+    <td>${miniSpark(s.closes22, s.mth)}</td>
     <td class="${rotCls}" style="font-weight:700;">${s.rot>=0?'+':''}${s.rot.toFixed(2)}</td>
     <td class="${drift[1]}" title="${drift[2]}" style="font-size:11px;letter-spacing:-1px;">${drift[0]}</td>
+    <td class="${s.atr_mult >= 0 ? 'up' : 'dn'}" style="font-size:11px;">${s.atr_mult >= 0 ? '+' : ''}${s.atr_mult.toFixed(2)}x</td>
   </tr>`;
 }
 
@@ -1263,10 +1194,11 @@ async function refreshAll() {
   document.getElementById('errBanner').classList.remove('show');
 
   try {
-    // Set als Guard: THEME_SYMS ist aktuell dublettenfrei ggü. SEC/IND,
-    // faengt aber kuenftige Ueberschneidungen beim Erweitern ab.
+    // THEME_MEMBERS sind Einzelaktien (~200), nicht die Theme-Keys.
+    // getCandles laeuft sequenziell in 20er-Batches -> kein Rate-Limit-Burst,
+    // aber der Refresh dauert entsprechend laenger.
     const mainSyms = [...new Set(['SPY','RSP','QQQ','QQQE','IWM',
-      ...SEC_SYMS, ...IND_SYMS, ...THEME_SYMS])];
+      ...SEC_SYMS, ...IND_SYMS, ...THEME_MEMBERS])];
 
     const [idxData, candleData, breadthRaw] = await Promise.all([
       loadIndices(),
@@ -1299,10 +1231,9 @@ async function refreshAll() {
     const vixVal = idxData.vix ?? null;
     window._secArr=secArr; window._indArr=indArr; window._trendData=trend; window._vix=vixVal;
 
-    loadBreadthSnapshot();   // /breadth.json — laeuft unabhaengig, blockiert nichts
 
-    const secSorted = renderTable('secTbl', sectors);
-    const indSorted = renderTable('indTbl', industries);
+    const secSorted = Object.entries(sectors).sort((a,b) => b[1].rs - a[1].rs);
+    const indSorted = Object.entries(industries).sort((a,b) => b[1].rs - a[1].rs);
 
     renderIndustrySummary(indSorted);   // NEW: Gainers/Losers bar
 
