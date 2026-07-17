@@ -792,18 +792,21 @@ async function loadIndices() {
   const YF_MAP = {'BINANCE:BTCUSDT':'BTC-USD','GLD':'GLD','SPY':'SPY','RSP':'RSP','QQQ':'QQQ','QQQE':'QQQE','CL=F':'CL=F'};
   IDX_SYMS.forEach((sym) => {
     let price = null, prev = null;
+    // 0 ist kein Kurs, sondern fehlende Daten. clean() laesst Nullen durch,
+    // deshalb hier explizit > 0 pruefen — sonst wird aus "nichts" ein "$0.00".
     if(sym === OIL_SYM) {
-      const c = clean(oilCandles?.[OIL_SYM]?.c || []);
+      const c = clean(oilCandles?.[OIL_SYM]?.c || []).filter(v => v > 0);
       if(c.length > 1) { price = c[c.length-1]; prev = c[c.length-2]; }
     } else {
       const q = quotesData[sym];
-      if(q?.c) { price = q.c; prev = q.pc || null; }
+      if(q?.c > 0) { price = q.c; prev = q.pc > 0 ? q.pc : null; }
     }
     const chg = (price != null && prev > 0) ? (price - prev) / prev * 100 : null;
     const disp = sym==='BINANCE:BTCUSDT' ? 'BTC' : sym===OIL_SYM ? 'CRUDE' : sym;
-    // Kein $0.00 vortaeuschen, wenn keine Daten da sind.
+    // en-US erzwingen: toLocaleString() nimmt sonst die Browsersprache (de-DE),
+    // und "$62.886" liest sich neben dem $-Zeichen wie 62 Dollar statt 62'886.
     const pstr = price == null ? '—'
-      : sym==='BINANCE:BTCUSDT' ? '$'+Math.round(price).toLocaleString()
+      : sym==='BINANCE:BTCUSDT' ? '$'+Math.round(price).toLocaleString('en-US')
       : '$'+price.toFixed(2);
     const cstr = chg == null ? '—' : (chg>=0?'+':'')+chg.toFixed(2)+'%';
     const ccls = chg == null ? '' : chg>=0 ? 'up' : 'dn';
