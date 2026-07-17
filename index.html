@@ -158,13 +158,10 @@ body {
   font-family:var(--mono);font-size:9px;color:var(--muted);
   padding:9px 8px;border-bottom:1px solid var(--border);
   letter-spacing:.08em;font-weight:500;text-align:right;white-space:nowrap;}
-.tw thead th:first-child,
-.tw thead th:nth-child(2),
-.tw thead th:nth-child(3){text-align:left;}
+/* Spalten 1-4 (# · RS · Ticker/Stocks · Name) links, alle Zahlenspalten rechts */
+.tw thead th:nth-child(-n+4){text-align:left;}
 .tw td{padding:8px 8px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;text-align:right;}
-.tw td:first-child{text-align:left;}
-.tw td:nth-child(2){text-align:left;}
-.tw td:nth-child(3){text-align:left;}
+.tw td:nth-child(-n+4){text-align:left;}
 .tw tr:last-child td{border-bottom:none;}
 .tw tr:hover td{background:var(--surface2);}
 .tck{color:var(--accent);font-weight:700;}
@@ -195,6 +192,8 @@ body {
 .ind-lose{background:rgba(255,68,102,.15);color:var(--red);}
 .ind-best{color:var(--green);}
 .ind-worst{color:var(--red);}
+.ind-flat{background:rgba(120,130,150,.15);color:var(--muted);}
+.ind-basis{margin-left:auto;opacity:.6;}
 
 /* RS Rotation */
 th.rot-s{cursor:pointer;user-select:none;}
@@ -386,6 +385,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
   <div class="rrs">
     <div class="pnl">
       <div class="ph"><h3>RS Rotation — Sectors</h3></div>
+      <div class="ind-summary" id="rotSumSEC"></div>
       <div class="tw"><table>
         <thead id="rotHeadSEC"></thead>
         <tbody id="rotBodySEC"></tbody>
@@ -396,7 +396,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
   <div class="rrs">
     <div class="pnl">
       <div class="ph"><h3>RS Rotation — Industries</h3></div>
-      <div class="ind-summary" id="indSummary"></div>
+      <div class="ind-summary" id="rotSumIND"></div>
       <div class="tw"><table>
         <thead id="rotHeadIND"></thead>
         <tbody id="rotBodyIND"></tbody>
@@ -407,6 +407,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
   <div class="rrs">
     <div class="pnl">
       <div class="ph"><h3>RS Rotation — Themes</h3></div>
+      <div class="ind-summary" id="rotSumTHM"></div>
       <div class="tw"><table>
         <thead id="rotHeadTHM"></thead>
         <tbody id="rotBodyTHM"></tbody>
@@ -541,24 +542,24 @@ const THEME_BASKETS = {
   cyberSecurity:          ['PANW','CRWD','FTNT','ZS','OKTA','S','RBRK','QLYS','TENB','VRNS','NET'],
   digitalisation:         ['ACN','IBM','CTSH','EPAM','INFY','NOW','GLOB','DXC','WIT'],
   drones:                 ['AVAV','KTOS','TXT','LHX','TDY','RTX','HON','OSIS','RCAT'],
-  fintech:                ['V','MA','PYPL','XYZ','FI','FIS','GPN','AFRM','SOFI','COIN','TOST','NU'],
+  fintech:                ['V','MA','PYPL','XYZ','FISV','FIS','GPN','AFRM','SOFI','COIN','TOST','NU'],
   founder:                ['META','NVDA','TSLA','CRM','PLTR','SHOP','ABNB','COIN','SPOT','XYZ','MELI','DELL'],
   futureEntertainment:    ['NFLX','DIS','SPOT','RBLX','EA','TTWO','WBD','LYV','ROKU'],
   futureFood:             ['BYND','INGR','DAR','ADM','CALM','HAIN','SMPL','FRPT','LW'],
   futureVehicles:         ['TSLA','RIVN','LCID','NIO','LI','XPEV','GM','F','MBLY','APTV','QS','ALB'],
   gaming:                 ['EA','TTWO','RBLX','U','PLTK','DKNG','NTES','SE','HUYA'],
   globalCleanEnergy:      ['FSLR','ENPH','NEE','BE','PLUG','RUN','NXT','ORA','AMRC','BEP'],
-  globalWater:            ['AWK','WTRG','XYL','ECL','PNR','WMS','VLTO','CWT','SJW','MWA'],
+  globalWater:            ['AWK','WTRG','XYL','ECL','PNR','WMS','VLTO','CWT','HTO','MWA'],
   healthcareInnovation:   ['ISRG','DXCM','PODD','ILMN','TMO','DHR','VEEV','MDT','ABT','EW','CRSP','TDOC'],
   hr:                     ['ADP','PAYX','PCTY','WDAY','TNET','RHI','MAN','UPWK','ZIP'],
-  mobilePayment:          ['V','MA','PYPL','XYZ','FI','FIS','GPN','NU','TOST','MELI','AFRM'],
+  mobilePayment:          ['V','MA','PYPL','XYZ','FISV','FIS','GPN','NU','TOST','MELI','AFRM'],
   organicFood:            ['SFM','UNFI','HAIN','CALM','INGR','VITL','SMPL','KR'],
   robotics:               ['ISRG','ROK','TER','PATH','SYM','NVDA','EMR','HON','ZBRA','FANUY','ABBNY'],
   '3dPrinting':           ['DDD','SSYS','PRLB','MTLS','NNDM','XMTR'],
   ageingPopulation:       ['UNH','HUM','ELV','CI','ABBV','AMGN','SYK','ZBH','EW','WELL','VTR','OHI'],
   financialExchangesData: ['CME','ICE','NDAQ','CBOE','SPGI','MCO','MSCI','FDS','TRU','MORN','COIN','TW'],
   tobaccoAlcoholGambling: ['MO','PM','BTI','STZ','DEO','TAP','LVS','WYNN','MGM','DKNG','CZR'],
-  windEnergy:             ['GEV','SMNEY','AMSC','NEE','BEP','ORA','VWDRY','DNNGY'],
+  windEnergy:             ['GEV','CWEN','AMSC','NEE','BEP','ORA','VWDRY','DNNGY'],
 };
 const THEME_SYMS = Object.keys(THEME_BASKETS);
 const THEME_NAMES = {
@@ -1123,20 +1124,31 @@ function renderThemeMissing() {
 // ══════════════════════════════════════════════════════
 // renderIndustrySummary — Gainers/Losers/Best/Worst bar
 // ══════════════════════════════════════════════════════
-function renderIndustrySummary(sortedData) {
-  const el = document.getElementById('indSummary');
-  if(!el) return;
-  const gainers = sortedData.filter(([,s]) => s.day > 0).length;
-  const losers  = sortedData.filter(([,s]) => s.day < 0).length;
-  const best    = sortedData.reduce((a,b) => b[1].day > a[1].day ? b : a);
-  const worst   = sortedData.reduce((a,b) => b[1].day < a[1].day ? b : a);
+// Gainers/Losers-Leiste je Box. Basis: 1W — die kuerzeste Spalte, die in der
+// Tabelle sichtbar ist, damit die Zahlen nachrechenbar sind. Vorher lief sie
+// auf s.day, seit dem Entfernen der 1D%-Spalte stand sie nirgends mehr.
+const ROT_SUM_KEY = 'wk';
+const ROT_SUM_LBL = '1W';
+
+function renderRotSummary(g, sortedData) {
+  const el = document.getElementById('rotSum' + g);
+  if(!el || !sortedData.length) return;
+  const k = ROT_SUM_KEY;
+  const gainers = sortedData.filter(([,s]) => s[k] > 0).length;
+  const losers  = sortedData.filter(([,s]) => s[k] < 0).length;
+  const flat    = sortedData.length - gainers - losers;
+  const best    = sortedData.reduce((a,b) => b[1][k] > a[1][k] ? b : a);
+  const worst   = sortedData.reduce((a,b) => b[1][k] < a[1][k] ? b : a);
+  const fmt = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
   el.innerHTML = `
     <span>
       <span class="ind-badge ind-gain">${gainers} Gainers</span>
       <span class="ind-badge ind-lose">${losers} Losers</span>
+      ${flat ? `<span class="ind-badge ind-flat">${flat} Flat</span>` : ''}
     </span>
-    <span>Best: <strong class="ind-best">${best[1].name} ${best[1].day >= 0 ? '+' : ''}${best[1].day.toFixed(2)}%</strong></span>
-    <span>Worst: <strong class="ind-worst">${worst[1].name} ${worst[1].day.toFixed(2)}%</strong></span>
+    <span>Best: <strong class="ind-best">${best[1].name} ${fmt(best[1][k])}</strong></span>
+    <span>Worst: <strong class="ind-worst">${worst[1].name} ${fmt(worst[1][k])}</strong></span>
+    <span class="ind-basis">Basis ${ROT_SUM_LBL}</span>
   `;
 }
 
@@ -1174,6 +1186,9 @@ function renderRotation(secSorted, indSorted, thmSorted) {
     IND: indSorted.map(([sym,s]) => ({sym, s})),
     THM: thmSorted.map(([sym,s]) => ({sym, s})),
   };
+  renderRotSummary('SEC', secSorted);
+  renderRotSummary('IND', indSorted);
+  renderRotSummary('THM', thmSorted);
   ROT_GROUPS.forEach(drawRotGroup);
 }
 
@@ -1287,7 +1302,6 @@ async function refreshAll() {
     const secSorted = Object.entries(sectors).sort((a,b) => b[1].rs - a[1].rs);
     const indSorted = Object.entries(industries).sort((a,b) => b[1].rs - a[1].rs);
 
-    renderIndustrySummary(indSorted);   // NEW: Gainers/Losers bar
 
     renderRotation(secSorted, indSorted, Object.entries(themes));
 
