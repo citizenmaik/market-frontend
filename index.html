@@ -778,22 +778,39 @@ function renderOverall(result) {
   </tr>`;
 }
 
+const OIL_SYM = 'CL=F';   // Quotes-Route laeuft ueber Finnhub und kennt keine Futures
+
 async function loadIndices() {
-  const [quotesData, vixRes] = await Promise.all([
-    getQuotes(IDX_SYMS),
-    fetch(`${API}?type=vix&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({vix:null}))
+  const [quotesData, vixRes, oilCandles] = await Promise.all([
+    getQuotes(IDX_SYMS.filter(s => s !== OIL_SYM)),
+    fetch(`${API}?type=vix&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({vix:null})),
+    // Crude ueber die Candles-Route: die spricht Yahoo (siehe ^ -> __ Kodierung),
+    // dort existiert CL=F. Direkt bei Yahoo fetchen geht nicht — CORS ist dort aus.
+    getCandles([OIL_SYM], '5d').catch(()=>({}))
   ]);
   const row = document.getElementById('idxRow'); row.innerHTML='';
   const YF_MAP = {'BINANCE:BTCUSDT':'BTC-USD','GLD':'GLD','SPY':'SPY','RSP':'RSP','QQQ':'QQQ','QQQE':'QQQE','CL=F':'CL=F'};
   IDX_SYMS.forEach((sym) => {
-    const q=quotesData[sym]; const price=q?.c||0, prev=q?.pc||0;
-    const chg=prev>0?(price-prev)/prev*100:0;
-    const disp=sym==='BINANCE:BTCUSDT'?'BTC':sym==='CL=F'?'CRUDE':sym;
-    const pstr=sym==='BINANCE:BTCUSDT'?'$'+Math.round(price).toLocaleString():'$'+price.toFixed(2);
+    let price = null, prev = null;
+    if(sym === OIL_SYM) {
+      const c = clean(oilCandles?.[OIL_SYM]?.c || []);
+      if(c.length > 1) { price = c[c.length-1]; prev = c[c.length-2]; }
+    } else {
+      const q = quotesData[sym];
+      if(q?.c) { price = q.c; prev = q.pc || null; }
+    }
+    const chg = (price != null && prev > 0) ? (price - prev) / prev * 100 : null;
+    const disp = sym==='BINANCE:BTCUSDT' ? 'BTC' : sym===OIL_SYM ? 'CRUDE' : sym;
+    // Kein $0.00 vortaeuschen, wenn keine Daten da sind.
+    const pstr = price == null ? '—'
+      : sym==='BINANCE:BTCUSDT' ? '$'+Math.round(price).toLocaleString()
+      : '$'+price.toFixed(2);
+    const cstr = chg == null ? '—' : (chg>=0?'+':'')+chg.toFixed(2)+'%';
+    const ccls = chg == null ? '' : chg>=0 ? 'up' : 'dn';
     const yfTicker=YF_MAP[sym]||sym;
     const yfUrl=`https://finance.yahoo.com/quote/${yfTicker}`;
     row.innerHTML+=`<a class="ic" href="${yfUrl}" target="_blank" rel="noopener noreferrer"><div class="tk">${disp}</div><div class="pr">${pstr}</div>
-      <div class="ch ${chg>=0?'up':'dn'}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
+      <div class="ch ${ccls}" ${chg==null?'style="color:var(--muted)"':''}>${cstr}</div>
       <div class="nm">${IDX_META[sym]}</div></a>`;
   });
   const vix = vixRes?.vix ?? null;
