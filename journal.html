@@ -311,7 +311,7 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
         <div class="fg"><label for="kaufdatum">Kaufdatum</label><input type="date" id="kaufdatum"></div>
       </div>
 
-      <div class="fg-cat">Einstieg — 21DMA v2.33</div>
+      <div class="fg-cat">Einstieg — 21DMA v2.34</div>
       <div class="form-grid">
         <div class="fg"><label for="score">Score /6</label>
           <select id="score"><option value="">–</option><option value="6">6/6</option><option value="5">5/6</option><option value="4">4/6</option><option value="3">3/6</option><option value="2">2/6</option><option value="1">1/6</option><option value="0">0/6</option></select></div>
@@ -322,6 +322,16 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
         <div class="fg"><label for="bandEinstieg">21EMA Low Band $</label><input type="number" id="bandEinstieg" step="0.0001" placeholder="47.8000"></div>
       </div>
       <div class="fg-r" id="mindestabstandHinweis">1R / Stop-Abstand — Entry + Stop0 eingeben</div>
+
+      <div class="fg-cat">Gruppen-Kontext (Dashboard) — nur Kontext, kein Trigger (§5.1)</div>
+      <div class="form-grid">
+        <div class="fg"><label for="industryEntry">Industrie</label><input type="text" id="industryEntry" placeholder="z.B. KBE Banks (sonst SEKTOR: …)"></div>
+        <div class="fg"><label for="industryRsEntry">Industry-RS (0–100)</label><input type="number" id="industryRsEntry" step="1" min="0" max="100" placeholder="73"></div>
+        <div class="fg"><label for="industryRotEntry">Rotation (± Vorzeichen)</label><input type="number" id="industryRotEntry" step="0.01" placeholder="+2.68 / −5.15"></div>
+        <div class="fg"><label for="industryAtrMultEntry">ATR Mult. (± , kein §9-Gate)</label><input type="number" id="industryAtrMultEntry" step="0.01" placeholder="+3.85"></div>
+        <div class="fg"><label for="themeEntry">Theme (optional)</label><input type="text" id="themeEntry" placeholder="z.B. Fintech (mehrere: kommasep.)"></div>
+      </div>
+      <div class="fg-r" id="quadrantHinweis">Quadrant — Industry-RS + Rotation eingeben</div>
 
       <div class="form-actions">
         <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
@@ -492,6 +502,11 @@ function dbToTrade(t) {
     score: (t.score !== null && t.score !== undefined) ? parseInt(t.score) : null,
     regime: t.regime || null, atrPctEinstieg: t.atr_pct_einstieg ? parseFloat(t.atr_pct_einstieg) : null,
     stop0: t.stop0 ? parseFloat(t.stop0) : null, bandEinstieg: t.band_einstieg ? parseFloat(t.band_einstieg) : null,
+    industry: t.industry || null,
+    industryRsEntry: (t.industry_rs_entry !== null && t.industry_rs_entry !== undefined) ? parseFloat(t.industry_rs_entry) : null,
+    industryRotEntry: (t.industry_rot_entry !== null && t.industry_rot_entry !== undefined) ? parseFloat(t.industry_rot_entry) : null,
+    industryAtrMultEntry: (t.industry_atr_mult_entry !== null && t.industry_atr_mult_entry !== undefined) ? parseFloat(t.industry_atr_mult_entry) : null,
+    themeEntry: t.theme_entry || null,
     exitGrund: t.exit_grund || null, exitPreis: t.exit_preis ? parseFloat(t.exit_preis) : null,
     screenshotEntry: t.screenshot_entry, screenshotTp1: t.screenshot_tp1,
     screenshotTp2: t.screenshot_tp2, screenshotTp3: t.screenshot_tp3, screenshotExit: t.screenshot_exit
@@ -516,15 +531,24 @@ async function addTrade() {
   const atrPctEinstieg = parseFloat(document.getElementById('atrPctEinstieg').value) || null;
   const stop0 = parseFloat(document.getElementById('stop0').value) || null;
   const bandEinstieg = parseFloat(document.getElementById('bandEinstieg').value) || null;
+  const industry = document.getElementById('industryEntry').value.trim() || null;
+  const rsRaw = document.getElementById('industryRsEntry').value;
+  const industryRsEntry = rsRaw !== '' ? parseFloat(rsRaw) : null;
+  const rotRaw = document.getElementById('industryRotEntry').value;
+  const industryRotEntry = rotRaw !== '' ? parseFloat(rotRaw) : null;
+  const atrmRaw = document.getElementById('industryAtrMultEntry').value;
+  const industryAtrMultEntry = atrmRaw !== '' ? parseFloat(atrmRaw) : null;
+  const themeEntry = document.getElementById('themeEntry').value.trim() || null;
   try {
-    await supabaseClient.from('trades').insert({ user_id: USER_ID, ticker, einstiegspreis, kaufmenge, kaufdatum, stop_loss: stopLoss || null, tp1_preis: tp1Preis || null, tp2_preis: tp2Preis || null, tp3_preis: tp3Preis || null, live_preis: einstiegspreis, status: 'offen', initial_rrr: initialRRR, score, regime, atr_pct_einstieg: atrPctEinstieg, stop0, band_einstieg: bandEinstieg });
+    await supabaseClient.from('trades').insert({ user_id: USER_ID, ticker, einstiegspreis, kaufmenge, kaufdatum, stop_loss: stopLoss || null, tp1_preis: tp1Preis || null, tp2_preis: tp2Preis || null, tp3_preis: tp3Preis || null, live_preis: einstiegspreis, status: 'offen', initial_rrr: initialRRR, score, regime, atr_pct_einstieg: atrPctEinstieg, stop0, band_einstieg: bandEinstieg, industry, industry_rs_entry: industryRsEntry, industry_rot_entry: industryRotEntry, industry_atr_mult_entry: industryAtrMultEntry, theme_entry: themeEntry });
     await loadData(); updateUI(); resetForm();
   } catch (error) { console.error('Add trade error:', error); alert('Fehler beim Hinzufügen!'); }
 }
 
 function resetForm() {
-  ['ticker','einstiegspreis','kaufmenge','stopLoss','tp1Preis','tp2Preis','tp3Preis','kaufdatum','score','regime','atrPctEinstieg','stop0','bandEinstieg'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['ticker','einstiegspreis','kaufmenge','stopLoss','tp1Preis','tp2Preis','tp3Preis','kaufdatum','score','regime','atrPctEinstieg','stop0','bandEinstieg','industryEntry','industryRsEntry','industryRotEntry','industryAtrMultEntry','themeEntry'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const mh = document.getElementById('mindestabstandHinweis'); if (mh) { mh.textContent = '1R / Stop-Abstand — Entry + Stop0 eingeben'; mh.className = 'fg-r'; }
+  const qh = document.getElementById('quadrantHinweis'); if (qh) { qh.textContent = 'Quadrant — Industry-RS + Rotation eingeben'; qh.className = 'fg-r'; }
   document.getElementById('kaufdatum').value = getTodayISO();
 }
 
@@ -733,7 +757,7 @@ async function closeTrade(tradeId) {
     else if (trade.tp1Menge === 0) { trade.tp1Preis = ausstiegspreis; trade.tp1Menge = restmenge; }
   }
   try {
-    await supabaseClient.from('closed_trades').insert({ user_id: USER_ID, ticker: trade.ticker, einstiegspreis: trade.einstiegspreis, kaufmenge: trade.kaufmenge, kaufdatum: trade.kaufdatum || null, stop_loss: trade.stopLoss || null, tp1_preis: trade.tp1Preis || null, tp2_preis: trade.tp2Preis || null, tp3_preis: trade.tp3Preis || null, tp1_menge: trade.tp1Menge || 0, tp2_menge: trade.tp2Menge || 0, tp3_menge: trade.tp3Menge || 0, tp1_datum: trade.tp1Datum || null, tp2_datum: trade.tp2Datum || null, tp3_datum: trade.tp3Datum || null, exit_datum: exitDatum, live_preis: trade.livePreis, status: 'geschlossen', initial_rrr: trade.initialRRR || null, score: trade.score ?? null, regime: trade.regime || null, atr_pct_einstieg: trade.atrPctEinstieg ?? null, stop0: trade.stop0 ?? null, band_einstieg: trade.bandEinstieg ?? null, exit_grund: trade.exitGrund || null, exit_preis: trade.exitPreis ?? null, screenshot_entry: trade.screenshotEntry || null, screenshot_tp1: trade.screenshotTp1 || null, screenshot_tp2: trade.screenshotTp2 || null, screenshot_tp3: trade.screenshotTp3 || null, screenshot_exit: trade.screenshotExit || null });
+    await supabaseClient.from('closed_trades').insert({ user_id: USER_ID, ticker: trade.ticker, einstiegspreis: trade.einstiegspreis, kaufmenge: trade.kaufmenge, kaufdatum: trade.kaufdatum || null, stop_loss: trade.stopLoss || null, tp1_preis: trade.tp1Preis || null, tp2_preis: trade.tp2Preis || null, tp3_preis: trade.tp3Preis || null, tp1_menge: trade.tp1Menge || 0, tp2_menge: trade.tp2Menge || 0, tp3_menge: trade.tp3Menge || 0, tp1_datum: trade.tp1Datum || null, tp2_datum: trade.tp2Datum || null, tp3_datum: trade.tp3Datum || null, exit_datum: exitDatum, live_preis: trade.livePreis, status: 'geschlossen', initial_rrr: trade.initialRRR || null, score: trade.score ?? null, regime: trade.regime || null, atr_pct_einstieg: trade.atrPctEinstieg ?? null, stop0: trade.stop0 ?? null, band_einstieg: trade.bandEinstieg ?? null, industry: trade.industry ?? null, industry_rs_entry: trade.industryRsEntry ?? null, industry_rot_entry: trade.industryRotEntry ?? null, industry_atr_mult_entry: trade.industryAtrMultEntry ?? null, theme_entry: trade.themeEntry ?? null, exit_grund: trade.exitGrund || null, exit_preis: trade.exitPreis ?? null, screenshot_entry: trade.screenshotEntry || null, screenshot_tp1: trade.screenshotTp1 || null, screenshot_tp2: trade.screenshotTp2 || null, screenshot_tp3: trade.screenshotTp3 || null, screenshot_exit: trade.screenshotExit || null });
     await supabaseClient.from('trades').delete().eq('id', tradeId);
     await loadData(); updateUI();
   } catch (error) { console.error('Close trade error:', error); alert('Fehler beim Schließen!'); }
@@ -1412,7 +1436,32 @@ function calcMindestabstand(){
   }
   box.textContent=txt; box.className=warn?'fg-r warn':'fg-r';
 }
-document.addEventListener('DOMContentLoaded',function(){ const e=document.getElementById('einstiegspreis'); if(e) e.addEventListener('input',calcMindestabstand); });
+// Quadrant-Live-Hinweis (§5.1): RS-Level × Rotations-Vorzeichen. Nur Kontext, kein Trigger.
+function calcQuadrant(){
+  const box = document.getElementById('quadrantHinweis');
+  if(!box) return;
+  const rsRaw  = (document.getElementById('industryRsEntry')||{}).value;
+  const rotRaw = (document.getElementById('industryRotEntry')||{}).value;
+  if(rsRaw===''||rsRaw===undefined||rotRaw===''||rotRaw===undefined){
+    box.textContent='Quadrant — Industry-RS + Rotation eingeben'; box.className='fg-r'; return;
+  }
+  const rs=parseFloat(rsRaw), rot=parseFloat(rotRaw);
+  if(isNaN(rs)||isNaN(rot)){ box.textContent='Quadrant — Industry-RS + Rotation eingeben'; box.className='fg-r'; return; }
+  let q, note, warn=false;
+  if(rs>60 && rot>0){ q='🟢 Rückenwind'; note='#2 ✅ · T1-fähig'; }
+  else if(rs>60 && rot<=0){ q='🟡 Führung ermüdet'; note='#2 ✅ · Tier ⬇️ max. T2 (späte Führung)'; }
+  else if(rs<=60 && rot>0){ q='⚪ Frühphase'; note='#2 ❌ · KEIN Zugang, nur Watchlist'; warn=true; }
+  else { q='⛔ Tot'; note='#2 ❌'; warn=true; }
+  const atrmRaw=(document.getElementById('industryAtrMultEntry')||{}).value;
+  let spaet='';
+  if(rs>60 && rot<0 && atrmRaw!==''){ const am=parseFloat(atrmRaw); if(!isNaN(am)&&am>3.0) spaet='  ·  ATR Mult. '+am.toFixed(2)+'x → effizienter 1M-Trend, aber Woche liefert nicht nach'; }
+  box.textContent=q+'  —  '+note+spaet;
+  box.className=warn?'fg-r warn':'fg-r';
+}
+document.addEventListener('DOMContentLoaded',function(){
+  const e=document.getElementById('einstiegspreis'); if(e) e.addEventListener('input',calcMindestabstand);
+  ['industryRsEntry','industryRotEntry','industryAtrMultEntry'].forEach(function(id){ const el=document.getElementById(id); if(el) el.addEventListener('input',calcQuadrant); });
+});
 </script>
 
 <!-- Edit Trade Modal -->
