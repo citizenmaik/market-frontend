@@ -322,6 +322,16 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
         <div class="fg"><label for="bandEinstieg">21EMA Low Band $</label><input type="number" id="bandEinstieg" step="0.0001" placeholder="47.8000"></div>
       </div>
       <div class="fg-r" id="mindestabstandHinweis">1R / Stop-Abstand — Entry + Stop0 eingeben</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <label for="nerObs" style="font-size:11px;color:var(--muted);white-space:nowrap">NER (Beob.)</label>
+        <select id="nerObs" onchange="calcIdee4()" style="width:auto;padding:2px 6px;font-size:12px">
+          <option value="0.00125">0.125%</option>
+          <option value="0.0025" selected>0.25%</option>
+          <option value="0.005">0.5%</option>
+          <option value="0.01">1.0%</option>
+        </select>
+      </div>
+      <div class="fg-r" id="idee4Hinweis" title="§21 Beobachtungsmodus — ändert kein Sizing, nur Anzeige. Die 0.5 ist unvalidiert.">Idee-4-Beobachtung — Entry, Stop0 + ATR% eingeben</div>
 
       <div class="fg-cat">Gruppen-Kontext (Dashboard) — nur Kontext, kein Trigger (§5.1)</div>
       <div class="form-grid">
@@ -1434,6 +1444,41 @@ function calcMindestabstand(){
     txt+='  ·  Stop = '+ratio.toFixed(2)+'x ATR%';
     if(ratio<0.5){ txt+='  ⚠ Stop im Rauschen (<0.5x ATR%)'; warn=true; }
   }
+  box.textContent=txt; box.className=warn?'fg-r warn':'fg-r';
+  calcIdee4();
+}
+// ── IDEE-4-BEOBACHTUNG (§21, im Freeze — NUR ANZEIGE, kein Sizing-Trigger) ──
+// Vergleicht die aktuelle Sizing-Regel (gegen nominales 1R = Entry−Stop0) mit dem
+// Kandidaten „Sizing gegen effektiven Ausstieg" (Entry − (Stop0 − 0.5×ATR$)).
+// Ändert KEINE Stückzahl. Macht nur sichtbar, ob beide auseinanderlaufen — die
+// Datengrundlage für die Entscheidung nach dem Freeze. Die 0.5 ist unvalidiert (§21).
+function calcIdee4(){
+  const box = document.getElementById('idee4Hinweis');
+  if(!box) return;
+  const entry  = parseFloat((document.getElementById('einstiegspreis')||{}).value);
+  const stop0  = parseFloat((document.getElementById('stop0')||{}).value);
+  const atrPct = parseFloat((document.getElementById('atrPctEinstieg')||{}).value);
+  const nerSel = (document.getElementById('nerObs')||{}).value;
+  if(isNaN(entry)||isNaN(stop0)||entry<=0||isNaN(atrPct)||atrPct<=0){
+    box.textContent='Idee-4-Beobachtung — Entry, Stop0 + ATR% eingeben'; box.className='fg-r'; return;
+  }
+  const portfolio=11000, cap=0.20, ner=parseFloat(nerSel||'0.0025');
+  const dollarRisk=portfolio*ner, maxCap=portfolio*cap;
+  const nom1R=entry-stop0;
+  const atrDollar=atrPct/100*entry;
+  const effFloor=stop0-0.5*atrDollar;
+  const effRisk=entry-effFloor;
+  if(nom1R<=0||effRisk<=0){ box.textContent='Idee-4-Beobachtung — Stop0 unter Entry nötig'; box.className='fg-r'; return; }
+  function shares(risk){ let s=dollarRisk/risk; const capped=(s*entry)>maxCap; if(capped) s=maxCap/entry; return {s:Math.floor(s*10)/10, capped}; }
+  const nom=shares(nom1R), eff=shares(effRisk);
+  // realer Verlust, wenn der Kurs zum effektiven Ausstieg (Stop0 − 0.5ATR) fällt
+  const realNom=nom.s*effRisk, realEff=eff.s*effRisk;
+  const divergenz=nom.s>0 ? (nom.s/eff.s) : 1;
+  let txt='Idee 4 (Beob.): '+eff.s.toFixed(1)+' Stk vs. aktuell '+nom.s.toFixed(1)+' Stk';
+  txt+='  ·  realer Verlust aktuell $'+realNom.toFixed(2)+' (−'+(realNom/dollarRisk).toFixed(1)+'R) vs. Idee 4 $'+realEff.toFixed(2);
+  let warn=false;
+  if(nom.capped){ txt+='  ⚠ aktuell am 20%-Cap → gap-exponiert'; warn=true; }
+  else if(divergenz>=1.5){ txt+='  ⚠ Regeln laufen auseinander ('+divergenz.toFixed(1)+'×)'; warn=true; }
   box.textContent=txt; box.className=warn?'fg-r warn':'fg-r';
 }
 // Quadrant-Live-Hinweis (§5.1): RS-Level × Rotations-Vorzeichen. Nur Kontext, kein Trigger.
