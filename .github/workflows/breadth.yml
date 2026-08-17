@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
+          # kein cache: pip -- dafür bräuchte es eine requirements.txt im Repo
 
       - name: Install dependencies
         run: pip install yfinance pandas numpy lxml requests
@@ -35,10 +35,11 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- breadth.json; then
-            echo "Keine Änderung an breadth.json – nichts zu committen."
+          git add -A breadth.json
+          if git diff --cached --quiet -- breadth.json; then
+            echo "Keine Änderung an breadth.json - nichts zu committen."
           else
-            git add breadth.json
             git commit -m "chore: breadth snapshot $(date -u +%Y-%m-%d)"
+            git pull --rebase --autostash
             git push
           fi
