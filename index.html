@@ -307,6 +307,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
           <div id="gaugeExpVal" style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--muted);margin-top:3px;">—</div>
           <div id="gaugeExpTier" style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.06em;margin-top:3px;text-align:center;">—</div>
           <div id="gaugeExpDist" style="font-family:var(--mono);font-size:8.5px;color:var(--muted);letter-spacing:.04em;margin-top:5px;text-align:center;">—</div>
+          <div id="gaugeFtd" style="font-family:var(--mono);font-size:8.5px;letter-spacing:.04em;margin-top:6px;text-align:center;display:none;"></div>
         </div>
         <div class="omi-table">
           <table style="width:100%;border-collapse:collapse;">
@@ -692,6 +693,92 @@ function calcExposure(gesamt, trendData, signals) {
   return { tier, tierBase, band, label, flag, cb, distDays: (signals.distDays != null ? signals.distDays : null) };
 }
 
+// ── FTD / Rally-Versuch (v2.14 · Regelwerk § 4.4) — localStorage-persistiert ──
+// Referenz-Index = QQQ (Tag-Zähler, day1Low, Reset). SPY darf den FTD-Up-Day
+// zusätzlich auslösen. Fortschreibung nur einmal pro ABGESCHLOSSENEM Tagesbar
+// (Refresh läuft alle 5 min): ist der neueste Bar 'heute' (noch in Bildung),
+// zählt der Vortagsschluss — die Morgen-Session handelt ohnehin darauf.
+const FTD_CFG = {
+  LOCK_SCORE:    -10,   // GESAMT ≤ -10 → Bearish-Lockout (§ 4.1)
+  RELEASE_SCORE: -10,   // FTD verlangt Rückkreuzung > -10
+  DAY_MIN: 4, DAY_MAX: 7, // gültiges FTD-Fenster (Rally-Tag)
+  UP_PCT:  1.25,        // Leit-Index Mindest-Tagesgewinn %
+  LS_KEY: 'ftdStateV1',
+};
+function loadFtd(){ try { return JSON.parse(localStorage.getItem(FTD_CFG.LS_KEY)) || null; } catch(e){ return null; } }
+function saveFtd(s){ try { localStorage.setItem(FTD_CFG.LS_KEY, JSON.stringify(s)); } catch(e){} }
+
+// Index des letzten ABGESCHLOSSENEN Bars (heutiger, noch offener Bar → Vortag).
+function _completedIdx(q){
+  const c = q && q.c, t = q && q.t;
+  if(!Array.isArray(c) || c.length < 2) return -1;
+  let i = c.length - 1;
+  if(Array.isArray(t) && t.length === c.length){
+    if(new Date(t[i]*1000).toDateString() === new Date().toDateString()) i = c.length - 2;
+  }
+  return i;
+}
+// Tageswerte am abgeschlossenen Bar: {day%, close, low, up}. low aus .l, sonst close.
+function _dayStat(candleData, sym){
+  const x = candleData[sym] || {};
+  const i = _completedIdx(x);
+  if(i < 1) return null;
+  const c = x.c, l = Array.isArray(x.l) && x.l.length === c.length ? x.l : null;
+  return { day:(c[i]/c[i-1]-1)*100, close:c[i], low: l ? l[i] : c[i], up: c[i] > c[i-1] };
+}
+function _barKey(candleData){
+  const x = candleData['QQQ'] || {}, i = _completedIdx(x);
+  if(i < 0) return null;
+  return Array.isArray(x.t) && x.t.length === x.c.length ? 'd'+x.t[i] : 'n'+i;
+}
+
+function updateFtdState(gesamt, candleData){
+  let st = loadFtd() || { lockout:false, rallyDay:0, day1Low:null, lastBar:null, releasedOn:null };
+  const key = _barKey(candleData);
+  if(key && st.lastBar === key) return st;   // gleicher abgeschl. Bar → kein Advance (intraday-safe)
+  st.lastBar = key;
+
+  const Q = _dayStat(candleData, 'QQQ'), S = _dayStat(candleData, 'SPY');
+  if(!Q){ saveFtd(st); return st; }
+
+  if(gesamt <= FTD_CFG.LOCK_SCORE) st.lockout = true;          // Lockout-Eintritt
+
+  if(st.lockout){
+    if(st.rallyDay === 0){
+      if(Q.up){ st.rallyDay = 1; st.day1Low = Q.low; }         // Tag 1 = erster höherer QQQ-Schluss
+    } else if(Q.low < st.day1Low){
+      st.rallyDay = 0; st.day1Low = null;                      // Reset: Tag-1-Tief unterschritten
+    } else {
+      st.rallyDay += 1;
+      if(st.rallyDay > FTD_CFG.DAY_MAX){ st.rallyDay = 0; st.day1Low = null; } // Fenster verstrichen → neuer Versuch
+    }
+    const inWin     = st.rallyDay >= FTD_CFG.DAY_MIN && st.rallyDay <= FTD_CFG.DAY_MAX;
+    const bigUp     = (Q.day >= FTD_CFG.UP_PCT) || (S && S.day >= FTD_CFG.UP_PCT);
+    const recrossed = gesamt > FTD_CFG.RELEASE_SCORE;
+    if(inWin && bigUp && recrossed){                           // FTD → Freigabe
+      st.lockout = false; st.rallyDay = 0; st.day1Low = null; st.releasedOn = key;
+    }
+  }
+  saveFtd(st);
+  return st;
+}
+
+function renderFtd(st){
+  const el = document.getElementById('gaugeFtd');
+  if(!el) return;
+  if(!st || (!st.lockout && !st.rallyDay)){ el.style.display='none'; el.textContent=''; return; }
+  el.style.display = 'block';
+  if(st.lockout){
+    el.innerHTML = st.rallyDay
+      ? `Lockout · Rally-Tag ${st.rallyDay}/≥${FTD_CFG.DAY_MIN} · FTD: <b>nein</b>`
+      : `Lockout · kein Rally-Versuch · FTD: <b>nein</b>`;
+    el.style.color = 'var(--red)';
+  } else {
+    el.innerHTML = `FTD ausgelöst ✓ — Freigabe (überschreibt C1)`;
+    el.style.color = 'var(--green)';
+  }
+}
+
 // ── Overall Market Indicator ─────────────────────────
 function calcOverall(secData, indData, trendData, vix, mcScores, expSignals) {
   const secs = Object.values(secData);
@@ -740,8 +827,8 @@ function calcOverall(secData, indData, trendData, vix, mcScores, expSignals) {
 
 function renderOverall(result) {
   const {gesamt, rows} = result;
-  const zone  = gesamt>=60?'STRONGLY BULLISH':gesamt>=30?'BULLISH':gesamt<=-60?'STRONGLY BEARISH':gesamt<=-30?'BEARISH':'NEUTRAL';
-  const color = gesamt>=30?'var(--green)':gesamt<=-30?'var(--red)':'var(--yellow)';
+  const zone  = gesamt>30?'STRONGLY BULLISH':gesamt>10?'BULLISH':gesamt>=-10?'NEUTRAL':gesamt>=-30?'BEARISH':'STRONGLY BEARISH';
+  const color = gesamt>10?'var(--green)':gesamt>=-10?'var(--yellow)':'var(--red)';
   const pct2    = (gesamt+100)/200;
   const offset = 204 - pct2*204;
   const arc = document.getElementById('gaugeArc');
@@ -923,6 +1010,7 @@ async function loadAllMarketConditions(candleData, breadthData) {
     const expSignals = computeExposureSignals(candleData);
     const ovResult = calcOverall(window._secArr||{}, window._indArr||{}, window._trendData||{}, window._vix||null, allScores, expSignals);
     renderOverall(ovResult);
+    renderFtd(updateFtdState(ovResult.gesamt, candleData));   // ← NEU (v2.14 · § 4.4)
   }
 }
 
