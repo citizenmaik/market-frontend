@@ -848,11 +848,6 @@ function renderTradesTable() {
         <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 1)">TP1</button>
         <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 2)">TP2</button>
         <button class="action-btn edit" onclick="editTeilverkauf('${t.id}', 3)">TP3</button>
-        <button class="action-btn ${t.screenshotEntry ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'entry')" title="Entry Chart">📸E</button>
-        <button class="action-btn ${t.screenshotTp1 ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'tp1')" title="TP1 Chart">📸₁</button>
-        <button class="action-btn ${t.screenshotTp2 ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'tp2')" title="TP2 Chart">📸₂</button>
-        <button class="action-btn ${t.screenshotTp3 ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'tp3')" title="TP3 Chart">📸₃</button>
-        <button class="action-btn ${t.screenshotExit ? 'has-screenshot' : 'upload'}" onclick="uploadScreenshot('${t.id}', 'exit')" title="Exit Chart">📸X</button>
         <button class="action-btn split" onclick="openSplitModal('${t.id}')" title="Aktiensplit anwenden">Split</button>
         <button class="action-btn close" onclick="closeTrade('${t.id}')">Close</button>
         <button class="action-btn delete" onclick="deleteTrade('${t.id}')">×</button>
@@ -901,11 +896,6 @@ function renderHistorieTable() {
       <td class="text-right ${plClass}">${plPercent >= 0 ? '+' : ''}${plPercent.toFixed(2)}%</td>
       <td class="text-right ${rrrClass}">${rrrDisplay}</td>
       <td><div class="action-cell">
-        <button class="action-btn ${t.screenshotEntry ? 'has-screenshot' : 'upload'}" onclick="uploadClosedScreenshot('${t.id}', 'entry')">📸E</button>
-        <button class="action-btn ${t.screenshotTp1 ? 'has-screenshot' : 'upload'}" onclick="uploadClosedScreenshot('${t.id}', 'tp1')">📸₁</button>
-        <button class="action-btn ${t.screenshotTp2 ? 'has-screenshot' : 'upload'}" onclick="uploadClosedScreenshot('${t.id}', 'tp2')">📸₂</button>
-        <button class="action-btn ${t.screenshotTp3 ? 'has-screenshot' : 'upload'}" onclick="uploadClosedScreenshot('${t.id}', 'tp3')">📸₃</button>
-        <button class="action-btn ${t.screenshotExit ? 'has-screenshot' : 'upload'}" onclick="uploadClosedScreenshot('${t.id}', 'exit')">📸X</button>
         <button class="action-btn delete" onclick="deleteClosedTrade('${t.id}')">×</button>
       </div></td>
     </tr>`;
