@@ -304,44 +304,8 @@ input[type="number"] { -moz-appearance:textfield; appearance:textfield; }
         <div class="fg"><label for="ticker">Ticker *</label><input type="text" id="ticker" placeholder="AAPL"></div>
         <div class="fg"><label for="einstiegspreis">Einstiegspreis ($) *</label><input type="number" id="einstiegspreis" step="0.01" placeholder="0.00"></div>
         <div class="fg"><label for="kaufmenge">Kaufmenge (Stk) *</label><input type="number" id="kaufmenge" step="0.01" placeholder="0"></div>
-        <div class="fg"><label for="stopLoss">Stop-Loss ($)</label><input type="number" id="stopLoss" step="0.01" placeholder="0.00"></div>
-        <div class="fg"><label for="tp1Preis">TP1 Preis ($)</label><input type="number" id="tp1Preis" step="0.01" placeholder="0.00"></div>
-        <div class="fg"><label for="tp2Preis">TP2 Preis ($)</label><input type="number" id="tp2Preis" step="0.01" placeholder="0.00"></div>
-        <div class="fg"><label for="tp3Preis">Runner-Exit ($)</label><input type="number" id="tp3Preis" step="0.01" placeholder="0.00"></div>
         <div class="fg"><label for="kaufdatum">Kaufdatum</label><input type="date" id="kaufdatum"></div>
       </div>
-
-      <div class="fg-cat">Einstieg — 21DMA v2.34</div>
-      <div class="form-grid">
-        <div class="fg"><label for="score">Score /6</label>
-          <select id="score"><option value="">–</option><option value="6">6/6</option><option value="5">5/6</option><option value="4">4/6</option><option value="3">3/6</option><option value="2">2/6</option><option value="1">1/6</option><option value="0">0/6</option></select></div>
-        <div class="fg"><label for="regime">Regime</label>
-          <select id="regime"><option value="">–</option><option value="Risk-On">Risk-On (BUY ≥4/6)</option><option value="NEUTRAL/VORSICHT">NEUTRAL/VORSICHT (≥5/6)</option><option value="Risk-Off">Risk-Off (K.O.)</option></select></div>
-        <div class="fg"><label for="atrPctEinstieg">ATR% Einstieg</label><input type="number" id="atrPctEinstieg" step="0.01" placeholder="3.5" oninput="calcMindestabstand()"></div>
-        <div class="fg"><label for="stop0">Initialer Stop $ (Stop0)</label><input type="number" id="stop0" step="0.0001" placeholder="fix, nicht trailen" oninput="calcMindestabstand()"></div>
-        <div class="fg"><label for="bandEinstieg">21EMA Low Band $</label><input type="number" id="bandEinstieg" step="0.0001" placeholder="47.8000"></div>
-      </div>
-      <div class="fg-r" id="mindestabstandHinweis">1R / Stop-Abstand — Entry + Stop0 eingeben</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-        <label for="nerObs" style="font-size:11px;color:var(--muted);white-space:nowrap">NER (Beob.)</label>
-        <select id="nerObs" onchange="calcIdee4()" style="width:auto;padding:2px 6px;font-size:12px">
-          <option value="0.00125">0.125%</option>
-          <option value="0.0025" selected>0.25%</option>
-          <option value="0.005">0.5%</option>
-          <option value="0.01">1.0%</option>
-        </select>
-      </div>
-      <div class="fg-r" id="idee4Hinweis" title="§21 Beobachtungsmodus — ändert kein Sizing, nur Anzeige. Die 0.5 ist unvalidiert.">Idee-4-Beobachtung — Entry, Stop0 + ATR% eingeben</div>
-
-      <div class="fg-cat">Gruppen-Kontext (Dashboard) — nur Kontext, kein Trigger (§5.1)</div>
-      <div class="form-grid">
-        <div class="fg"><label for="industryEntry">Industrie</label><input type="text" id="industryEntry" placeholder="z.B. KBE Banks (sonst SEKTOR: …)"></div>
-        <div class="fg"><label for="industryRsEntry">Industry-RS (0–100)</label><input type="number" id="industryRsEntry" step="1" min="0" max="100" placeholder="73"></div>
-        <div class="fg"><label for="industryRotEntry">Rotation (± Vorzeichen)</label><input type="number" id="industryRotEntry" step="0.01" placeholder="+2.68 / −5.15"></div>
-        <div class="fg"><label for="industryAtrMultEntry">ATR Mult. (± , kein §9-Gate)</label><input type="number" id="industryAtrMultEntry" step="0.01" placeholder="+3.85"></div>
-        <div class="fg"><label for="themeEntry">Theme (optional)</label><input type="text" id="themeEntry" placeholder="z.B. Fintech (mehrere: kommasep.)"></div>
-      </div>
-      <div class="fg-r" id="quadrantHinweis">Quadrant — Industry-RS + Rotation eingeben</div>
 
       <div class="form-actions">
         <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
@@ -529,26 +493,29 @@ async function addTrade() {
   const ticker = document.getElementById('ticker').value.toUpperCase().trim();
   const einstiegspreis = parseFloat(document.getElementById('einstiegspreis').value);
   const kaufmenge = parseFloat(document.getElementById('kaufmenge').value);
-  const stopLoss = parseFloat(document.getElementById('stopLoss').value) || 0;
-  const tp1Preis = parseFloat(document.getElementById('tp1Preis').value) || 0;
-  const tp2Preis = parseFloat(document.getElementById('tp2Preis').value) || 0;
-  const tp3Preis = parseFloat(document.getElementById('tp3Preis').value) || 0;
+  // Entfernte Formularfelder (Stop-Loss/TP, 21DMA-Einstieg, Gruppen-Kontext):
+  // Werte werden nicht mehr erfasst; die Spalten bleiben in der DB und werden null geschrieben.
+  const fv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const stopLoss = parseFloat(fv('stopLoss')) || 0;
+  const tp1Preis = parseFloat(fv('tp1Preis')) || 0;
+  const tp2Preis = parseFloat(fv('tp2Preis')) || 0;
+  const tp3Preis = parseFloat(fv('tp3Preis')) || 0;
   const kaufdatum = document.getElementById('kaufdatum').value || getTodayISO();
   if (!ticker || !einstiegspreis || !kaufmenge) { alert('Bitte fülle alle Pflichtfelder aus!'); return; }
   const initialRRR = calcInitialRRR(einstiegspreis, stopLoss, tp1Preis, tp2Preis, tp3Preis);
-  const score = document.getElementById('score').value !== '' ? parseInt(document.getElementById('score').value) : null;
-  const regime = document.getElementById('regime').value || null;
-  const atrPctEinstieg = parseFloat(document.getElementById('atrPctEinstieg').value) || null;
-  const stop0 = parseFloat(document.getElementById('stop0').value) || null;
-  const bandEinstieg = parseFloat(document.getElementById('bandEinstieg').value) || null;
-  const industry = document.getElementById('industryEntry').value.trim() || null;
-  const rsRaw = document.getElementById('industryRsEntry').value;
+  const score = fv('score') !== '' ? parseInt(fv('score')) : null;
+  const regime = fv('regime') || null;
+  const atrPctEinstieg = parseFloat(fv('atrPctEinstieg')) || null;
+  const stop0 = parseFloat(fv('stop0')) || null;
+  const bandEinstieg = parseFloat(fv('bandEinstieg')) || null;
+  const industry = fv('industryEntry').trim() || null;
+  const rsRaw = fv('industryRsEntry');
   const industryRsEntry = rsRaw !== '' ? parseFloat(rsRaw) : null;
-  const rotRaw = document.getElementById('industryRotEntry').value;
+  const rotRaw = fv('industryRotEntry');
   const industryRotEntry = rotRaw !== '' ? parseFloat(rotRaw) : null;
-  const atrmRaw = document.getElementById('industryAtrMultEntry').value;
+  const atrmRaw = fv('industryAtrMultEntry');
   const industryAtrMultEntry = atrmRaw !== '' ? parseFloat(atrmRaw) : null;
-  const themeEntry = document.getElementById('themeEntry').value.trim() || null;
+  const themeEntry = fv('themeEntry').trim() || null;
   try {
     await supabaseClient.from('trades').insert({ user_id: USER_ID, ticker, einstiegspreis, kaufmenge, kaufdatum, stop_loss: stopLoss || null, tp1_preis: tp1Preis || null, tp2_preis: tp2Preis || null, tp3_preis: tp3Preis || null, live_preis: einstiegspreis, status: 'offen', initial_rrr: initialRRR, score, regime, atr_pct_einstieg: atrPctEinstieg, stop0, band_einstieg: bandEinstieg, industry, industry_rs_entry: industryRsEntry, industry_rot_entry: industryRotEntry, industry_atr_mult_entry: industryAtrMultEntry, theme_entry: themeEntry });
     await loadData(); updateUI(); resetForm();
