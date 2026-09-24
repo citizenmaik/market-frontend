@@ -276,6 +276,11 @@ th.rot-s.sorted.asc::after{content:" ↑";}
 .omi-g .sub { font-family:var(--mono); font-size:8px; font-weight:300; color:var(--muted);
   margin-top:5px; text-align:center; line-height:1.55; opacity:.8; }
 .omi-table { overflow-x:hidden; }
+/* [B9] Kontext-Flag — Hinweis, kein Gate */
+.b9 { grid-column:1; font-family:var(--mono); font-size:9px; font-weight:300; line-height:1.55;
+  color:var(--yellow); background:rgba(245,200,66,.06); border-top:1px solid var(--border);
+  padding:8px 14px; text-align:center; }
+@media (max-width: 820px){ .b9 { border-bottom:1px solid var(--border); } }
 @media (max-width: 820px) {
   .omi-wrap { grid-template-columns: 1fr; }
   .omi-gauge { border-right:none; border-bottom:1px solid var(--border); padding:16px 12px; gap:14px; }
@@ -347,6 +352,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
           </div>
 
         </div>
+        <div id="b9Flag" class="b9" style="display:none;"></div>
         <div class="omi-table">
           <table style="width:100%;border-collapse:collapse;">
             <thead>
@@ -731,6 +737,7 @@ function calcOverall(secData, indData, trendData, vix, mcScores, expSignals, bre
   return {
     gesamt,
     breadth: breadth || null,
+    wide: { sec: pct_sec_50*100, ind: pct_ind_50*100 },   // [B9] Breitmarkt-Kontext
     exposure: calcExposure(gesamt, trendData, expSignals),
     rows: [
       {lbl:`Sektor-Breadth`,          score:score_sec,   weight:'20%', detail:`${Math.round(pct_sec_50*100)}% >50SMA, ${Math.round(pct_sec_rs*100)}% RS≥60`},
@@ -759,6 +766,13 @@ const BREADTH_CFG = {
   Z_WINDOW: 120,       // [B7] z-Fenster (Alternative 250)
   UNIVERSE: 'own',     // [B8] 'own' = ~180 Themen-Aktien (Default) · 'nyse' = externer Feed (fehlt)
   MIN_NAMES: 30,       // Mindestzahl verwertbarer Titel, sonst n/a
+  // [B9] Kontext-Flag: § 4.5 misst die Breite des EIGENEN Universums. Liegt der
+  // Breitmarkt (Sektor-/Industry-Breadth, Anteil ueber 50SMA) darunter, waehrend
+  // der Score neutral oder bullish steht, handelst du in einer engen Fuehrungs-
+  // gruppe. Reiner Hinweis — kein Gate, keine Score-Aenderung.
+  B9_ON: true,
+  B9_BREADTH_MIN: 40,  // % Sektor-/Industry-ETFs ueber 50SMA
+  B9_SCORE_MIN:   45,  // ab hier gilt der Score als 'nicht bearish'
   Z_CLAMP:  2,
   LS_KEY:   'breadthLogV1',
   LOG_MAX:  400,       // Tage im Log (rollierend)
@@ -994,6 +1008,20 @@ function renderOverall(result) {
   const nte = document.getElementById('gaugeNote');
   if(val){ val.textContent = score.toFixed(1); val.setAttribute('fill', color); }
   if(lbl){ lbl.textContent = zone; lbl.style.color = color; }
+  // [B9] Kontext-Flag — enge Fuehrungsgruppe
+  const wide = result.wide || null;
+  const b9 = (BREADTH_CFG.B9_ON && wide && live45
+      && score >= BREADTH_CFG.B9_SCORE_MIN
+      && Math.min(wide.sec, wide.ind) < BREADTH_CFG.B9_BREADTH_MIN)
+    ? { sec: wide.sec, ind: wide.ind } : null;
+  const fl = document.getElementById('b9Flag');
+  if(fl){
+    fl.style.display = b9 ? 'block' : 'none';
+    if(b9) fl.innerHTML = `⚠ Universum stark, Breitmarkt schwach`
+      + `<br><span style="opacity:.75">Sektor ${b9.sec.toFixed(0)} % · Industry ${b9.ind.toFixed(0)} % über 50SMA`
+      + ` · Score ${score.toFixed(1)} — enge Führungsgruppe, kein Gate</span>`;
+  }
+
   if(nte){ nte.innerHTML = `Ticket-Budget ${zone==='BULLISH'?3:zone==='NEUTRAL'?1:0}`
     + `<br><span style="opacity:.7">${live45
         ? `§ 4.5 · ${4-bs.na.length}/4 · ${bs.names} Titel`
