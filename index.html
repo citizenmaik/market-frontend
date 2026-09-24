@@ -101,6 +101,12 @@ body {
 .ic .pr{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:3px;}
 .ic .ch{font-family:var(--mono);font-size:13px;font-weight:600;margin-bottom:3px;}
 .ic .nm{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;}
+/* Volumen-Zeile (nur SPY/QQQ) — Datengrundlage fuer F3, Regelwerk § 4.4 */
+.ic .vx{font-family:var(--mono);font-size:9px;letter-spacing:.03em;color:var(--muted);
+  display:flex;flex-wrap:wrap;gap:5px;margin-bottom:3px;line-height:1.5;}
+.ic .vx .vu{color:var(--green);font-weight:600;}
+.ic .vx .vd{color:var(--red);font-weight:600;}
+.ic .vx .vn{color:var(--yellow);font-weight:600;}
 
 .r1  {display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
 .rtd {display:block;margin-bottom:var(--gap);}
@@ -306,8 +312,6 @@ th.rot-s.sorted.asc::after{content:" ↑";}
           <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);letter-spacing:.14em;">INVEST-EXPOSURE</div>
           <div id="gaugeExpVal" style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--muted);margin-top:3px;">—</div>
           <div id="gaugeExpTier" style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.06em;margin-top:3px;text-align:center;">—</div>
-          <div id="gaugeExpDist" style="font-family:var(--mono);font-size:8.5px;color:var(--muted);letter-spacing:.04em;margin-top:5px;text-align:center;">—</div>
-          <div id="gaugeFtd" style="font-family:var(--mono);font-size:8.5px;letter-spacing:.04em;margin-top:6px;text-align:center;display:none;"></div>
         </div>
         <div class="omi-table">
           <table style="width:100%;border-collapse:collapse;">
@@ -376,7 +380,7 @@ th.rot-s.sorted.asc::after{content:" ↑";}
     <div class="pnl">
       <div class="ph"><h3>Trend Status</h3></div>
       <div class="ts-wrap"><table class="ts">
-        <thead><tr><th>Signal</th><th>SPY</th><th>RSP</th><th>QQQ</th><th>QQQE</th><th>IWM</th></tr></thead>
+        <thead><tr><th>Signal</th><th>RSP</th><th>QQQE</th><th>IWM</th></tr></thead>
         <tbody id="trendTbl"></tbody>
       </table></div>
     </div>
@@ -485,6 +489,9 @@ function toggleTheme() {
   html.dataset.theme = next; localStorage.setItem('theme', next);
   document.getElementById('thBtn').textContent = next === 'dark' ? '🌙' : '☀️';
 }
+// Altlast v2.15: FTD-/Rally-Zustand ist ausgebaut, Key aufraeumen
+try { localStorage.removeItem('ftdStateV1'); } catch(e){}
+
 // Force dark mode reset (v2)
 if (localStorage.getItem('theme') === 'light') localStorage.setItem('theme', 'dark');
 const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -520,7 +527,7 @@ async function getCandles(symbols, range='1y') {
 
 // ── Constants ─────────────────────────────────────────
 // Index-Karten. 'CL=F' = Crude Oil Front-Month-Future (Yahoo-Notation,
-// Benchmark WTI). IWM bleibt in Trend/Breadth/Market-Conditions.
+// Benchmark WTI). Trend Status + Market Indicator laufen ab v2.16 auf RSP/QQQE/IWM.
 const IDX_SYMS = ['SPY','RSP','QQQ','QQQE','CL=F','BINANCE:BTCUSDT','GLD'];
 const IDX_META = {SPY:'S&P 500',RSP:'S&P 500 EQ WT',QQQ:'NASDAQ 100',QQQE:'NASDAQ 100 EQ WT','CL=F':'CRUDE OIL','BINANCE:BTCUSDT':'BITCOIN',GLD:'GOLD ETF'};
 
@@ -585,31 +592,11 @@ const THEME_MEMBERS = [...new Set(Object.values(THEME_BASKETS).flat())];
 
 // ── Invest-Exposure Regime (abgeleitet vom GESAMT-Composite, −100…+100) ──
 const EXP_CFG = {
-  DIST_WINDOW:      25,   // Sessions-Fenster für Distribution Days
-  DIST_DOWN_PCT:    0.2,  // Mindest-Tagesverlust % für einen Distribution Day
-  DIST_WASHOUT_PCT: 5,    // Rally % ab Dist-Day-Close lässt ihn verfallen
-  DIST_CLUSTER:     5,    // ab so vielen Dist Days = Cluster → Tier −1
   CB_DRAWDOWN_PCT:  10,   // Drawdown % vom Rally-High → Circuit-Breaker
   CB_RALLY_LOOKBACK:60,   // Sessions für Rally-High-Bestimmung
   HYST:             3,    // Composite-Punkte-Puffer gegen Tier-Whipsaw
   LS_KEY: 'omiExpTierV1', // localStorage-Schlüssel für Tier-Persistenz
 };
-
-// Distribution Days auf Index-Close/Volume-Array (IBD-Logik)
-function countDistributionDays(c, v) {
-  if (!Array.isArray(c) || !Array.isArray(v) || c.length < 2 || v.length !== c.length) return null;
-  const n = c.length, start = Math.max(1, n - EXP_CFG.DIST_WINDOW);
-  let count = 0;
-  for (let i = start; i < n; i++) {
-    if (v[i] == null || v[i-1] == null) continue;          // Lücken überspringen (null≠0)
-    const chg = (c[i] - c[i-1]) / c[i-1] * 100;
-    if (chg <= -EXP_CFG.DIST_DOWN_PCT && v[i] > v[i-1]) {
-      const maxSince = Math.max(...c.slice(i));             // Washout-Regel
-      if (maxSince < c[i] * (1 + EXP_CFG.DIST_WASHOUT_PCT/100)) count++;
-    }
-  }
-  return count;
-}
 
 // Circuit-Breaker: ≥ CB_DRAWDOWN_PCT unter Rally-High ODER unter 200 EMA
 function circuitBreakerState(c, below200) {
@@ -627,38 +614,15 @@ function circuitBreakerState(c, below200) {
 }
 
 // Aggregiert Candle-abgeleitete Signale (QQQ als Leit-Index)
+// Exposure-Signale (v2.16): nur noch kursbasiert. Der Distribution-Zaehler und
+// die FTD-Maschine sind ausgebaut — das Index-Volumen von Yahoo kam in einzelnen
+// Sessions luecken­haft an und hat den Zaehler still zu niedrig gerechnet.
 function computeExposureSignals(candleData) {
   const q = (candleData && candleData['QQQ']) || {};
   const cRaw = q.c || [];
-  // Volumen unter verschiedenen möglichen Keys suchen
-  const vRaw = q.v || q.volume || q.vol || q.Volume || q.V || [];
-  const c = [], v = [];
-  for (let i = 0; i < cRaw.length; i++) {
-    if (cRaw[i] == null || isNaN(cRaw[i])) continue;
-    c.push(cRaw[i]);
-    const vol = vRaw[i];
-    v.push((vol == null || isNaN(vol)) ? null : +vol);
-  }
-  // Volumen nutzbar, wenn ≥80% des Fensters gültige Werte hat
-  const nVol = v.filter(x => x != null && x > 0).length;
-  const need = Math.min(c.length, EXP_CFG.DIST_WINDOW) * 0.8;
-  const hasVol = nVol >= need && need > 0;
-  const distDays = hasVol ? countDistributionDays(c, v) : null;
+  const c = cRaw.filter(x => x != null && !isNaN(x));
   const below200 = c.length >= 2 ? (c[c.length-1] - emaCalc(c, 200)) < 0 : false;
-
-  // Einmalige Diagnose, falls kein Volumen ankommt
-  if (!hasVol && typeof window !== 'undefined' && !window.__volDiagLogged) {
-    window.__volDiagLogged = true;
-    console.warn('[Exposure] Kein nutzbares Volumen in QQQ-Candles.',
-      'Keys:', Object.keys(q),
-      '| gültige Vol-Werte:', nVol, 'von', c.length,
-      '| letzte v-Rohwerte:', (vRaw.slice ? vRaw.slice(-3) : vRaw));
-  }
-  return {
-    distDays,
-    cluster: distDays != null && distDays >= EXP_CFG.DIST_CLUSTER,
-    cb: circuitBreakerState(c, below200),
-  };
+  return { cb: circuitBreakerState(c, below200) };
 }
 
 // Hysterese-Tier (persistiert, um Whipsaw an Tier-Grenzen zu dämpfen)
@@ -689,99 +653,10 @@ function calcExposure(gesamt, trendData, signals) {
   // Tier 4 — Cap auf 60% wenn QQQ unter 50 EMA
   if (tier === 4 && below50) { band = '≤60%'; flag = 'QQQ<50EMA'; }
 
-  // Tier 2 — Distribution-Cluster zieht eine Tier runter
-  if (tier === 2 && signals.cluster) { tier = 1; band = BANDS[1]; label = LABELS[1]; flag = `Distrib. ×${signals.distDays}`; }
-
   // Circuit-Breaker (global): Rally-High-Drawdown ODER 200-EMA-Bruch → Cash
   if (signals.cb && signals.cb.active) { band = '0% · CASH'; label = 'Bearish'; flag = 'CB: ' + signals.cb.reason; cb = true; }
 
-  return { tier, tierBase, band, label, flag, cb, distDays: (signals.distDays != null ? signals.distDays : null) };
-}
-
-// ── FTD / Rally-Versuch (v2.14 · Regelwerk § 4.4) — localStorage-persistiert ──
-// Referenz-Index = QQQ (Tag-Zähler, day1Low, Reset). SPY darf den FTD-Up-Day
-// zusätzlich auslösen. Fortschreibung nur einmal pro ABGESCHLOSSENEM Tagesbar
-// (Refresh läuft alle 5 min): ist der neueste Bar 'heute' (noch in Bildung),
-// zählt der Vortagsschluss — die Morgen-Session handelt ohnehin darauf.
-const FTD_CFG = {
-  LOCK_SCORE:    -10,   // GESAMT ≤ -10 → Bearish-Lockout (§ 4.1)
-  RELEASE_SCORE: -10,   // FTD verlangt Rückkreuzung > -10
-  DAY_MIN: 4, DAY_MAX: 7, // gültiges FTD-Fenster (Rally-Tag)
-  UP_PCT:  1.25,        // Leit-Index Mindest-Tagesgewinn %
-  LS_KEY: 'ftdStateV1',
-};
-function loadFtd(){ try { return JSON.parse(localStorage.getItem(FTD_CFG.LS_KEY)) || null; } catch(e){ return null; } }
-function saveFtd(s){ try { localStorage.setItem(FTD_CFG.LS_KEY, JSON.stringify(s)); } catch(e){} }
-
-// Index des letzten ABGESCHLOSSENEN Bars (heutiger, noch offener Bar → Vortag).
-function _completedIdx(q){
-  const c = q && q.c, t = q && q.t;
-  if(!Array.isArray(c) || c.length < 2) return -1;
-  let i = c.length - 1;
-  if(Array.isArray(t) && t.length === c.length){
-    if(new Date(t[i]*1000).toDateString() === new Date().toDateString()) i = c.length - 2;
-  }
-  return i;
-}
-// Tageswerte am abgeschlossenen Bar: {day%, close, low, up}. low aus .l, sonst close.
-function _dayStat(candleData, sym){
-  const x = candleData[sym] || {};
-  const i = _completedIdx(x);
-  if(i < 1) return null;
-  const c = x.c, l = Array.isArray(x.l) && x.l.length === c.length ? x.l : null;
-  return { day:(c[i]/c[i-1]-1)*100, close:c[i], low: l ? l[i] : c[i], up: c[i] > c[i-1] };
-}
-function _barKey(candleData){
-  const x = candleData['QQQ'] || {}, i = _completedIdx(x);
-  if(i < 0) return null;
-  return Array.isArray(x.t) && x.t.length === x.c.length ? 'd'+x.t[i] : 'n'+i;
-}
-
-function updateFtdState(gesamt, candleData){
-  let st = loadFtd() || { lockout:false, rallyDay:0, day1Low:null, lastBar:null, releasedOn:null };
-  const key = _barKey(candleData);
-  if(key && st.lastBar === key) return st;   // gleicher abgeschl. Bar → kein Advance (intraday-safe)
-  st.lastBar = key;
-
-  const Q = _dayStat(candleData, 'QQQ'), S = _dayStat(candleData, 'SPY');
-  if(!Q){ saveFtd(st); return st; }
-
-  if(gesamt <= FTD_CFG.LOCK_SCORE) st.lockout = true;          // Lockout-Eintritt
-
-  if(st.lockout){
-    if(st.rallyDay === 0){
-      if(Q.up){ st.rallyDay = 1; st.day1Low = Q.low; }         // Tag 1 = erster höherer QQQ-Schluss
-    } else if(Q.low < st.day1Low){
-      st.rallyDay = 0; st.day1Low = null;                      // Reset: Tag-1-Tief unterschritten
-    } else {
-      st.rallyDay += 1;
-      if(st.rallyDay > FTD_CFG.DAY_MAX){ st.rallyDay = 0; st.day1Low = null; } // Fenster verstrichen → neuer Versuch
-    }
-    const inWin     = st.rallyDay >= FTD_CFG.DAY_MIN && st.rallyDay <= FTD_CFG.DAY_MAX;
-    const bigUp     = (Q.day >= FTD_CFG.UP_PCT) || (S && S.day >= FTD_CFG.UP_PCT);
-    const recrossed = gesamt > FTD_CFG.RELEASE_SCORE;
-    if(inWin && bigUp && recrossed){                           // FTD → Freigabe
-      st.lockout = false; st.rallyDay = 0; st.day1Low = null; st.releasedOn = key;
-    }
-  }
-  saveFtd(st);
-  return st;
-}
-
-function renderFtd(st){
-  const el = document.getElementById('gaugeFtd');
-  if(!el) return;
-  if(!st || (!st.lockout && !st.rallyDay)){ el.style.display='none'; el.textContent=''; return; }
-  el.style.display = 'block';
-  if(st.lockout){
-    el.innerHTML = st.rallyDay
-      ? `Lockout · Rally-Tag ${st.rallyDay}/≥${FTD_CFG.DAY_MIN} · FTD: <b>nein</b>`
-      : `Lockout · kein Rally-Versuch · FTD: <b>nein</b>`;
-    el.style.color = 'var(--red)';
-  } else {
-    el.innerHTML = `FTD ausgelöst ✓ — Freigabe (überschreibt C1)`;
-    el.style.color = 'var(--green)';
-  }
+  return { tier, tierBase, band, label, flag, cb };
 }
 
 // ── Overall Market Indicator ─────────────────────────
@@ -798,7 +673,7 @@ function calcOverall(secData, indData, trendData, vix, mcScores, expSignals) {
   const pct_ind_rs = inds.filter(i=>i.rs>=60).length / n_ind;
   const score_ind  = (pct_ind_50*2-1)*10 + (pct_ind_rs*2-1)*10;
 
-  const syms = ['SPY','RSP','QQQ','QQQE','IWM'];
+  const syms = TREND_SYMS;   // v2.16: nur RSP/QQQE/IWM zaehlen in die Trend-Komponente
   const keys = ['ema9','ema21','ema50','ema200','d3ema21','w52h'];
   let pos=0, total=0;
   syms.forEach(sym => {
@@ -848,14 +723,8 @@ function renderOverall(result) {
     const expColor = exp.cb ? 'var(--red)' : exp.tier>=4 ? 'var(--green)' : exp.tier<=1 ? 'var(--red)' : 'var(--yellow)';
     const ev = document.getElementById('gaugeExpVal');
     const et = document.getElementById('gaugeExpTier');
-    const ed = document.getElementById('gaugeExpDist');
     if(ev){ ev.textContent = exp.band; ev.style.color = expColor; }
     if(et){ et.innerHTML = `Tier ${exp.tier} · ${exp.label}` + (exp.flag?` <span style="color:${expColor};">· ${exp.flag}</span>`:''); }
-    if(ed){
-      if(exp.distDays==null){ ed.textContent='Distribution Days: n/a (kein Vol)'; ed.style.color='var(--muted)'; }
-      else { ed.textContent=`Distribution Days: ${exp.distDays} / ${EXP_CFG.DIST_CLUSTER}`;
-             ed.style.color = exp.distDays>=EXP_CFG.DIST_CLUSTER ? 'var(--red)' : exp.distDays>=EXP_CFG.DIST_CLUSTER-2 ? 'var(--yellow)' : 'var(--muted)'; }
-    }
   }
 
   const tb = document.getElementById('overallTbl');
@@ -876,6 +745,68 @@ function renderOverall(result) {
     <td style="font-family:var(--mono);font-size:15px;font-weight:700;padding:10px 16px;text-align:right;color:${color};">${gesamt>=0?'+':''}${gesamt.toFixed(1)}</td>
     <td style="font-family:var(--mono);font-size:11px;font-weight:700;padding:8px 12px;text-align:right;color:${color};white-space:nowrap;">${zone}</td>
   </tr>`;
+}
+
+// ── Index-Volumen (F3-Datengrundlage · Regelwerk § 4.4) ──────────────
+// Die Quotes-Route (Finnhub) liefert kein Volumen — die Candles-Route (Yahoo)
+// schon. Deshalb werden die Karten zweistufig gefuellt: Preis sofort aus den
+// Quotes, Volumen/Vortagsschluss nach dem Candle-Load via renderIdxVol().
+const VOL_CARDS = ['SPY','QQQ'];
+
+function _volSeries(x){
+  const raw = x && (x.v || x.volume || x.vol || x.Volume || x.V);
+  return Array.isArray(raw) ? raw : null;
+}
+function fmtVol(n){
+  if(n == null || !isFinite(n)) return '—';
+  if(n >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if(n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if(n >= 1e3) return (n/1e3).toFixed(0)+'K';
+  return String(Math.round(n));
+}
+// Letzter Bar + Vorgaenger. live=true ⇒ letzter Bar ist HEUTE und damit noch
+// offen: sein Volumen ist ein Zwischenstand, kein Tagesvolumen.
+function idxVolStat(candleData, sym){
+  const x = (candleData && candleData[sym]) || {};
+  const c = Array.isArray(x.c) ? x.c : null;
+  const t = Array.isArray(x.t) ? x.t : null;
+  const v = _volSeries(x);
+  if(!c || c.length < 2) return null;
+  const i = c.length - 1;
+  const live = !!(t && t.length === c.length &&
+    new Date(t[i]*1000).toDateString() === new Date().toDateString());
+  const ok = v && v.length === c.length;
+  const volNow  = ok && v[i]   > 0 ? +v[i]   : null;
+  const volPrev = ok && v[i-1] > 0 ? +v[i-1] : null;
+  return {
+    live, volNow, volPrev,
+    ratio: (volNow && volPrev) ? volNow/volPrev : null,
+    close: c[i], prevClose: c[i-1],
+    dayPct: c[i-1] > 0 ? (c[i]/c[i-1]-1)*100 : null
+  };
+}
+function renderIdxVol(candleData){
+  VOL_CARDS.forEach(sym=>{
+    const el = document.getElementById('vx-'+sym);
+    if(!el) return;
+    const s = idxVolStat(candleData, sym);
+    if(!s || s.volNow == null || s.volPrev == null){
+      el.innerHTML = `<span class="vl">Vol n/a</span>`;
+      el.title = 'Kein Index-Volumen in den Candles — F3 nicht auswertbar (§ 4.4).';
+      return;
+    }
+    const pct = Math.round(s.ratio*100);
+    const cls = s.live ? 'vn' : (s.ratio > 1 ? 'vu' : 'vd');
+    el.innerHTML =
+      `<span class="vl">Vol ${fmtVol(s.volNow)}${s.live?'*':''}</span>`+
+      `<span class="vl">VT ${fmtVol(s.volPrev)}</span>`+
+      `<span class="${cls}">${pct}%</span>`+
+      `<span class="vl">VT-C $${s.prevClose.toFixed(2)}</span>`;
+    el.title = s.live
+      ? 'Vol = laufendes Tagesvolumen (unvollstaendig, deshalb *). VT = letztes abgeschlossenes '
+        + 'Tagesvolumen, VT-C dessen Schlusskurs. Der %-Wert ist erst zum Close aussagekraeftig.'
+      : 'Vol = Volumen des letzten abgeschlossenen Tages, VT = Vortag, VT-C = Vortagsschluss.';
+  });
 }
 
 const OIL_SYM = 'CL=F';   // Quotes-Route laeuft ueber Finnhub und kennt keine Futures
@@ -912,8 +843,14 @@ async function loadIndices() {
     const ccls = chg == null ? '' : chg>=0 ? 'up' : 'dn';
     const yfTicker=YF_MAP[sym]||sym;
     const yfUrl=`https://finance.yahoo.com/quote/${yfTicker}`;
-    row.innerHTML+=`<a class="ic" href="${yfUrl}" target="_blank" rel="noopener noreferrer"><div class="tk">${disp}</div><div class="pr">${pstr}</div>
+    // Volumen-Slot nur fuer die Leit-Indizes (F3-Datengrundlage, § 4.4).
+    // Wird nach dem Candle-Load von renderIdxVol() gefuellt — loadIndices()
+    // laeuft parallel dazu und hat die Candles hier noch nicht.
+    const volSlot = VOL_CARDS.includes(sym)
+      ? `<div class="vx" id="vx-${sym}"><span class="vl">Vol …</span></div>` : '';
+    row.innerHTML+=`<a class="ic" id="ic-${sym}" href="${yfUrl}" target="_blank" rel="noopener noreferrer"><div class="tk">${disp}</div><div class="pr">${pstr}</div>
       <div class="ch ${ccls}" ${chg==null?'style="color:var(--muted)"':''}>${cstr}</div>
+      ${volSlot}
       <div class="nm">${IDX_META[sym]}</div></a>`;
   });
   const vix = vixRes?.vix ?? null;
@@ -995,6 +932,7 @@ function renderMCPanel(ids, data) {
 }
 
 async function loadAllMarketConditions(candleData, breadthData) {
+  // v2.16: gleiche Achse wie der Trend Status — QQQE, RSP, IWM.
   const syms=['QQQE','RSP','IWM'];
   const idList=[
     {badgeId:'mcBadge3',scoreId:'mcScore3',checksId:'mcChecks3',breadthId:'mcBreadth3'},
@@ -1015,15 +953,21 @@ async function loadAllMarketConditions(candleData, breadthData) {
     const expSignals = computeExposureSignals(candleData);
     const ovResult = calcOverall(window._secArr||{}, window._indArr||{}, window._trendData||{}, window._vix||null, allScores, expSignals);
     renderOverall(ovResult);
-    renderFtd(updateFtdState(ovResult.gesamt, candleData));   // ← NEU (v2.14 · § 4.4)
   }
 }
 
 // ── Trend Status ─────────────────────────────────────
+// v2.16: Trend Status und Market Indicator laufen nur noch ueber die
+// Equal-Weight-/Small-Cap-Achse. SPY und QQQ sind als cap-gewichtete Indizes
+// raus — sie werden von wenigen Mega-Caps getragen und verdecken die Breite.
+// TREND_CALC bleibt der Superset: QQQ wird weiterhin berechnet, aber nur noch
+// intern gebraucht (Tier-4-Cap 'QQQ<50EMA' in calcExposure).
+const TREND_SYMS = ['RSP','QQQE','IWM'];          // Anzeige + GESAMT
+const TREND_CALC = ['RSP','QQQE','IWM','QQQ'];    // intern berechnet
 const TREND_LABELS=[['ema9','9 EMA'],['ema21','21 EMA'],['ema50','50 EMA'],['ema200','200 EMA'],['d3ema21','3D>21 EMA'],['w52h','52W High']];
 
 async function loadTrend(candleData) {
-  const syms=['SPY','RSP','QQQ','QQQE','IWM'];
+  const syms=TREND_CALC;
   const result={};
   syms.forEach(sym=>{
     const c=clean(candleData[sym]?.c||[]); if(c.length<50) return;
@@ -1041,7 +985,7 @@ function renderTrend(data) {
   if(!data) return;
   TREND_LABELS.forEach(([key,label])=>{
     const tr2=document.createElement('tr'); let cells=`<td>${label}</td>`;
-    ['SPY','RSP','QQQ','QQQE','IWM'].forEach(t=>{
+    TREND_SYMS.forEach(t=>{
       const v=data[t]?.[key];
       if(v==null){cells+='<td>—</td>';return;}
       if(typeof v==='boolean') cells+=`<td class="${v?'ty':'tn'}">${v?'Yes':'No'}</td>`;
@@ -1367,6 +1311,8 @@ async function refreshAll() {
     ]);
 
     const breadthData = {moVal:breadthRaw.nymo??null, p50Val:breadthRaw.pct50??null, hlVal:breadthRaw.nyhl??null};
+
+    renderIdxVol(candleData);   // Volumen/Vortagsschluss in die SPY/QQQ-Karten (reine Anzeige)
 
     // SPY perf windows for RS calculations
     const spyC = clean(candleData['SPY']?.c || []);
