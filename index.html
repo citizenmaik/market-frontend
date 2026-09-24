@@ -334,6 +334,8 @@ th.rot-s.sorted.asc::after{content:" ↑";}
             <div class="cap">Invest-Exposure</div>
             <svg viewBox="0 0 170 95" preserveAspectRatio="xMidYMid meet" aria-label="Invest-Exposure-Band in Prozent">
               <path d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--surface2)" stroke-width="5" stroke-linecap="round"/>
+              <!-- Marke = Untergrenze des Bandes; der Bogen laeuft von 0 bis zur Obergrenze -->
+              <line id="ezLo" stroke="var(--border)" stroke-width="1"/>
               <path id="expArc" d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--muted)" stroke-width="5"
                     stroke-dasharray="0 220" style="transition:stroke-dasharray .8s ease,stroke .8s ease;"/>
               <text id="gaugeExpVal" x="85" y="79" text-anchor="middle" font-family="IBM Plex Mono,monospace"
@@ -788,7 +790,10 @@ function renderOverall(result) {
   if(exp){
     const expColor = exp.cb ? 'var(--red)' : exp.tier>=4 ? 'var(--green)' : exp.tier<=1 ? 'var(--red)' : 'var(--yellow)';
     const r = exp.range || [0,0];
-    setArc('expArc', r[0]/100, r[1]/100, expColor);
+    // v2.16: Bogen startet immer bei 0 und laeuft bis zur Band-Obergrenze;
+    // die Untergrenze bleibt als feine Marke sichtbar.
+    setArc('expArc', 0, r[1]/100, expColor);
+    gaugeTick('ezLo', r[0]/100);
     const ev = document.getElementById('gaugeExpVal');
     const et = document.getElementById('gaugeExpTier');
     const ef = document.getElementById('gaugeExpFlag');
