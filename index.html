@@ -267,14 +267,14 @@ th.rot-s.sorted.asc::after{content:" ↑";}
   padding:22px 18px; border-right:1px solid var(--border); }
 .omi-g { display:flex; flex-direction:column; align-items:center; flex:1 1 0; min-width:0; max-width:300px; }
 .omi-g svg { width:100%; height:auto; display:block; }
-.omi-g .cap { font-family:var(--mono); font-size:9.5px; color:var(--muted); letter-spacing:.14em;
-  margin-bottom:10px; text-transform:uppercase; white-space:nowrap; }
+.omi-g .cap { font-family:var(--mono); font-size:8px; font-weight:300; color:var(--muted);
+  letter-spacing:.16em; margin-bottom:10px; text-transform:uppercase; white-space:nowrap; }
 .omi-g .scl { display:flex; justify-content:space-between; width:100%; font-family:var(--mono);
-  font-size:9px; color:var(--muted); opacity:.65; margin-top:-8px; }
-.omi-g .st { font-family:var(--mono); font-size:12.5px; font-weight:700; letter-spacing:.1em;
+  font-size:7.5px; font-weight:300; color:var(--muted); opacity:.55; margin-top:-6px; }
+.omi-g .st { font-family:var(--mono); font-size:10px; font-weight:400; letter-spacing:.14em;
   margin-top:12px; text-align:center; }
-.omi-g .sub { font-family:var(--mono); font-size:9.5px; color:var(--muted); margin-top:6px;
-  text-align:center; line-height:1.5; }
+.omi-g .sub { font-family:var(--mono); font-size:8px; font-weight:300; color:var(--muted);
+  margin-top:5px; text-align:center; line-height:1.55; opacity:.8; }
 .omi-table { overflow-x:hidden; }
 @media (max-width: 820px) {
   .omi-wrap { grid-template-columns: 1fr; }
@@ -315,14 +315,14 @@ th.rot-s.sorted.asc::after{content:" ↑";}
           <div class="omi-g">
             <div class="cap">Regime · Score</div>
             <svg viewBox="0 0 170 95" preserveAspectRatio="xMidYMid meet" aria-label="Regime-Score 0 bis 100">
-              <path d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--surface2)" stroke-width="15" stroke-linecap="round"/>
+              <path d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--surface2)" stroke-width="5" stroke-linecap="round"/>
               <!-- Zonenmarken 45 / 55 -->
-              <line id="gz45" stroke="var(--border)" stroke-width="2"/>
-              <line id="gz55" stroke="var(--border)" stroke-width="2"/>
-              <path id="gaugeArc" d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--muted)" stroke-width="15"
+              <line id="gz45" stroke="var(--border)" stroke-width="1"/>
+              <line id="gz55" stroke="var(--border)" stroke-width="1"/>
+              <path id="gaugeArc" d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--muted)" stroke-width="5"
                     stroke-dasharray="0 220" style="transition:stroke-dasharray .8s ease,stroke .8s ease;"/>
-              <text id="gaugeVal" x="85" y="80" text-anchor="middle" font-family="IBM Plex Mono,monospace"
-                    font-size="26" font-weight="700" fill="var(--muted)">—</text>
+              <text id="gaugeVal" x="85" y="79" text-anchor="middle" font-family="IBM Plex Mono,monospace"
+                    font-size="21" font-weight="300" letter-spacing="-.5" fill="var(--muted)">—</text>
             </svg>
             <div class="scl"><span>0</span><span>50</span><span>100</span></div>
             <div class="st" id="gaugeLbl" style="color:var(--muted);">—</div>
@@ -333,11 +333,11 @@ th.rot-s.sorted.asc::after{content:" ↑";}
           <div class="omi-g">
             <div class="cap">Invest-Exposure</div>
             <svg viewBox="0 0 170 95" preserveAspectRatio="xMidYMid meet" aria-label="Invest-Exposure-Band in Prozent">
-              <path d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--surface2)" stroke-width="15" stroke-linecap="round"/>
-              <path id="expArc" d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--muted)" stroke-width="15"
+              <path d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--surface2)" stroke-width="5" stroke-linecap="round"/>
+              <path id="expArc" d="M15,85 A70,70 0 0,1 155,85" fill="none" stroke="var(--muted)" stroke-width="5"
                     stroke-dasharray="0 220" style="transition:stroke-dasharray .8s ease,stroke .8s ease;"/>
-              <text id="gaugeExpVal" x="85" y="80" text-anchor="middle" font-family="IBM Plex Mono,monospace"
-                    font-size="21" font-weight="700" fill="var(--muted)">—</text>
+              <text id="gaugeExpVal" x="85" y="79" text-anchor="middle" font-family="IBM Plex Mono,monospace"
+                    font-size="17" font-weight="300" letter-spacing="-.5" fill="var(--muted)">—</text>
             </svg>
             <div class="scl"><span>0%</span><span>50%</span><span>100%</span></div>
             <div class="st" id="gaugeExpTier" style="color:var(--muted);">—</div>
@@ -793,7 +793,7 @@ function renderOverall(result) {
     const et = document.getElementById('gaugeExpTier');
     const ef = document.getElementById('gaugeExpFlag');
     if(ev){ ev.textContent = exp.band; ev.setAttribute('fill', expColor);
-            ev.setAttribute('font-size', exp.band.length > 7 ? '17' : '21'); }
+            ev.setAttribute('font-size', exp.band.length > 7 ? '14' : '17'); }
     if(et){ et.textContent = `TIER ${exp.tier} · ${exp.label}`; et.style.color = expColor; }
     if(ef){ ef.innerHTML = exp.flag ? `<span style="color:${expColor}">${exp.flag}</span>` : ''; }
   }
