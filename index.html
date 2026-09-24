@@ -696,7 +696,7 @@ function calcExposure(gesamt, trendData, signals) {
 }
 
 // ── Overall Market Indicator ─────────────────────────
-function calcOverall(secData, indData, trendData, vix, mcScores, expSignals) {
+function calcOverall(secData, indData, trendData, vix, mcScores, expSignals, breadth) {
   const secs = Object.values(secData);
   const n_sec = secs.length;
   const pct_sec_50 = secs.filter(s=>s.above50).length / n_sec;
@@ -730,6 +730,7 @@ function calcOverall(secData, indData, trendData, vix, mcScores, expSignals) {
   const gesamt = Math.max(-100, Math.min(100, score_sec+score_ind+score_trend+score_vix+score_mc));
   return {
     gesamt,
+    breadth: breadth || null,
     exposure: calcExposure(gesamt, trendData, expSignals),
     rows: [
       {lbl:`Sektor-Breadth`,          score:score_sec,   weight:'20%', detail:`${Math.round(pct_sec_50*100)}% >50SMA, ${Math.round(pct_sec_rs*100)}% RS≥60`},
@@ -739,6 +740,215 @@ function calcOverall(secData, indData, trendData, vix, mcScores, expSignals) {
       {lbl:`MC-Scores Ø`,             score:score_mc,    weight:'20%', detail:`Ø ${avg_mc.toFixed(1)}`},
     ]
   };
+}
+
+
+// ── § 4.5 · Breadth Score (v2.16) ────────────────────────────────────
+// Vier swing-kalibrierte Komponenten auf 0-100 (50 = neutral).
+// Laeuft zunaechst im SCHATTENBETRIEB: die Komponenten werden gerechnet und
+// angezeigt, das Gate haengt bis zur vollen Datenlage an der Uebergangsregel
+// § 4.1a. Grund: der z-Wert braucht BREADTH_CFG.Z_WINDOW abgeschlossene Tage,
+// und fuer Beteiligung/Leadership/Akkumulation liefert die Breadth-Route nur
+// Tagesstaende — die Historie waechst erst ueber das Log hier unten.
+const BREADTH_CFG = {
+  W:        { part:20, lead:30, accu:30, spread:20 },  // Gewichte %
+  PART_MA:  20,        // [B1] 20SMA (Alternative 50)
+  LEAD_WIN: 21,        // [B2] Hoch/Tief-Fenster in Handelstagen
+  LOW_MULT: 1.5,       // [B3] neue Tiefs wiegen schwerer
+  SPREAD:   'QQQE/QQQ',// [B4] Alternative: beide Paare gemittelt
+  Z_WINDOW: 120,       // [B7] z-Fenster (Alternative 250)
+  UNIVERSE: 'own',     // [B8] 'own' = ~180 Themen-Aktien (Default) · 'nyse' = externer Feed (fehlt)
+  MIN_NAMES: 30,       // Mindestzahl verwertbarer Titel, sonst n/a
+  Z_CLAMP:  2,
+  LS_KEY:   'breadthLogV1',
+  LOG_MAX:  400,       // Tage im Log (rollierend)
+};
+
+const _mean = a => a.reduce((x,y)=>x+y,0)/a.length;
+function zScore(series, val){
+  const w = series.filter(x => typeof x === 'number' && isFinite(x)).slice(-BREADTH_CFG.Z_WINDOW);
+  if (w.length < BREADTH_CFG.Z_WINDOW) return { ok:false, n:w.length };
+  const mu = _mean(w), sd = Math.sqrt(_mean(w.map(x => (x-mu)**2)));
+  if (!(sd > 0)) return { ok:false, n:w.length };
+  const z = Math.max(-BREADTH_CFG.Z_CLAMP, Math.min(BREADTH_CFG.Z_CLAMP, (val-mu)/sd));
+  return { ok:true, z, score: 50 + z*25, n:w.length };
+}
+
+// --- Log: eine Zeile je abgeschlossenem Handelstag ---
+function loadBreadthLog(){
+  try { const r = JSON.parse(localStorage.getItem(BREADTH_CFG.LS_KEY)||'[]'); return Array.isArray(r)?r:[]; }
+  catch(e){ return []; }
+}
+function saveBreadthLog(rows){
+  try { localStorage.setItem(BREADTH_CFG.LS_KEY, JSON.stringify(rows.slice(-BREADTH_CFG.LOG_MAX))); } catch(e){}
+}
+// Rohwerte des letzten ABGESCHLOSSENEN Tages wegschreiben. Fehlende Werte
+// werden als null geloggt — der Ausfall selbst ist Teil der Historie (§ 4.5).
+function logBreadthRaw(dateKey, raw){
+  const rows = loadBreadthLog();
+  const i = rows.findIndex(r => r.d === dateKey);
+  const row = Object.assign({ d: dateKey }, raw);
+  if (i >= 0) rows[i] = row; else rows.push(row);
+  rows.sort((a,b) => a.d < b.d ? -1 : 1);
+  saveBreadthLog(rows);
+  return rows;
+}
+
+// --- Rohwerte ---
+// Spread [B4]: QQQE/QQQ. Abstand des Quotienten zur eigenen 10SMA (%) und
+// Veraenderung ueber 5 Tage (%), je zur Haelfte. Beide aus den Candles direkt
+// rechenbar — diese Komponente hat ab dem ersten Tag volle Historie.
+function spreadRaw(candleData){
+  const a = clean(candleData?.[BREADTH_CFG.SPREAD.split('/')[0]]?.c || []);
+  const b = clean(candleData?.[BREADTH_CFG.SPREAD.split('/')[1]]?.c || []);
+  const n = Math.min(a.length, b.length);
+  if (n < BREADTH_CFG.Z_WINDOW + 15) return { series:null, n };
+  const q = [];
+  for (let i=0;i<n;i++) q.push(a[a.length-n+i] / b[b.length-n+i]);
+  const out = [];
+  for (let i=14;i<q.length;i++){
+    const ma10 = _mean(q.slice(i-9, i+1));
+    const dist = (q[i]/ma10 - 1) * 100;
+    const chg5 = (q[i]/q[i-5] - 1) * 100;
+    out.push(0.5*dist + 0.5*chg5);
+  }
+  return { series: out, n: out.length };
+}
+
+// ── § 4.5 · Komponenten aus dem eigenen Universum [B8] ───────────────
+// Grund: /api/data?type=breadth liefert keine NYSE-Daten. Die StockCharts-
+// Symbole (^NYMO, ^NYA50R, ^NYHL) existieren bei Yahoo nicht, die Route faellt
+// still auf 11 gleichgewichtete Sektor-ETFs zurueck (verifiziert 24.09.2026:
+// pct50 27,3 = 3/11, pct200 45,5 = 5/11, nymo null). Stattdessen rechnen wir
+// die Beteiligung, Leadership und Akkumulation direkt aus den Candles der
+// ~180 Themen-Aktien, die ohnehin bei jedem Refresh geladen werden.
+// Das ist NICHT NYSE-weit — es ist die Breite des eigenen Handelsuniversums.
+function universeSeries(candleData, symbols){
+  const cal = (candleData?.['QQQ']?.t || []).map(x => new Date(x*1000).toISOString().slice(0,10));
+  if (cal.length < 40) return null;
+  const pos = new Map(cal.map((d,i) => [d,i]));
+  const N = cal.length;
+  const C = [], V = [];                       // je Symbol auf den Kalender gelegt
+  let used = 0;
+  symbols.forEach(sym => {
+    const x = candleData?.[sym]; if (!x || !Array.isArray(x.c)) return;
+    const c = new Array(N).fill(null), v = new Array(N).fill(null);
+    (x.t||[]).forEach((ts,k) => {
+      const i = pos.get(new Date(ts*1000).toISOString().slice(0,10));
+      if (i == null) return;
+      const cc = x.c?.[k], vv = x.v?.[k];
+      if (cc != null && !isNaN(cc)) c[i] = cc;
+      if (vv != null && !isNaN(vv)) v[i] = vv;
+    });
+    if (c.filter(Boolean).length > N*0.8) { C.push(c); V.push(v); used++; }
+  });
+  if (used < 30) return null;
+
+  const part = [], lead = [], accu = [];
+  const W_MA = BREADTH_CFG.PART_MA, W_HL = BREADTH_CFG.LEAD_WIN;
+  const start = Math.max(W_MA, W_HL) + 1;
+  for (let i = start; i < N; i++){
+    let above = 0, tot = 0, hi = 0, lo = 0, upV = 0, dnV = 0, totHL = 0;
+    for (let s = 0; s < C.length; s++){
+      const c = C[s], v = V[s];
+      const px = c[i]; if (px == null) continue;
+      // Beteiligung [B1]
+      const win = c.slice(i-W_MA+1, i+1).filter(x => x != null);
+      if (win.length === W_MA){ tot++; if (px > win.reduce((a,b)=>a+b,0)/W_MA) above++; }
+      // Leadership [B2/B3] — echte neue Hochs/Tiefs im Fenster
+      const wh = c.slice(i-W_HL+1, i+1).filter(x => x != null);
+      if (wh.length === W_HL){ totHL++;
+        if (px >= Math.max(...wh)) hi++;
+        if (px <= Math.min(...wh)) lo++; }
+      // Akkumulation — echtes Up/Down-Volumen
+      const prev = c[i-1];
+      if (prev != null && v[i] != null){ if (px > prev) upV += v[i]; else if (px < prev) dnV += v[i]; }
+    }
+    part.push(tot ? above/tot*100 : null);
+    lead.push(totHL ? (hi - lo*BREADTH_CFG.LOW_MULT)/totHL*100 : null);
+    accu.push((upV > 0 && dnV > 0) ? Math.log(upV/dnV) : null);
+  }
+  // Akkumulation: 3-Tage-Mittel gegen 10-Tage-Mittel (§ 4.5)
+  const accuRaw = [];
+  for (let i = 9; i < accu.length; i++){
+    const w3 = accu.slice(i-2, i+1).filter(x => x != null);
+    const w10 = accu.slice(i-9, i+1).filter(x => x != null);
+    accuRaw.push((w3.length === 3 && w10.length === 10)
+      ? _mean(w3) - _mean(w10) : null);
+  }
+  // Beteiligung: Niveau und Steigung (5 T) zu gleichen Teilen
+  const partRaw = [];
+  for (let i = 5; i < part.length; i++){
+    partRaw.push((part[i] != null && part[i-5] != null)
+      ? 0.5*part[i] + 0.5*(part[i]-part[i-5])*5 : null);   // Steigung skaliert
+  }
+  return { names: used, part: partRaw.filter(x=>x!=null), lead: lead.filter(x=>x!=null),
+           accu: accuRaw.filter(x=>x!=null), partLast: part[part.length-1] };
+}
+
+// Beteiligung / Leadership / Akkumulation kommen aus der Breadth-Route und
+// liegen nur als Tagesstand vor. Historie entsteht ausschliesslich ueber das Log.
+function seriesFromLog(rows, key){
+  return rows.map(r => (typeof r[key] === 'number' ? r[key] : null))
+             .filter(x => x !== null);
+}
+
+function breadthScore(candleData, breadthRaw){
+  const q = candleData?.['QQQ'] || {};
+  const i = _completedIdxSafe(q);
+  const dateKey = (Array.isArray(q.t) && q.t[i])
+    ? new Date(q.t[i]*1000).toISOString().slice(0,10)
+    : new Date().toISOString().slice(0,10);
+
+  const U = (BREADTH_CFG.UNIVERSE === 'own')
+    ? universeSeries(candleData, (typeof THEME_MEMBERS !== 'undefined' ? THEME_MEMBERS : []))
+    : null;
+  const uni = U && U.names >= BREADTH_CFG.MIN_NAMES ? U : null;
+  const need = BREADTH_CFG.Z_WINDOW;
+  const mk = (key, lbl, w, series, extra) => {
+    if (!series || !series.length)
+      return { key, lbl, w, score:null, reason: uni
+        ? `Serie leer (${uni.names} Titel)` : `kein Universum — [B8] ${BREADTH_CFG.UNIVERSE}, Feed fehlt` };
+    const z = zScore(series.slice(0,-1), series[series.length-1]);
+    return z.ok
+      ? { key, lbl, w, score:z.score, detail:`z ${z.z.toFixed(2)} · ${z.n} T${extra?' · '+extra:''}` }
+      : { key, lbl, w, score:null, reason:`Historie ${z.n}/${need} T — Candle-Range erhöhen` };
+  };
+
+  const sp = spreadRaw(candleData);
+  const comps = [
+    mk('part','Beteiligung',   BREADTH_CFG.W.part, uni&&uni.part, uni?`${uni.names} Titel > ${BREADTH_CFG.PART_MA}SMA`:''),
+    mk('lead','Leadership',    BREADTH_CFG.W.lead, uni&&uni.lead, `${BREADTH_CFG.LEAD_WIN}-T-Extrema · Tiefs ×${BREADTH_CFG.LOW_MULT}`),
+    mk('accu','Akkumulation',  BREADTH_CFG.W.accu, uni&&uni.accu, 'Up/Down-Vol 3 vs. 10 T'),
+    mk('spread',`Spread ${BREADTH_CFG.SPREAD}`, BREADTH_CFG.W.spread, sp.series, ''),
+  ];
+
+  // Rohwerte des Tages wegschreiben — inkl. Ausfaellen (§ 4.5)
+  const rows = logBreadthRaw(dateKey, {
+    u:    uni ? uni.names : null,
+    part: uni && uni.part.length ? +uni.part[uni.part.length-1].toFixed(3) : null,
+    lead: uni && uni.lead.length ? +uni.lead[uni.lead.length-1].toFixed(3) : null,
+    accu: uni && uni.accu.length ? +uni.accu[uni.accu.length-1].toFixed(4) : null,
+    spr:  sp.series && sp.series.length ? +sp.series[sp.series.length-1].toFixed(4) : null,
+  });
+
+  const ok = comps.filter(c => c.score != null);
+  const na = comps.filter(c => c.score == null);
+  const wSum = ok.reduce((s,c) => s + c.w, 0);
+  comps.forEach(c => c.wEff = (c.score != null && wSum > 0) ? +(c.w/wSum*100).toFixed(0) : 0);
+  const score = (na.length >= 2 || wSum === 0) ? null
+              : ok.reduce((s,c) => s + c.score * c.w, 0) / wSum;
+
+  return { score, comps, na: na.map(c => c.lbl), logDays: rows.length, dateKey,
+           names: uni ? uni.names : 0, universe: BREADTH_CFG.UNIVERSE };
+}
+function _completedIdxSafe(x){
+  const c = Array.isArray(x.c) ? x.c : [], t = Array.isArray(x.t) ? x.t : [];
+  if (!c.length) return -1;
+  const last = c.length - 1;
+  const live = t.length === c.length &&
+    new Date(t[last]*1000).toDateString() === new Date().toDateString();
+  return live ? last - 1 : last;
 }
 
 // ── Gauge-Helfer (Halbkreis r=70) ────────────────────────────────────
@@ -765,10 +975,11 @@ function gaugeTick(id, f){                    // Zonenmarke bei Anteil f
 function renderOverall(result) {
   const {gesamt, rows} = result;
 
-  // v2.16 · § 4.1a Uebergangsregel: solange die Komponenten noch die alte
-  // Skala (-100..+100) liefern, wird linear auf 0-100 uebersetzt (50 = neutral).
-  // Sobald § 4.5 gerechnet wird, faellt genau diese Zeile weg.
-  const score = 50 + gesamt / 2;
+  // Score-Quelle: § 4.5 sobald er traegt, sonst die Uebergangsregel § 4.1a
+  // (lineare Umrechnung der alten Skala -100..+100 auf 0-100, 50 = neutral).
+  const bs    = result.breadth || { score:null, comps:[], na:[], logDays:0 };
+  const live45 = bs.score != null;
+  const score  = live45 ? bs.score : 50 + gesamt / 2;
 
   // 3-stufige Ampel (§ 4.1). Grenzen fallen zur ruhigeren Seite:
   // genau 45 und genau 55 sind NEUTRAL.
@@ -784,7 +995,9 @@ function renderOverall(result) {
   if(val){ val.textContent = score.toFixed(1); val.setAttribute('fill', color); }
   if(lbl){ lbl.textContent = zone; lbl.style.color = color; }
   if(nte){ nte.innerHTML = `Ticket-Budget ${zone==='BULLISH'?3:zone==='NEUTRAL'?1:0}`
-    + `<br><span style="opacity:.7">§ 4.1a · 50 + GESAMT ÷ 2</span>`; }
+    + `<br><span style="opacity:.7">${live45
+        ? `§ 4.5 · ${4-bs.na.length}/4 · ${bs.names} Titel`
+        : `§ 4.1a · Übergang · Log ${bs.logDays} T`}</span>`; }
 
   const exp = result.exposure;
   if(exp){
@@ -805,7 +1018,29 @@ function renderOverall(result) {
 
   const tb = document.getElementById('overallTbl');
   if(!tb) return;
-  tb.innerHTML = rows.map(r => {
+
+  // § 4.5-Block: die vier Swing-Komponenten mit Status und effektivem Gewicht
+  const sep = (txt) => `<tr><td colspan="3" style="font-family:var(--mono);font-size:9px;
+      letter-spacing:.12em;color:var(--muted);padding:9px 12px 5px;text-transform:uppercase;
+      border-bottom:1px solid var(--border);opacity:.7;">${txt}</td></tr>`;
+  const c45 = bs.comps.map(c => {
+    const on = c.score != null;
+    const col = !on ? 'var(--muted)' : c.score > 55 ? 'var(--green)' : c.score >= 45 ? 'var(--yellow)' : 'var(--red)';
+    return `<tr style="border-bottom:1px solid var(--border);${on?'':'opacity:.65;'}">
+      <td style="font-family:var(--mono);font-size:11px;padding:7px 12px;color:var(--text);">
+        ${c.lbl}
+        <br><span style="font-size:9px;color:var(--muted);">${on ? c.detail : c.reason}</span>
+      </td>
+      <td style="font-family:var(--mono);font-size:12px;font-weight:600;padding:7px 12px;text-align:right;color:${col};">
+        ${on ? c.score.toFixed(1) : 'n/a'}</td>
+      <td style="font-family:var(--mono);font-size:11px;padding:7px 12px;text-align:right;color:var(--muted);white-space:nowrap;">
+        ${c.w}%${on && c.wEff !== c.w ? `<br><span style="font-size:9px;">eff. ${c.wEff}%</span>` : ''}</td>
+    </tr>`;
+  }).join('');
+
+  tb.innerHTML = sep(`§ 4.5 · Breadth Score · [B8] ${bs.universe === 'own' ? `eigenes Universum (${bs.names} Titel)` : 'NYSE-weit'}${live45 ? '' : ' · Schattenbetrieb'}`) + c45
+    + sep(live45 ? 'Alt-Komponenten · nur noch Anzeige' : 'Übergang § 4.1a · Gate läuft auf diesen Komponenten')
+    + rows.map(r => {
     const c = r.score>0?'var(--green)':r.score<0?'var(--red)':'var(--muted)';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="font-family:var(--mono);font-size:11px;padding:7px 12px;color:var(--text);">
@@ -817,7 +1052,8 @@ function renderOverall(result) {
     </tr>`;
   }).join('') +
   `<tr style="border-top:2px solid var(--border);">
-    <td style="font-family:var(--mono);font-size:13px;font-weight:700;padding:10px 16px;color:var(--text);">GESAMT</td>
+    <td style="font-family:var(--mono);font-size:13px;font-weight:700;padding:10px 16px;color:var(--text);">GESAMT
+      <br><span style="font-size:9px;font-weight:400;color:var(--muted);">${live45 ? '§ 4.5' : '§ 4.1a · 50 + GESAMT ÷ 2'}</span></td>
     <td style="font-family:var(--mono);font-size:15px;font-weight:700;padding:10px 16px;text-align:right;color:${color};">${score.toFixed(1)}
       <span style="font-size:10px;font-weight:500;color:var(--muted);">/100</span></td>
     <td style="font-family:var(--mono);font-size:11px;font-weight:700;padding:8px 12px;text-align:right;color:${color};white-space:nowrap;">${zone}</td>
@@ -1034,7 +1270,8 @@ async function loadAllMarketConditions(candleData, breadthData) {
   }
   if (allScores.length) {
     const expSignals = computeExposureSignals(candleData);
-    const ovResult = calcOverall(window._secArr||{}, window._indArr||{}, window._trendData||{}, window._vix||null, allScores, expSignals);
+    const breadth  = breadthScore(candleData, window._breadthRaw || {});   // § 4.5 (v2.16)
+    const ovResult = calcOverall(window._secArr||{}, window._indArr||{}, window._trendData||{}, window._vix||null, allScores, expSignals, breadth);
     renderOverall(ovResult);
   }
 }
@@ -1389,11 +1626,12 @@ async function refreshAll() {
 
     const [idxData, candleData, breadthRaw] = await Promise.all([
       loadIndices(),
-      getCandles(mainSyms, '6mo'),
+      getCandles(mainSyms, '1y'),        // v2.16: z-Fenster 120 T braucht > 6mo
       fetch(`${API}?type=breadth&fhkey=${FKEY}`).then(r=>r.json()).catch(()=>({}))
     ]);
 
     const breadthData = {moVal:breadthRaw.nymo??null, p50Val:breadthRaw.pct50??null, hlVal:breadthRaw.nyhl??null};
+    window._breadthRaw = breadthRaw;   // § 4.5 braucht die Rohwerte fuer Log + z
 
     renderIdxVol(candleData);   // Volumen/Vortagsschluss in die SPY/QQQ-Karten (reine Anzeige)
 
