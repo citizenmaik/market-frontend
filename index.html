@@ -776,7 +776,36 @@ const BREADTH_CFG = {
   Z_CLAMP:  2,
   LS_KEY:   'breadthLogV1',
   LOG_MAX:  400,       // Tage im Log (rollierend)
+  // Schattenwerte (28.09.2026) — NUR Log, fliessen NICHT in den Score.
+  // Entscheidung ueber eine Uebernahme bei der Log-Auswertung (05.11.2026).
+  SHADOW: {
+    NEAR_PCT: 3,           // Leadership 'nahe am Extrem': <= 3 % unter 21-T-Hoch / ueber 21-T-Tief
+    ACCU_CAP: Math.log(5), // Akkumulation: Tageswert ln(Up/Down) gekappt bei +-ln 5 (5:1)
+    EPS:      1,           // Volumen-Epsilon gegen Nulldivision (Stueck)
+  },
+  BACKFILL: true,      // fehlende Log-Tage aus den Candles nachtragen (bf:1)
 };
+
+// Event-Flag je Handelstag (nur Log): Tage mit mechanisch verzerrtem Volumen.
+//   OPEX   = 3. Freitag des Monats
+//   OPEX-Q = 3. Freitag Mrz/Jun/Sep/Dez (Hexensabbat + S&P/NDX-Rebalancing)
+//   RUSSELL= 4. Freitag Juni/Dezember (Rekonstitution, ab 2026 halbjaehrlich)
+//   HALF   = verkuerzter Handelstag (3. Jul, Tag nach Thanksgiving, 24. Dez)
+function breadthEventFlag(d){
+  const dt = new Date(d + 'T12:00:00Z');
+  const y = dt.getUTCFullYear(), m = dt.getUTCMonth(), day = dt.getUTCDate(), wd = dt.getUTCDay();
+  const nth = Math.ceil(day / 7);                       // n-ter Wochentag im Monat
+  if ((m === 6 && day === 3) || (m === 11 && day === 24)) return 'HALF';
+  if (m === 10 && wd === 5) {                           // Tag nach dem 4. Donnerstag im Nov.
+    const thu = new Date(Date.UTC(y, m, day - 1));
+    if (Math.ceil(thu.getUTCDate() / 7) === 4) return 'HALF';
+  }
+  if (wd === 5 && nth === 3) return [2,5,8,11].includes(m) ? 'OPEX-Q' : 'OPEX';
+  if (wd === 5 && nth === 4 && (m === 5 || m === 11)) return 'RUSSELL';
+  return null;
+}
+const _median = a => { const s = [...a].sort((x,y)=>x-y), k = s.length>>1;
+  return s.length ? (s.length % 2 ? s[k] : (s[k-1]+s[k])/2) : null; };
 
 const _mean = a => a.reduce((x,y)=>x+y,0)/a.length;
 function zScore(series, val){
@@ -859,21 +888,30 @@ function universeSeries(candleData, symbols){
   if (used < 30) return null;
 
   const part = [], lead = [], accu = [];
+  // Schattenwerte (nur Log): Median-Abstand 20SMA, Leadership 'nahe am Extrem',
+  // Akkumulation-Tageswert ungekappt (aDay) und gekappt (aCl)
+  const pDist = [], lNear = [], aDay = [], aCl = [];
+  const SH = BREADTH_CFG.SHADOW, nearF = SH.NEAR_PCT / 100;
   const W_MA = BREADTH_CFG.PART_MA, W_HL = BREADTH_CFG.LEAD_WIN;
   const start = Math.max(W_MA, W_HL) + 1;
   for (let i = start; i < N; i++){
-    let above = 0, tot = 0, hi = 0, lo = 0, upV = 0, dnV = 0, totHL = 0;
+    let above = 0, tot = 0, hi = 0, lo = 0, upV = 0, dnV = 0, totHL = 0, nHi = 0, nLo = 0;
+    const dists = [];
     for (let s = 0; s < C.length; s++){
       const c = C[s], v = V[s];
       const px = c[i]; if (px == null) continue;
       // Beteiligung [B1]
       const win = c.slice(i-W_MA+1, i+1).filter(x => x != null);
-      if (win.length === W_MA){ tot++; if (px > win.reduce((a,b)=>a+b,0)/W_MA) above++; }
-      // Leadership [B2/B3] — echte neue Hochs/Tiefs im Fenster
+      if (win.length === W_MA){ tot++; const ma = win.reduce((a,b)=>a+b,0)/W_MA;
+        if (px > ma) above++; dists.push((px/ma - 1) * 100); }
+      // Leadership [B2/B3] — echte neue Hochs/Tiefs im Fenster (bereits als Anteil)
       const wh = c.slice(i-W_HL+1, i+1).filter(x => x != null);
       if (wh.length === W_HL){ totHL++;
-        if (px >= Math.max(...wh)) hi++;
-        if (px <= Math.min(...wh)) lo++; }
+        const mx = Math.max(...wh), mn = Math.min(...wh);
+        if (px >= mx) hi++;
+        if (px <= mn) lo++;
+        if (px >= mx * (1 - nearF)) nHi++;
+        if (px <= mn * (1 + nearF)) nLo++; }
       // Akkumulation — echtes Up/Down-Volumen
       const prev = c[i-1];
       if (prev != null && v[i] != null){ if (px > prev) upV += v[i]; else if (px < prev) dnV += v[i]; }
@@ -881,7 +919,34 @@ function universeSeries(candleData, symbols){
     part.push(tot ? above/tot*100 : null);
     lead.push(totHL ? (hi - lo*BREADTH_CFG.LOW_MULT)/totHL*100 : null);
     accu.push((upV > 0 && dnV > 0) ? Math.log(upV/dnV) : null);
+    pDist.push(dists.length ? _median(dists) : null);
+    lNear.push(totHL ? (nHi - nLo*BREADTH_CFG.LOW_MULT)/totHL*100 : null);
+    const lr = (upV + dnV > 0) ? Math.log((upV + SH.EPS)/(dnV + SH.EPS)) : null;
+    aDay.push(lr);
+    aCl.push(lr == null ? null : Math.max(-SH.ACCU_CAP, Math.min(SH.ACCU_CAP, lr)));
   }
+
+  // Log-Zeilen je Kalendertag (fuer Backfill + Schattenwerte), datums-exakt
+  const w3w10 = (arr, j) => {
+    if (j < 9) return null;
+    const w3 = arr.slice(j-2, j+1), w10 = arr.slice(j-9, j+1);
+    return (w3.every(x => x != null) && w10.every(x => x != null)) ? _mean(w3) - _mean(w10) : null;
+  };
+  const r3 = (x, k) => (x == null || !isFinite(x)) ? null : +x.toFixed(k);
+  const logRows = part.map((p, j) => ({
+    d:     cal[start + j],
+    u:     used,
+    part:  (j >= 5 && p != null && part[j-5] != null) ? r3(0.5*p + 0.5*(p - part[j-5])*5, 3) : null,
+    lead:  r3(lead[j], 3),
+    accu:  r3(w3w10(accu, j), 4),
+    // --- Schatten ---
+    pAbv:  r3(p, 2),              // Anteil > 20SMA (ungeglaettet, Niveau)
+    pDist: r3(pDist[j], 3),       // Median-Abstand zur 20SMA in %
+    lNear: r3(lNear[j], 3),       // 'nahe am Extrem' (3 %), Tiefs x1,5, als Anteil
+    aDay:  r3(aDay[j], 4),        // Tages-ln(Up/Down), UNgekappt — Kappungs-Check
+    aCl:   r3(w3w10(aCl, j), 4),  // Akkumulation-Variante: gekappt, Mittel3 - Mittel10
+    ev:    breadthEventFlag(cal[start + j]),
+  }));
   // Akkumulation: 3-Tage-Mittel gegen 10-Tage-Mittel (§ 4.5)
   const accuRaw = [];
   for (let i = 9; i < accu.length; i++){
@@ -897,8 +962,39 @@ function universeSeries(candleData, symbols){
       ? 0.5*part[i] + 0.5*(part[i]-part[i-5])*5 : null);   // Steigung skaliert
   }
   return { names: used, part: partRaw.filter(x=>x!=null), lead: lead.filter(x=>x!=null),
-           accu: accuRaw.filter(x=>x!=null), partLast: part[part.length-1] };
+           accu: accuRaw.filter(x=>x!=null), partLast: part[part.length-1], logRows };
 }
+
+// Fehlende Tage aus den Candles nachtragen. Bestehende Zeilen behalten ihre
+// Werte (Korb-Aenderungen verschieben sonst still die Historie); nur fehlende
+// Schattenfelder werden ergaenzt. Nachgetragene Zeilen tragen bf:1.
+function backfillBreadthLog(logRows, todayKey){
+  if (!BREADTH_CFG.BACKFILL || !Array.isArray(logRows)) return;
+  const rows = loadBreadthLog();
+  const byD = new Map(rows.map(r => [r.d, r]));
+  logRows.forEach(n => {
+    if (!n.d || n.d > todayKey) return;
+    const r = byD.get(n.d);
+    if (!r){ const x = Object.assign({}, n, { bf:1 }); rows.push(x); byD.set(n.d, x); return; }
+    Object.keys(n).forEach(k => { if (r[k] === undefined) r[k] = n[k]; });
+  });
+  rows.sort((a,b) => a.d < b.d ? -1 : 1);
+  saveBreadthLog(rows);
+}
+
+// Export fuer die Auswertung: das Log liegt NUR im localStorage dieses Browsers.
+function exportBreadthLog(){
+  const rows = loadBreadthLog();
+  if (!rows.length){ alert('breadthLogV1 ist leer.'); return; }
+  const keys = ['d','u','part','lead','accu','spr','pAbv','pDist','lNear','aDay','aCl','ev','bf'];
+  const esc = v => v == null ? '' : String(v);
+  const csv = [keys.join(';')].concat(rows.map(r => keys.map(k => esc(r[k])).join(';'))).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
+  a.download = `breadthLogV1_${rows[rows.length-1].d}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+window.exportBreadthLog = exportBreadthLog;
 
 // Beteiligung / Leadership / Akkumulation kommen aus der Breadth-Route und
 // liegen nur als Tagesstand vor. Historie entsteht ausschliesslich ueber das Log.
@@ -938,12 +1034,17 @@ function breadthScore(candleData, breadthRaw){
   ];
 
   // Rohwerte des Tages wegschreiben — inkl. Ausfaellen (§ 4.5)
+  // Vorher fehlende Tage nachtragen; die Tageszeile traegt die Schattenwerte mit.
+  if (uni) backfillBreadthLog(uni.logRows, dateKey);
+  const sh = (uni && uni.logRows || []).find(r => r.d === dateKey) || {};
   const rows = logBreadthRaw(dateKey, {
     u:    uni ? uni.names : null,
     part: uni && uni.part.length ? +uni.part[uni.part.length-1].toFixed(3) : null,
     lead: uni && uni.lead.length ? +uni.lead[uni.lead.length-1].toFixed(3) : null,
     accu: uni && uni.accu.length ? +uni.accu[uni.accu.length-1].toFixed(4) : null,
     spr:  sp.series && sp.series.length ? +sp.series[sp.series.length-1].toFixed(4) : null,
+    pAbv: sh.pAbv ?? null, pDist: sh.pDist ?? null, lNear: sh.lNear ?? null,
+    aDay: sh.aDay ?? null, aCl: sh.aCl ?? null, ev: breadthEventFlag(dateKey),
   });
 
   const ok = comps.filter(c => c.score != null);
@@ -1066,7 +1167,8 @@ function renderOverall(result) {
     </tr>`;
   }).join('');
 
-  tb.innerHTML = sep(`§ 4.5 · Breadth Score · [B8] ${bs.universe === 'own' ? `eigenes Universum (${bs.names} Titel)` : 'NYSE-weit'}${live45 ? '' : ' · Schattenbetrieb'}`) + c45
+  tb.innerHTML = sep(`§ 4.5 · Breadth Score · [B8] ${bs.universe === 'own' ? `eigenes Universum (${bs.names} Titel)` : 'NYSE-weit'}${live45 ? '' : ' · Schattenbetrieb'}`
+      + ` · <a href="#" onclick="exportBreadthLog();return false;" style="color:var(--muted);text-decoration:underline;">Log ${bs.logDays} T ↓ CSV</a>`) + c45
     + sep(live45 ? 'Alt-Komponenten · nur noch Anzeige' : 'Übergang § 4.1a · Gate läuft auf diesen Komponenten')
     + rows.map(r => {
     const c = r.score>0?'var(--green)':r.score<0?'var(--red)':'var(--muted)';
